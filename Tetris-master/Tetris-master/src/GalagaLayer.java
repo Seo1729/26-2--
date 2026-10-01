@@ -1,3 +1,5 @@
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -11,7 +13,7 @@ import javax.swing.Timer;
 
 /**
  * 갤러그 협동 모드에서 테트리스 영역 위에 겹쳐 그려지는 투명 레이어.
- * 전투기 등 갤러그 요소를 일정 주기로 갱신하고 그리는 역할을 맡는다.
+ * 전투기 등 갤러그 요소를 일정 주기로 갱신하고 그리며, 웨이브 진행과 승리 판정을 맡는다.
  */
 public class GalagaLayer extends JPanel
 {
@@ -21,11 +23,23 @@ public class GalagaLayer extends JPanel
 	/** 연사 간격(타이머 주기 횟수). 7 x 30ms = 약 0.2초마다 한 발 */
 	private static final int FIRE_INTERVAL = 7;
 
+	/** 모두 막아내면 승리하는 전체 웨이브 수 */
+	private static final int TOTAL_WAVES = 3;
+
 	/** 하단에서 외계인을 격추하는 전투기 */
 	private final Fighter fighter;
 
-	/** 화면 상단에서 좌우로 움직이는 외계인 편대 */
-	private final AlienFleet fleet;
+	/** 레이어 아래에 있는 테트리스 판. 승리를 알리고 게임 종료 여부를 확인할 때 쓴다. */
+	private final GamePanel board;
+
+	/** 주기적으로 갤러그 상태를 갱신하는 타이머. 게임이 끝나면 멈춘다. */
+	private final Timer timer;
+
+	/** 현재 웨이브의 외계인 편대. 웨이브가 바뀌면 새 편대로 교체된다. */
+	private AlienFleet fleet;
+
+	/** 현재 웨이브 번호(1부터 시작) */
+	private int wave = 1;
 
 	/** 현재 화면에 날아가고 있는 총알 목록 */
 	private final ArrayList<Bullet> bullets = new ArrayList<Bullet>();
@@ -59,6 +73,7 @@ public class GalagaLayer extends JPanel
 		// 아래의 테트리스 블록이 비쳐 보이도록 배경을 칠하지 않는다
 		setOpaque(false);
 		setBounds(x, y, width, height);
+		this.board = board;
 		fighter = new Fighter(width, height);
 		fleet = new AlienFleet(width, board);
 
@@ -77,11 +92,18 @@ public class GalagaLayer extends JPanel
 			}
 		};
 
-		// 일정 주기마다 눌린 키에 따라 전투기를 움직이고 화면을 다시 그린다
-		Timer timer = new Timer(TICK, new ActionListener()
+		// 일정 주기마다 갤러그 상태를 갱신하고 화면을 다시 그린다
+		timer = new Timer(TICK, new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
+				// 승리나 패배로 게임이 끝났으면 갱신을 멈추고, 결과 메시지를 가리지 않게 레이어를 숨긴다
+				if (!board.isRunning())
+				{
+					timer.stop();
+					setVisible(false);
+					return;
+				}
 				update();
 				repaint();
 			}
@@ -117,7 +139,8 @@ public class GalagaLayer extends JPanel
 	}
 
 	/**
-	 * 한 주기 동안의 갤러그 상태를 갱신한다. 편대 이동, 전투기 이동, 연사, 총알 이동을 처리한다.
+	 * 한 주기 동안의 갤러그 상태를 갱신한다. 편대 이동, 전투기 이동, 연사, 총알 이동,
+	 * 웨이브 진행과 승리 판정을 처리한다.
 	 */
 	private void update()
 	{
@@ -149,6 +172,18 @@ public class GalagaLayer extends JPanel
 			if (bullets.get(i).isOutOfArea() || fleet.hit(bullets.get(i)))
 				bullets.remove(i);
 		}
+
+		// 편대가 모두 없어졌으면 마지막 웨이브는 승리, 아니면 새 편대로 다음 웨이브를 시작한다
+		if (fleet.isEmpty())
+		{
+			if (wave == TOTAL_WAVES)
+				board.endGame("CLEAR");
+			else
+			{
+				wave++;
+				fleet = new AlienFleet(getWidth(), board);
+			}
+		}
 	}
 
 	/**
@@ -165,5 +200,10 @@ public class GalagaLayer extends JPanel
 		// 날아가고 있는 총알을 모두 그린다
 		for (int i = 0; i < bullets.size(); i++)
 			bullets.get(i).draw(g);
+
+		// 왼쪽 위에 현재 웨이브를 작게 표시한다(편대 첫 줄보다 위)
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("Verdana", Font.PLAIN, 10));
+		g.drawString("WAVE " + wave + "/" + TOTAL_WAVES, 4, 12);
 	}
 }

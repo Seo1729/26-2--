@@ -131,6 +131,16 @@ public class AlienFleet
 	}
 
 	/**
+	 * 편대의 외계인이 모두 없어졌는지 알려 준다. 다음 웨이브로 넘어갈지 판단할 때 쓴다.
+	 *
+	 * @return 격추되거나 착지해서 남은 외계인이 없으면 true
+	 */
+	public boolean isEmpty()
+	{
+		return aliens.isEmpty();
+	}
+
+	/**
 	 * 급강하 중인 외계인이 고정 블록이나 바닥에 닿았는지 확인하고,
 	 * 닿았으면 외계인이 있던 칸에 방해 블록을 놓는다.
 	 *

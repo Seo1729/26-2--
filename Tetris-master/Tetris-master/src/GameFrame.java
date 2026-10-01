@@ -428,6 +428,13 @@ class GamePanel extends JPanel implements Runnable
 					count++;
 		if (count > 0)
 		{
+			// 갤러그 협동 모드는 창을 바로 닫지 않고 두 사람의 패배 결과를 보여 준다
+			if (GameFrame.gameMode == 3)
+			{
+				endGame("GAME OVER");
+				return;
+			}
+
 			gameRun = false;
 			th.interrupt();
 			timeTh.interrupt();
@@ -1564,6 +1571,36 @@ class GamePanel extends JPanel implements Runnable
 			field[row][col + 1] = 100;
 			drawTetris();
 		}
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 게임을 끝내고 결과 메시지를 보여 준다.
+	 * 블록 낙하와 시간 표시를 멈추고, 테트리스 영역을 가린 검은 패널에 메시지를 띄운다.
+	 *
+	 * @param message 화면에 띄울 결과 문구(예: "CLEAR", "GAME OVER")
+	 */
+	public void endGame(String message)
+	{
+		// 블록 낙하 스레드와 시간 스레드를 멈춘다
+		gameRun = false;
+		th.interrupt();
+		timeTh.interrupt();
+
+		// 테트리스 영역을 가리고 시작 카운트다운에 쓰던 검은 패널에 결과를 띄운다
+		textLabel.setText(message);
+		textLabel.setVisible(true);
+		blackPanel.setVisible(true);
+		tetrisArea.setVisible(false);
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 갤러그 쪽도 멈춰야 하는지 판단할 때 쓴다.
+	 *
+	 * @return 게임이 아직 진행 중이면 true, 끝났으면 false
+	 */
+	public boolean isRunning()
+	{
+		return gameRun;
 	}
 
 }
