@@ -30,12 +30,17 @@ public class GameFrame extends JFrame
 		switch (gameMode)
 		{
 			case 1:
+			case 3:
 				fgp = new GamePanel();
 				fgp.setBounds(0, 0, 360, 640);
 				add(fgp);
 				MyKey1(fgp);
 				break;
 		}
+
+		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올린다
+		if (gameMode == 3)
+			getLayeredPane().add(new GalagaLayer(10, 60, 240, 480), JLayeredPane.PALETTE_LAYER);
 
 		setLocationRelativeTo(getParent());
 
@@ -118,6 +123,14 @@ public class GameFrame extends JFrame
 	public static void main(String[] args)
 	{
 		new ImageSource();
+
+		// 시작 전에 모드를 고르게 하고, 갤러그 협동을 고르면 모드 3으로 바꾼다(창을 닫으면 일반 모드)
+		String[] modes = { "일반", "갤러그 협동" };
+		int choice = JOptionPane.showOptionDialog(null, "게임 모드를 선택하세요", "Tetris",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, modes, modes[0]);
+		if (choice == 1)
+			gameMode = 3;
+
 		new GameFrame();
 	}
 }
