@@ -59,7 +59,7 @@ public class GalagaLayer extends JPanel
 		setOpaque(false);
 		setBounds(x, y, width, height);
 		fighter = new Fighter(width, height);
-		fleet = new AlienFleet(width);
+		fleet = new AlienFleet(width, height);
 
 		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
 		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
@@ -140,11 +140,12 @@ public class GalagaLayer extends JPanel
 			fireCooldown = FIRE_INTERVAL;
 		}
 
-		// 총알을 위로 옮기고, 화면 밖으로 나간 총알은 지운다(삭제해도 인덱스가 꼬이지 않게 뒤에서부터 순회)
+		// 총알을 위로 옮기고, 화면 밖으로 나갔거나 외계인을 맞힌 총알은 지운다
+		// (삭제해도 인덱스가 꼬이지 않게 뒤에서부터 순회)
 		for (int i = bullets.size() - 1; i >= 0; i--)
 		{
 			bullets.get(i).move();
-			if (bullets.get(i).isOutOfArea())
+			if (bullets.get(i).isOutOfArea() || fleet.hit(bullets.get(i)))
 				bullets.remove(i);
 		}
 	}

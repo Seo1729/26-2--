@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 
 /**
  * 갤러그 협동 모드에서 전투기가 쏘는 총알.
@@ -53,6 +54,16 @@ public class Bullet
 	{
 		// 아래쪽 끝이 0보다 위에 있으면 더 이상 화면에 보이지 않는다
 		return y + HEIGHT < 0;
+	}
+
+	/**
+	 * 충돌 판정에 쓸 총알의 사각 영역을 돌려준다.
+	 *
+	 * @return 현재 위치와 크기를 담은 사각형
+	 */
+	public Rectangle getBounds()
+	{
+		return new Rectangle(x, y, WIDTH, HEIGHT);
 	}
 
 	/**
