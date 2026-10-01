@@ -24,6 +24,9 @@ public class GalagaLayer extends JPanel
 	/** 하단에서 외계인을 격추하는 전투기 */
 	private final Fighter fighter;
 
+	/** 화면 상단에서 좌우로 움직이는 외계인 편대 */
+	private final AlienFleet fleet;
+
 	/** 현재 화면에 날아가고 있는 총알 목록 */
 	private final ArrayList<Bullet> bullets = new ArrayList<Bullet>();
 
@@ -56,6 +59,7 @@ public class GalagaLayer extends JPanel
 		setOpaque(false);
 		setBounds(x, y, width, height);
 		fighter = new Fighter(width, height);
+		fleet = new AlienFleet(width);
 
 		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
 		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
@@ -112,10 +116,13 @@ public class GalagaLayer extends JPanel
 	}
 
 	/**
-	 * 한 주기 동안의 갤러그 상태를 갱신한다. 전투기 이동, 연사, 총알 이동을 처리한다.
+	 * 한 주기 동안의 갤러그 상태를 갱신한다. 편대 이동, 전투기 이동, 연사, 총알 이동을 처리한다.
 	 */
 	private void update()
 	{
+		// 외계인 편대를 좌우로 흔든다
+		fleet.update();
+
 		// 누르고 있는 방향으로 전투기를 이동시킨다(둘 다 누르면 제자리)
 		if (leftHeld)
 			fighter.moveLeft();
@@ -150,6 +157,7 @@ public class GalagaLayer extends JPanel
 	protected void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
+		fleet.draw(g);
 		fighter.draw(g);
 
 		// 날아가고 있는 총알을 모두 그린다
