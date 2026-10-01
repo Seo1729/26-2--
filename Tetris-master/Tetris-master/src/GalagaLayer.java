@@ -1,18 +1,36 @@
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 import javax.swing.JPanel;
+import javax.swing.Timer;
 
 /**
  * 갤러그 협동 모드에서 테트리스 영역 위에 겹쳐 그려지는 투명 레이어.
- * 전투기 등 갤러그 요소를 그리는 역할을 맡는다.
+ * 전투기 등 갤러그 요소를 일정 주기로 갱신하고 그리는 역할을 맡는다.
  */
 public class GalagaLayer extends JPanel
 {
+	/** 화면 갱신 주기(밀리초). 약 33프레임/초 */
+	private static final int TICK = 30;
+
 	/** 하단에서 외계인을 격추하는 전투기 */
 	private final Fighter fighter;
 
+	/** 왼쪽 이동 키(A)를 누르고 있는지 여부 */
+	private boolean leftHeld;
+
+	/** 오른쪽 이동 키(D)를 누르고 있는지 여부 */
+	private boolean rightHeld;
+
+	/** 전투기 조작 키의 눌림 상태를 기록하는 키 리스너 */
+	private final KeyListener keyListener;
+
 	/**
-	 * 지정한 위치와 크기로 투명 레이어를 만든다.
+	 * 지정한 위치와 크기로 투명 레이어를 만들고 갱신 타이머를 시작한다.
 	 *
 	 * @param x      레이어 왼쪽 위 x좌표(프레임 기준 픽셀)
 	 * @param y      레이어 왼쪽 위 y좌표(프레임 기준 픽셀)
@@ -25,6 +43,69 @@ public class GalagaLayer extends JPanel
 		setOpaque(false);
 		setBounds(x, y, width, height);
 		fighter = new Fighter(width, height);
+
+		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
+		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
+		keyListener = new KeyAdapter()
+		{
+			public void keyPressed(KeyEvent e)
+			{
+				setHeld(e.getKeyCode(), true);
+			}
+
+			public void keyReleased(KeyEvent e)
+			{
+				setHeld(e.getKeyCode(), false);
+			}
+		};
+
+		// 일정 주기마다 눌린 키에 따라 전투기를 움직이고 화면을 다시 그린다
+		Timer timer = new Timer(TICK, new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				update();
+				repaint();
+			}
+		});
+		timer.start();
+	}
+
+	/**
+	 * 전투기 조작 키 입력을 받을 키 리스너를 돌려준다. 프레임에 등록해서 사용한다.
+	 *
+	 * @return 전투기 조작용 키 리스너
+	 */
+	public KeyListener getKeyListener()
+	{
+		return keyListener;
+	}
+
+	/**
+	 * 전투기 조작 키의 눌림 상태를 바꾼다. 전투기 키가 아니면 무시한다.
+	 *
+	 * @param keyCode 눌리거나 떼어진 키 코드
+	 * @param held    눌렸으면 true, 떼어졌으면 false
+	 */
+	private void setHeld(int keyCode, boolean held)
+	{
+		// A는 왼쪽, D는 오른쪽 이동 키로 쓴다
+		if (keyCode == KeyEvent.VK_A)
+			leftHeld = held;
+		else if (keyCode == KeyEvent.VK_D)
+			rightHeld = held;
+	}
+
+	/**
+	 * 한 주기 동안의 갤러그 상태를 갱신한다. 지금은 전투기 이동만 처리한다.
+	 */
+	private void update()
+	{
+		// 누르고 있는 방향으로 전투기를 이동시킨다(둘 다 누르면 제자리)
+		if (leftHeld)
+			fighter.moveLeft();
+		if (rightHeld)
+			fighter.moveRight();
 	}
 
 	/**

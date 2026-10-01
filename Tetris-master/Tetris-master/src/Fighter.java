@@ -13,11 +13,17 @@ public class Fighter
 	/** 전투기 세로 크기(픽셀) */
 	private static final int HEIGHT = 20;
 
+	/** 한 번 이동할 때 움직이는 거리(픽셀) */
+	private static final int SPEED = 4;
+
 	/** 전투기 왼쪽 위 x좌표(갤러그 레이어 기준 픽셀) */
 	private int x;
 
 	/** 전투기 왼쪽 위 y좌표(갤러그 레이어 기준 픽셀). 하단에 고정된다. */
 	private final int y;
+
+	/** x좌표의 최댓값. 이 값을 넘으면 기체가 영역 오른쪽 밖으로 나간다. */
+	private final int maxX;
 
 	/**
 	 * 전투기를 영역 하단 가운데에 배치한다.
@@ -31,6 +37,26 @@ public class Fighter
 		x = (areaWidth - WIDTH) / 2;
 		// 맨 아래에 붙여 쌓인 블록 위에 겹쳐 보이게 한다
 		y = areaHeight - HEIGHT;
+		// 기체 오른쪽 끝이 영역 오른쪽 끝에 닿는 위치까지만 허용한다
+		maxX = areaWidth - WIDTH;
+	}
+
+	/**
+	 * 전투기를 왼쪽으로 한 번 이동시킨다. 영역 왼쪽 끝에서는 더 가지 않는다.
+	 */
+	public void moveLeft()
+	{
+		// 왼쪽 벽(0)을 넘지 않도록 막는다
+		x = Math.max(0, x - SPEED);
+	}
+
+	/**
+	 * 전투기를 오른쪽으로 한 번 이동시킨다. 영역 오른쪽 끝에서는 더 가지 않는다.
+	 */
+	public void moveRight()
+	{
+		// 오른쪽 벽(maxX)을 넘지 않도록 막는다
+		x = Math.min(maxX, x + SPEED);
 	}
 
 	/**

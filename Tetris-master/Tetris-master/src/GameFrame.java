@@ -38,9 +38,14 @@ public class GameFrame extends JFrame
 				break;
 		}
 
-		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올린다
+		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올리고
+		// 전투기 조작 키도 프레임에서 함께 받도록 등록한다
 		if (gameMode == 3)
-			getLayeredPane().add(new GalagaLayer(10, 60, 240, 480), JLayeredPane.PALETTE_LAYER);
+		{
+			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480);
+			getLayeredPane().add(galagaLayer, JLayeredPane.PALETTE_LAYER);
+			addKeyListener(galagaLayer.getKeyListener());
+		}
 
 		setLocationRelativeTo(getParent());
 
