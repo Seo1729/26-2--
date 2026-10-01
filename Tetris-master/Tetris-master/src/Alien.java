@@ -79,18 +79,6 @@ public class Alien
 	}
 
 	/**
-	 * 외계인이 영역 아래쪽 밖으로 완전히 나갔는지 알려 준다.
-	 *
-	 * @param areaHeight 외계인이 움직이는 영역의 높이(픽셀)
-	 * @return 위쪽 끝까지 영역 아래로 벗어났으면 true
-	 */
-	public boolean isOutOfArea(int areaHeight)
-	{
-		// 위쪽 끝이 영역 높이보다 아래에 있으면 더 이상 보이지 않는다
-		return y > areaHeight;
-	}
-
-	/**
 	 * 충돌 판정에 쓸 외계인의 사각 영역을 돌려준다.
 	 *
 	 * @return 현재 위치와 크기를 담은 사각형

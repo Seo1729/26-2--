@@ -42,7 +42,7 @@ public class GameFrame extends JFrame
 		// 전투기 조작 키도 프레임에서 함께 받도록 등록한다
 		if (gameMode == 3)
 		{
-			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480);
+			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480, fgp);
 			getLayeredPane().add(galagaLayer, JLayeredPane.PALETTE_LAYER);
 			addKeyListener(galagaLayer.getKeyListener());
 		}
@@ -1528,6 +1528,41 @@ class GamePanel extends JPanel implements Runnable
 			g.setColor(Color.WHITE);
 			g.setFont(new Font("Verdana", 1, 20));
 			g.drawString(Integer.toString(times), 7, 22);
+		}
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 외계인이 착지할 수 있는지 판단할 때 쓴다.
+	 * 지정한 칸에 고정된 블록이 있거나 그 칸이 바닥 아래인지 알려 준다.
+	 *
+	 * @param row 화면 칸 기준 행(0이 맨 위)
+	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
+	 * @return 고정 블록이 있거나 바닥 아래면 true
+	 */
+	public boolean isBlocked(int row, int col)
+	{
+		// 맨 아래 줄보다 아래는 바닥이므로 막힌 것으로 본다
+		if (row >= fieldLabel.length)
+			return true;
+		// field는 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
+		return field[row][col + 1] > 0;
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 착지한 외계인을 회색 방해 블록으로 바꿀 때 쓴다.
+	 * 지정한 칸이 비어 있을 때만 방해 블록을 놓고 화면을 다시 그린다.
+	 *
+	 * @param row 화면 칸 기준 행(0이 맨 위)
+	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
+	 */
+	public void placeGarbage(int row, int col)
+	{
+		// 고정 블록이나 떨어지는 중인 블록과 겹치면 놓지 않는다(블록이 덮어써지는 것을 막기 위해)
+		if (field[row][col + 1] == 0 && array[row][col + 1] == 0)
+		{
+			// 100은 기존 줄 올리기 아이템과 같은 회색 방해 블록 값이다
+			field[row][col + 1] = 100;
+			drawTetris();
 		}
 	}
 

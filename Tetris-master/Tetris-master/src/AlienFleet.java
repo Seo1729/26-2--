@@ -1,9 +1,11 @@
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 
 /**
  * 갤러그 협동 모드에서 화면 상단에 줄지어 있는 외계인 편대.
- * 외계인들을 격자로 배치해 좌우로 흔들고, 한 마리씩 급강하시키며, 총알에 맞은 외계인을 없앤다.
+ * 외계인들을 격자로 배치해 좌우로 흔들고, 한 마리씩 급강하시키며,
+ * 총알에 맞은 외계인을 없애고, 착지한 외계인을 방해 블록으로 바꾼다.
  */
 public class AlienFleet
 {
@@ -25,11 +27,14 @@ public class AlienFleet
 	/** 급강하 간격(타이머 주기 횟수). 100 x 30ms = 약 3초 */
 	private static final int DIVE_INTERVAL = 100;
 
+	/** 테트리스 한 칸의 크기(픽셀). 외계인 위치를 테트리스 칸으로 바꿀 때 쓴다. */
+	private static final int CELL = 24;
+
 	/** 편대에 속한 외계인 목록(급강하 중인 외계인도 포함) */
 	private final ArrayList<Alien> aliens = new ArrayList<Alien>();
 
-	/** 외계인이 움직이는 영역의 높이(픽셀). 급강하한 외계인이 바닥을 벗어났는지 판단할 때 쓴다. */
-	private final int areaHeight;
+	/** 외계인이 착지하고 방해 블록을 놓을 테트리스 판 */
+	private final GamePanel board;
 
 	/** 급강하 중인 외계인이 없을 때부터 센 타이머 주기 횟수 */
 	private int diveTimer;
@@ -46,12 +51,12 @@ public class AlienFleet
 	/**
 	 * 영역 가운데 위쪽에 외계인들을 격자로 배치한다.
 	 *
-	 * @param areaWidth  편대가 움직일 영역의 너비(픽셀)
-	 * @param areaHeight 편대가 움직일 영역의 높이(픽셀)
+	 * @param areaWidth 편대가 움직일 영역의 너비(픽셀)
+	 * @param board     외계인이 착지할 테트리스 판
 	 */
-	public AlienFleet(int areaWidth, int areaHeight)
+	public AlienFleet(int areaWidth, GamePanel board)
 	{
-		this.areaHeight = areaHeight;
+		this.board = board;
 
 		// 편대 전체 너비를 구해 가운데 정렬 시작점을 정한다
 		int fleetWidth = (COLS - 1) * GAP_X + Alien.WIDTH;
@@ -78,15 +83,15 @@ public class AlienFleet
 		offset += direction;
 
 		// 편대에 있는 외계인은 좌우로 흔들고, 급강하 중인 외계인은 아래로 내린다
-		// (바닥을 벗어난 외계인을 지워도 인덱스가 꼬이지 않게 뒤에서부터 순회)
+		// (착지한 외계인을 지워도 인덱스가 꼬이지 않게 뒤에서부터 순회)
 		for (int i = aliens.size() - 1; i >= 0; i--)
 		{
 			Alien alien = aliens.get(i);
 			if (alien.isDiving())
 			{
 				alien.dive();
-				// 바닥 밖으로 나간 외계인은 더 이상 필요 없으므로 지운다
-				if (alien.isOutOfArea(areaHeight))
+				// 블록이나 바닥에 닿은 외계인은 방해 블록이 되고 편대에서 빠진다
+				if (land(alien))
 					aliens.remove(i);
 			}
 			else
@@ -123,6 +128,31 @@ public class AlienFleet
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * 급강하 중인 외계인이 고정 블록이나 바닥에 닿았는지 확인하고,
+	 * 닿았으면 외계인이 있던 칸에 방해 블록을 놓는다.
+	 *
+	 * @param alien 판정할 급강하 중인 외계인
+	 * @return 착지했으면 true, 아직 내려가는 중이면 false
+	 */
+	private boolean land(Alien alien)
+	{
+		Rectangle bounds = alien.getBounds();
+
+		// 외계인 가운데가 있는 열과, 아래쪽 끝이 들어간 행을 테트리스 칸으로 구한다
+		int col = (bounds.x + bounds.width / 2) / CELL;
+		int bottomRow = (bounds.y + bounds.height) / CELL;
+
+		// 아래쪽 끝이 들어간 칸이 비어 있으면 아직 착지하지 않은 것이다
+		if (!board.isBlocked(bottomRow, col))
+			return false;
+
+		// 막힌 칸 바로 위가 외계인이 내려앉을 칸이다(천장보다 위면 놓을 곳이 없으므로 그냥 사라진다)
+		if (bottomRow - 1 >= 0)
+			board.placeGarbage(bottomRow - 1, col);
+		return true;
 	}
 
 	/**

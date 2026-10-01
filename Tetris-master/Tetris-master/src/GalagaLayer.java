@@ -52,14 +52,15 @@ public class GalagaLayer extends JPanel
 	 * @param y      레이어 왼쪽 위 y좌표(프레임 기준 픽셀)
 	 * @param width  레이어 너비(픽셀). 테트리스 영역 너비와 같게 준다.
 	 * @param height 레이어 높이(픽셀). 테트리스 영역 높이와 같게 준다.
+	 * @param board  레이어 아래에 있는 테트리스 판. 외계인이 착지하면 여기에 방해 블록을 놓는다.
 	 */
-	public GalagaLayer(int x, int y, int width, int height)
+	public GalagaLayer(int x, int y, int width, int height, GamePanel board)
 	{
 		// 아래의 테트리스 블록이 비쳐 보이도록 배경을 칠하지 않는다
 		setOpaque(false);
 		setBounds(x, y, width, height);
 		fighter = new Fighter(width, height);
-		fleet = new AlienFleet(width, height);
+		fleet = new AlienFleet(width, board);
 
 		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
 		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
