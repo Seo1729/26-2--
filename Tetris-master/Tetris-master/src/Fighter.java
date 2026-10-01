@@ -60,6 +60,17 @@ public class Fighter
 	}
 
 	/**
+	 * 기체의 뾰족한 코끝에서 총알을 하나 발사한다.
+	 *
+	 * @return 코끝 바로 위에 만들어진 새 총알
+	 */
+	public Bullet fire()
+	{
+		// 삼각형 꼭짓점(가운데 위)이 코끝이므로 그 위치에서 총알을 만든다
+		return new Bullet(x + WIDTH / 2, y);
+	}
+
+	/**
 	 * 전투기를 위쪽이 뾰족한 삼각형 기체로 그린다.
 	 *
 	 * @param g 그리기에 사용할 그래픽 객체

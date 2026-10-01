@@ -4,6 +4,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -17,8 +18,20 @@ public class GalagaLayer extends JPanel
 	/** 화면 갱신 주기(밀리초). 약 33프레임/초 */
 	private static final int TICK = 30;
 
+	/** 연사 간격(타이머 주기 횟수). 7 x 30ms = 약 0.2초마다 한 발 */
+	private static final int FIRE_INTERVAL = 7;
+
 	/** 하단에서 외계인을 격추하는 전투기 */
 	private final Fighter fighter;
+
+	/** 현재 화면에 날아가고 있는 총알 목록 */
+	private final ArrayList<Bullet> bullets = new ArrayList<Bullet>();
+
+	/** 발사 키(W)를 누르고 있는지 여부. 누르고 있는 동안 연사한다. */
+	private boolean fireHeld;
+
+	/** 다음 발사까지 남은 타이머 주기 횟수. 0이면 바로 쏠 수 있다. */
+	private int fireCooldown;
 
 	/** 왼쪽 이동 키(A)를 누르고 있는지 여부 */
 	private boolean leftHeld;
@@ -89,15 +102,17 @@ public class GalagaLayer extends JPanel
 	 */
 	private void setHeld(int keyCode, boolean held)
 	{
-		// A는 왼쪽, D는 오른쪽 이동 키로 쓴다
+		// A는 왼쪽, D는 오른쪽 이동 키, W는 발사 키로 쓴다
 		if (keyCode == KeyEvent.VK_A)
 			leftHeld = held;
 		else if (keyCode == KeyEvent.VK_D)
 			rightHeld = held;
+		else if (keyCode == KeyEvent.VK_W)
+			fireHeld = held;
 	}
 
 	/**
-	 * 한 주기 동안의 갤러그 상태를 갱신한다. 지금은 전투기 이동만 처리한다.
+	 * 한 주기 동안의 갤러그 상태를 갱신한다. 전투기 이동, 연사, 총알 이동을 처리한다.
 	 */
 	private void update()
 	{
@@ -106,6 +121,25 @@ public class GalagaLayer extends JPanel
 			fighter.moveLeft();
 		if (rightHeld)
 			fighter.moveRight();
+
+		// 발사 대기 시간을 한 주기만큼 줄인다
+		if (fireCooldown > 0)
+			fireCooldown--;
+
+		// W를 누르고 있고 대기 시간이 끝났으면 한 발 쏘고, 다음 발사까지 간격을 다시 채운다
+		if (fireHeld && fireCooldown == 0)
+		{
+			bullets.add(fighter.fire());
+			fireCooldown = FIRE_INTERVAL;
+		}
+
+		// 총알을 위로 옮기고, 화면 밖으로 나간 총알은 지운다(삭제해도 인덱스가 꼬이지 않게 뒤에서부터 순회)
+		for (int i = bullets.size() - 1; i >= 0; i--)
+		{
+			bullets.get(i).move();
+			if (bullets.get(i).isOutOfArea())
+				bullets.remove(i);
+		}
 	}
 
 	/**
@@ -117,5 +151,9 @@ public class GalagaLayer extends JPanel
 	{
 		super.paintComponent(g);
 		fighter.draw(g);
+
+		// 날아가고 있는 총알을 모두 그린다
+		for (int i = 0; i < bullets.size(); i++)
+			bullets.get(i).draw(g);
 	}
 }
