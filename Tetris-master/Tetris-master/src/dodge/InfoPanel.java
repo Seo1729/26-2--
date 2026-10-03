@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -9,9 +9,6 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
 import javax.swing.JPanel;
-
-import kr.ac.jbnu.se.tetris.Shape;
-import kr.ac.jbnu.se.tetris.Tetrominoes;
 
 /**
  * 보드 오른쪽 정보판. 위에서부터 남은 시간, 다음 블록, 점수판을 보여 준다.

@@ -1,7 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
-
-import kr.ac.jbnu.se.tetris.Shape;
-import kr.ac.jbnu.se.tetris.Tetrominoes;
+package dodge;
 
 /**
  * P1 테트리스 플레이어의 상태와 동작. 현재 조각, 이동, 회전, 낙하, 줄 수.

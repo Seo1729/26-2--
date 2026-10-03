@@ -1,10 +1,8 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-
-import kr.ac.jbnu.se.tetris.Tetrominoes;
 
 /**
  * 똥피하기 모드 화면의 색과 글꼴, 블록 한 칸 그리기를 한곳에 모아 둔다.

@@ -1,7 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
-
-import kr.ac.jbnu.se.tetris.Shape;
-import kr.ac.jbnu.se.tetris.Tetrominoes;
+package dodge;
 
 import java.awt.Color;
 import java.awt.Font;

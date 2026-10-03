@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 /**
  * 승패 판정. 값은 임시(밸런스 조정 단계에서 바꿀 예정).

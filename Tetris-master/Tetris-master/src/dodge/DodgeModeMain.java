@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;

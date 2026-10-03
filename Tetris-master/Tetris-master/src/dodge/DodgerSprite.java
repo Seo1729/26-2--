@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

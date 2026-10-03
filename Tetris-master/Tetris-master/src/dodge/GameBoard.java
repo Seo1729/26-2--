@@ -1,7 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
-
-import kr.ac.jbnu.se.tetris.Shape;
-import kr.ac.jbnu.se.tetris.Tetrominoes;
+package dodge;
 
 /**
  * 보드 격자만 관리한다. 쌓인 블록 저장, 칸 비었는지 확인, 줄 삭제.

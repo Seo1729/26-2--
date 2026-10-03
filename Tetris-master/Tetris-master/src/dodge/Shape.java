@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris;
+package dodge;
 
 import java.util.Random;
 

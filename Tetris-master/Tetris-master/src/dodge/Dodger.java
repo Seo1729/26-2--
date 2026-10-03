@@ -1,4 +1,4 @@
-package kr.ac.jbnu.se.tetris.dodge;
+package dodge;
 
 /**
  * P2 똥피하기 플레이어 캐릭터. 보드 1칸 크기로 칸 단위로 움직인다.
