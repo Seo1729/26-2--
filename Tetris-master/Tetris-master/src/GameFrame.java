@@ -30,11 +30,21 @@ public class GameFrame extends JFrame
 		switch (gameMode)
 		{
 			case 1:
+			case 3:
 				fgp = new GamePanel();
 				fgp.setBounds(0, 0, 360, 640);
 				add(fgp);
 				MyKey1(fgp);
 				break;
+		}
+
+		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올리고
+		// 전투기 조작 키도 프레임에서 함께 받도록 등록한다
+		if (gameMode == 3)
+		{
+			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480, fgp);
+			getLayeredPane().add(galagaLayer, JLayeredPane.PALETTE_LAYER);
+			addKeyListener(galagaLayer.getKeyListener());
 		}
 
 		setLocationRelativeTo(getParent());
@@ -118,6 +128,14 @@ public class GameFrame extends JFrame
 	public static void main(String[] args)
 	{
 		new ImageSource();
+
+		// 시작 전에 모드를 고르게 하고, 갤러그 협동을 고르면 모드 3으로 바꾼다(창을 닫으면 일반 모드)
+		String[] modes = { "일반", "갤러그 협동" };
+		int choice = JOptionPane.showOptionDialog(null, "게임 모드를 선택하세요", "Tetris",
+				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, modes, modes[0]);
+		if (choice == 1)
+			gameMode = 3;
+
 		new GameFrame();
 	}
 }
@@ -410,6 +428,13 @@ class GamePanel extends JPanel implements Runnable
 					count++;
 		if (count > 0)
 		{
+			// 갤러그 협동 모드는 창을 바로 닫지 않고 두 사람의 패배 결과를 보여 준다
+			if (GameFrame.gameMode == 3)
+			{
+				endGame("GAME OVER");
+				return;
+			}
+
 			gameRun = false;
 			th.interrupt();
 			timeTh.interrupt();
@@ -1511,6 +1536,71 @@ class GamePanel extends JPanel implements Runnable
 			g.setFont(new Font("Verdana", 1, 20));
 			g.drawString(Integer.toString(times), 7, 22);
 		}
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 외계인이 착지할 수 있는지 판단할 때 쓴다.
+	 * 지정한 칸에 고정된 블록이 있거나 그 칸이 바닥 아래인지 알려 준다.
+	 *
+	 * @param row 화면 칸 기준 행(0이 맨 위)
+	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
+	 * @return 고정 블록이 있거나 바닥 아래면 true
+	 */
+	public boolean isBlocked(int row, int col)
+	{
+		// 맨 아래 줄보다 아래는 바닥이므로 막힌 것으로 본다
+		if (row >= fieldLabel.length)
+			return true;
+		// field는 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
+		return field[row][col + 1] > 0;
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 착지한 외계인을 회색 방해 블록으로 바꿀 때 쓴다.
+	 * 지정한 칸이 비어 있을 때만 방해 블록을 놓고 화면을 다시 그린다.
+	 *
+	 * @param row 화면 칸 기준 행(0이 맨 위)
+	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
+	 */
+	public void placeGarbage(int row, int col)
+	{
+		// 고정 블록이나 떨어지는 중인 블록과 겹치면 놓지 않는다(블록이 덮어써지는 것을 막기 위해)
+		if (field[row][col + 1] == 0 && array[row][col + 1] == 0)
+		{
+			// 100은 기존 줄 올리기 아이템과 같은 회색 방해 블록 값이다
+			field[row][col + 1] = 100;
+			drawTetris();
+		}
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 게임을 끝내고 결과 메시지를 보여 준다.
+	 * 블록 낙하와 시간 표시를 멈추고, 테트리스 영역을 가린 검은 패널에 메시지를 띄운다.
+	 *
+	 * @param message 화면에 띄울 결과 문구(예: "CLEAR", "GAME OVER")
+	 */
+	public void endGame(String message)
+	{
+		// 블록 낙하 스레드와 시간 스레드를 멈춘다
+		gameRun = false;
+		th.interrupt();
+		timeTh.interrupt();
+
+		// 테트리스 영역을 가리고 시작 카운트다운에 쓰던 검은 패널에 결과를 띄운다
+		textLabel.setText(message);
+		textLabel.setVisible(true);
+		blackPanel.setVisible(true);
+		tetrisArea.setVisible(false);
+	}
+
+	/**
+	 * 갤러그 협동 모드에서 갤러그 쪽도 멈춰야 하는지 판단할 때 쓴다.
+	 *
+	 * @return 게임이 아직 진행 중이면 true, 끝났으면 false
+	 */
+	public boolean isRunning()
+	{
+		return gameRun;
 	}
 
 }
