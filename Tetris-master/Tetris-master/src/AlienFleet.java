@@ -24,8 +24,14 @@ public class AlienFleet
 	/** 첫 줄의 y좌표(픽셀). 화면 맨 위에 붙지 않게 조금 띄운다. */
 	private static final int TOP_Y = 16;
 
-	/** 급강하 간격(타이머 주기 횟수). 100 x 30ms = 약 3초 */
-	private static final int DIVE_INTERVAL = 100;
+	/** 1웨이브의 급강하 간격(타이머 주기 횟수). 100 x 30ms = 약 3초 */
+	private static final int BASE_DIVE_INTERVAL = 100;
+
+	/** 웨이브가 하나 오를 때마다 줄어드는 급강하 간격(타이머 주기 횟수). 20 x 30ms = 약 0.6초 */
+	private static final int DIVE_INTERVAL_STEP = 20;
+
+	/** 1웨이브의 급강하 속도(한 번에 내려가는 픽셀) */
+	private static final int BASE_DIVE_SPEED = 2;
 
 	/** 테트리스 한 칸의 크기(픽셀). 외계인 위치를 테트리스 칸으로 바꿀 때 쓴다. */
 	private static final int CELL = 24;
@@ -35,6 +41,12 @@ public class AlienFleet
 
 	/** 외계인이 착지하고 방해 블록을 놓을 테트리스 판 */
 	private final GamePanel board;
+
+	/** 이 편대의 급강하 간격(타이머 주기 횟수). 웨이브가 높을수록 짧다. */
+	private final int diveInterval;
+
+	/** 이 편대의 급강하 속도(한 번에 내려가는 픽셀). 웨이브가 높을수록 빠르다. */
+	private final int diveSpeed;
 
 	/** 급강하 중인 외계인이 없을 때부터 센 타이머 주기 횟수 */
 	private int diveTimer;
@@ -49,14 +61,19 @@ public class AlienFleet
 	private int direction = 1;
 
 	/**
-	 * 영역 가운데 위쪽에 외계인들을 격자로 배치한다.
+	 * 영역 가운데 위쪽에 외계인들을 격자로 배치하고, 웨이브에 맞는 급강하 난이도를 정한다.
 	 *
 	 * @param areaWidth 편대가 움직일 영역의 너비(픽셀)
 	 * @param board     외계인이 착지할 테트리스 판
+	 * @param wave      이 편대의 웨이브 번호(1부터). 클수록 자주, 빠르게 급강하한다.
 	 */
-	public AlienFleet(int areaWidth, GamePanel board)
+	public AlienFleet(int areaWidth, GamePanel board, int wave)
 	{
 		this.board = board;
+
+		// 웨이브가 오를수록 급강하 간격은 0.6초씩 줄고(3.0/2.4/1.8초), 속도는 1픽셀씩 빨라진다(2/3/4픽셀)
+		diveInterval = BASE_DIVE_INTERVAL - (wave - 1) * DIVE_INTERVAL_STEP;
+		diveSpeed = BASE_DIVE_SPEED + (wave - 1);
 
 		// 편대 전체 너비를 구해 가운데 정렬 시작점을 정한다
 		int fleetWidth = (COLS - 1) * GAP_X + Alien.WIDTH;
@@ -102,9 +119,9 @@ public class AlienFleet
 		if (!hasDiver())
 		{
 			diveTimer++;
-			if (diveTimer >= DIVE_INTERVAL && !aliens.isEmpty())
+			if (diveTimer >= diveInterval && !aliens.isEmpty())
 			{
-				aliens.get((int) (Math.random() * aliens.size())).startDive();
+				aliens.get((int) (Math.random() * aliens.size())).startDive(diveSpeed);
 				diveTimer = 0;
 			}
 		}

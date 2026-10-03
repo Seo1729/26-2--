@@ -14,9 +14,6 @@ public class Alien
 	/** 외계인 세로 크기(픽셀) */
 	private static final int HEIGHT = 16;
 
-	/** 급강하할 때 한 번에 내려가는 거리(픽셀) */
-	private static final int DIVE_SPEED = 2;
-
 	/** 몸체 색. 테트리스 블록 색과 겹치지 않는 분홍색을 쓴다. */
 	private static final Color BODY_COLOR = new Color(255, 105, 180);
 
@@ -28,6 +25,9 @@ public class Alien
 
 	/** 편대를 벗어나 아래로 급강하하는 중인지 여부 */
 	private boolean diving;
+
+	/** 급강하할 때 한 번에 내려가는 거리(픽셀). 웨이브마다 다르게 정해진다. */
+	private int diveSpeed;
 
 	/**
 	 * 지정한 위치에 외계인을 만든다.
@@ -52,11 +52,14 @@ public class Alien
 	}
 
 	/**
-	 * 편대를 벗어나 급강하를 시작한다.
+	 * 편대를 벗어나 지정한 속도로 급강하를 시작한다.
+	 *
+	 * @param speed 한 번에 내려갈 거리(픽셀)
 	 */
-	public void startDive()
+	public void startDive(int speed)
 	{
 		diving = true;
+		diveSpeed = speed;
 	}
 
 	/**
@@ -75,7 +78,7 @@ public class Alien
 	public void dive()
 	{
 		// 화면 좌표는 아래로 갈수록 커지므로 y를 늘린다
-		y += DIVE_SPEED;
+		y += diveSpeed;
 	}
 
 	/**

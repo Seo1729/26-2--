@@ -75,7 +75,7 @@ public class GalagaLayer extends JPanel
 		setBounds(x, y, width, height);
 		this.board = board;
 		fighter = new Fighter(width, height);
-		fleet = new AlienFleet(width, board);
+		fleet = new AlienFleet(width, board, wave);
 
 		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
 		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
@@ -173,7 +173,7 @@ public class GalagaLayer extends JPanel
 				bullets.remove(i);
 		}
 
-		// 편대가 모두 없어졌으면 마지막 웨이브는 승리, 아니면 새 편대로 다음 웨이브를 시작한다
+		// 편대가 모두 없어졌으면 마지막 웨이브는 승리, 아니면 더 어려운 새 편대로 다음 웨이브를 시작한다
 		if (fleet.isEmpty())
 		{
 			if (wave == TOTAL_WAVES)
@@ -181,7 +181,7 @@ public class GalagaLayer extends JPanel
 			else
 			{
 				wave++;
-				fleet = new AlienFleet(getWidth(), board);
+				fleet = new AlienFleet(getWidth(), board, wave);
 			}
 		}
 	}
