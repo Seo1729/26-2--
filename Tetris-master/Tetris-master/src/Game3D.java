@@ -102,6 +102,7 @@ public class Game3D
 		{
 			board.lockBlock(activeBlock);
 			lockedBlockCount++;
+			board.clearCompletedLayers();
 			if (!spawnBlock())
 				stop();
 		}

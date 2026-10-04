@@ -33,6 +33,40 @@ public class Board3D
 		}
 	}
 
+	/** 완성된 층을 제거하고 남은 층을 순서대로 압축한다. 삭제한 층 수를 반환한다. */
+	public int clearCompletedLayers()
+	{
+		int destinationZ = 0;
+		for (int sourceZ = 0; sourceZ < SIZE_Z; sourceZ++)
+		{
+			boolean complete = true;
+			for (int x = 0; x < SIZE_X; x++)
+				for (int y = 0; y < SIZE_Y; y++)
+					if (!cells[x][y][sourceZ])
+						complete = false;
+			if (complete)
+				continue;
+			if (destinationZ != sourceZ)
+			{
+				for (int x = 0; x < SIZE_X; x++)
+					for (int y = 0; y < SIZE_Y; y++)
+					{
+						cells[x][y][destinationZ] = cells[x][y][sourceZ];
+						types[x][y][destinationZ] = types[x][y][sourceZ];
+					}
+			}
+			destinationZ++;
+		}
+		for (int z = destinationZ; z < SIZE_Z; z++)
+			for (int x = 0; x < SIZE_X; x++)
+				for (int y = 0; y < SIZE_Y; y++)
+				{
+					cells[x][y][z] = false;
+					types[x][y][z] = null;
+				}
+		return SIZE_Z - destinationZ;
+	}
+
 	/** 좌표가 보드 내부인지 검사한다. */
 	public boolean isInside(int x, int y, int z)
 	{
