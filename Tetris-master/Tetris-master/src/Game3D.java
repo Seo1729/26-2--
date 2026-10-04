@@ -11,7 +11,7 @@ public class Game3D
 		Block3D.Type.J, Block3D.Type.S, Block3D.Type.Z
 	};
 
-	private final Board3D board = new Board3D();
+	private final Board3D board;
 	private final Random random = new Random();
 	private final Timer fallTimer;
 	private Block3D activeBlock;
@@ -25,8 +25,15 @@ public class Game3D
 	/** 검증이나 속도 설정을 위해 낙하 간격을 지정할 수 있다. */
 	public Game3D(int fallIntervalMs)
 	{
+		this(new Board3D(), fallIntervalMs);
+	}
+
+	/** 미리 고정된 칸이 있는 보드에서도 같은 충돌 검사를 사용한다. */
+	public Game3D(Board3D board, int fallIntervalMs)
+	{
 		if (fallIntervalMs <= 0)
 			throw new IllegalArgumentException("Fall interval must be positive");
+		this.board = java.util.Objects.requireNonNull(board, "board");
 		fallTimer = new Timer(fallIntervalMs, event -> fallOneStep());
 	}
 
@@ -36,8 +43,15 @@ public class Game3D
 		if (running)
 			return;
 		if (activeBlock == null)
-			activeBlock = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
+		{
+			Block3D candidate = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
 					Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
+			if (!board.canPlace(candidate))
+				return;
+			activeBlock = candidate;
+		}
+		if (!board.canPlace(activeBlock))
+			return;
 		running = true;
 		fallTimer.start();
 	}
@@ -65,17 +79,22 @@ public class Game3D
 	{
 		if (!running)
 			return;
-		for (Block3D.Cube cube : activeBlock.getAbsoluteCubes())
+		if (!tryMoveTo(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1))
 		{
-			if (!board.isEmpty(cube.getX(), cube.getY(), cube.getZ() - 1))
-			{
-				stop();
-				return;
-			}
+			stop();
+			return;
 		}
-		activeBlock.setPosition(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1);
 		if (activeBlock.getZ() == 0)
 			stop();
+	}
+
+	/** 위치 갱신은 반드시 후보 위치의 충돌 검사를 통과한 뒤 수행한다. */
+	private boolean tryMoveTo(int x, int y, int z)
+	{
+		if (!board.canPlace(activeBlock, x, y, z))
+			return false;
+		activeBlock.setPosition(x, y, z);
+		return true;
 	}
 
 	/** 별도 실행 진입점: 콘솔에 실제 시간에 따른 낙하 위치를 출력한다. */
@@ -83,6 +102,11 @@ public class Game3D
 	{
 		Game3D game = new Game3D();
 		game.start();
+		if (game.getActiveBlock() == null)
+		{
+			System.out.println("Cannot spawn block: occupied spawn position.");
+			return;
+		}
 		int previousZ = -1;
 		try
 		{

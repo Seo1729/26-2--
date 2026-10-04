@@ -32,6 +32,36 @@ public class Board3D
 		return isInside(x, y, z) && cells[x][y][z];
 	}
 
+	/** 블록의 현재 위치에 네 큐브를 모두 배치할 수 있는지 검사한다. */
+	public boolean canPlace(Block3D block)
+	{
+		java.util.Objects.requireNonNull(block, "block");
+		return canPlace(block, block.getX(), block.getY(), block.getZ());
+	}
+
+	/**
+	 * 블록을 변경하지 않고 후보 중심 좌표의 배치 가능 여부를 검사한다.
+	 * 네 큐브 중 하나라도 경계 밖이거나 고정된 칸과 겹치면 false이다.
+	 */
+	public boolean canPlace(Block3D block, int x, int y, int z)
+	{
+		java.util.Objects.requireNonNull(block, "block");
+		for (Block3D.Cube cube : block.getRelativeCubes())
+		{
+			// 큰 후보 좌표를 더할 때 정수 오버플로로 경계 검사가 우회되지 않도록 한다.
+			long cubeX = (long) x + cube.getX();
+			long cubeY = (long) y + cube.getY();
+			long cubeZ = (long) z + cube.getZ();
+			if (cubeX < 0 || cubeX >= SIZE_X
+					|| cubeY < 0 || cubeY >= SIZE_Y
+					|| cubeZ < 0 || cubeZ >= SIZE_Z)
+				return false;
+			if (!isEmpty((int) cubeX, (int) cubeY, (int) cubeZ))
+				return false;
+		}
+		return true;
+	}
+
 	/**
 	 * 칸을 채우거나 비운다.
 	 * @throws IndexOutOfBoundsException 좌표가 보드 범위 밖인 경우
