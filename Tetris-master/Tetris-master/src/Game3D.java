@@ -1,7 +1,7 @@
 import java.util.Random;
 import javax.swing.Timer;
 
-/** 그래픽과 키 입력 없이 블록 생성 및 자동 낙하를 실행하는 3D 게임. */
+/** 블록 생성, 충돌 검사, 자동 낙하 및 수평 이동을 실행하는 3D 게임 로직. */
 public class Game3D
 {
 	public static final int DEFAULT_FALL_INTERVAL_MS = 1000;
@@ -75,6 +75,17 @@ public class Game3D
 		return new Block3D(activeBlock.getType(), activeBlock.getX(), activeBlock.getY(), activeBlock.getZ());
 	}
 
+	/** X 또는 Y 방향으로 한 칸 이동한다. 정지 상태이거나 충돌하면 위치를 유지한다. */
+	public synchronized boolean move(int dx, int dy)
+	{
+		if (!running || activeBlock == null)
+			return false;
+		if (!((dx == -1 || dx == 1) && dy == 0
+				|| (dy == -1 || dy == 1) && dx == 0))
+			return false;
+		return tryMoveTo(activeBlock.getX() + dx, activeBlock.getY() + dy, activeBlock.getZ());
+	}
+
 	private synchronized void fallOneStep()
 	{
 		if (!running)
@@ -97,9 +108,14 @@ public class Game3D
 		return true;
 	}
 
-	/** 별도 실행 진입점: 콘솔에 실제 시간에 따른 낙하 위치를 출력한다. */
+	/** 기본 실행은 키 입력 창을 연다. --console 옵션은 기존 콘솔 낙하 확인을 실행한다. */
 	public static void main(String[] args) throws InterruptedException
 	{
+		if (args.length == 0 || !"--console".equals(args[0]))
+		{
+			javax.swing.SwingUtilities.invokeLater(() -> new Game3DFrame().setVisible(true));
+			return;
+		}
 		Game3D game = new Game3D();
 		game.start();
 		if (game.getActiveBlock() == null)
