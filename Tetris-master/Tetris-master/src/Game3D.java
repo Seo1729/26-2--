@@ -1,0 +1,109 @@
+import java.util.Random;
+import javax.swing.Timer;
+
+/** 그래픽과 키 입력 없이 블록 생성 및 자동 낙하를 실행하는 3D 게임. */
+public class Game3D
+{
+	public static final int DEFAULT_FALL_INTERVAL_MS = 1000;
+	// XY 평면의 I는 폭이 4이므로 현재 3x3 보드에 배치할 수 없다.
+	private static final Block3D.Type[] SPAWN_TYPES = {
+		Block3D.Type.O, Block3D.Type.T, Block3D.Type.L,
+		Block3D.Type.J, Block3D.Type.S, Block3D.Type.Z
+	};
+
+	private final Board3D board = new Board3D();
+	private final Random random = new Random();
+	private final Timer fallTimer;
+	private Block3D activeBlock;
+	private boolean running;
+
+	public Game3D()
+	{
+		this(DEFAULT_FALL_INTERVAL_MS);
+	}
+
+	/** 검증이나 속도 설정을 위해 낙하 간격을 지정할 수 있다. */
+	public Game3D(int fallIntervalMs)
+	{
+		if (fallIntervalMs <= 0)
+			throw new IllegalArgumentException("Fall interval must be positive");
+		fallTimer = new Timer(fallIntervalMs, event -> fallOneStep());
+	}
+
+	/** 최초 시작 시 랜덤 블록을 생성한다. 정지 후 재시작하면 기존 블록을 이어서 낙하시킨다. */
+	public synchronized void start()
+	{
+		if (running)
+			return;
+		if (activeBlock == null)
+			activeBlock = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
+					Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
+		running = true;
+		fallTimer.start();
+	}
+
+	public synchronized void stop()
+	{
+		running = false;
+		fallTimer.stop();
+	}
+
+	public synchronized boolean isRunning()
+	{
+		return running;
+	}
+
+	/** 외부에서 낙하 중인 블록을 변경하지 못하도록 현재 상태의 복사본을 반환한다. */
+	public synchronized Block3D getActiveBlock()
+	{
+		if (activeBlock == null)
+			return null;
+		return new Block3D(activeBlock.getType(), activeBlock.getX(), activeBlock.getY(), activeBlock.getZ());
+	}
+
+	private synchronized void fallOneStep()
+	{
+		if (!running)
+			return;
+		for (Block3D.Cube cube : activeBlock.getAbsoluteCubes())
+		{
+			if (!board.isEmpty(cube.getX(), cube.getY(), cube.getZ() - 1))
+			{
+				stop();
+				return;
+			}
+		}
+		activeBlock.setPosition(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1);
+		if (activeBlock.getZ() == 0)
+			stop();
+	}
+
+	/** 별도 실행 진입점: 콘솔에 실제 시간에 따른 낙하 위치를 출력한다. */
+	public static void main(String[] args) throws InterruptedException
+	{
+		Game3D game = new Game3D();
+		game.start();
+		int previousZ = -1;
+		try
+		{
+			do
+			{
+				Block3D block = game.getActiveBlock();
+				if (block.getZ() != previousZ)
+				{
+					System.out.println(block.getType() + " position: (" + block.getX()
+							+ ", " + block.getY() + ", " + block.getZ() + ")");
+					previousZ = block.getZ();
+				}
+				if (previousZ == 0)
+					break;
+				Thread.sleep(50);
+			} while (game.isRunning());
+			System.out.println("Fall stopped at Z=" + game.getActiveBlock().getZ());
+		}
+		finally
+		{
+			game.stop();
+		}
+	}
+}
