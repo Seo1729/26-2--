@@ -24,7 +24,7 @@ public class Game3DPanel extends JPanel
 		setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 		add(new JLabel("W: Y+1   S: Y-1   A: X-1   D: X+1   |   J: X축   K: Y축   L: Z축 (90°)"), BorderLayout.NORTH);
 		add(status, BorderLayout.CENTER);
-		add(new JLabel("Space: 즉시 낙하·고정   |   키를 한 번 누르면 한 번 동작합니다. 자동 낙하: Z-1"), BorderLayout.SOUTH);
+		add(new JLabel("Space: 즉시 낙하·고정   |   R: 게임 오버 후 재시작   |   자동 낙하: Z-1"), BorderLayout.SOUTH);
 		bindMovement(KeyEvent.VK_W, "W", 0, 1);
 		bindMovement(KeyEvent.VK_S, "S", 0, -1);
 		bindMovement(KeyEvent.VK_A, "A", -1, 0);
@@ -33,6 +33,10 @@ public class Game3DPanel extends JPanel
 		bindKey(KeyEvent.VK_K, "K", () -> game.rotate(Block3D.Axis.Y));
 		bindKey(KeyEvent.VK_L, "L", () -> game.rotate(Block3D.Axis.Z));
 		bindKey(KeyEvent.VK_SPACE, "Space", () -> game.hardDrop());
+		bindKey(KeyEvent.VK_R, "R", () -> {
+			resetPressedKeys();
+			game.restart();
+		}, Game3D.State.GAME_OVER);
 		refreshStatus();
 	}
 
@@ -42,6 +46,11 @@ public class Game3DPanel extends JPanel
 	}
 
 	private void bindKey(final int keyCode, String name, final Runnable action)
+	{
+		bindKey(keyCode, name, action, Game3D.State.RUNNING);
+	}
+
+	private void bindKey(final int keyCode, String name, final Runnable action, final Game3D.State requiredState)
 	{
 		String pressAction = "press" + name;
 		String releaseAction = "release" + name;
@@ -55,6 +64,11 @@ public class Game3DPanel extends JPanel
 		{
 			public void actionPerformed(ActionEvent event)
 			{
+				if (game.getState() != requiredState)
+				{
+					resetPressedKeys();
+					return;
+				}
 				// OS 자동 반복으로 들어오는 pressed 이벤트는 무시한다.
 				if (pressedKeys.add(keyCode))
 					action.run();
@@ -78,6 +92,8 @@ public class Game3DPanel extends JPanel
 
 	public void refreshStatus()
 	{
+		if (!game.isRunning())
+			resetPressedKeys();
 		Block3D block = game.getActiveBlock();
 		if (block == null)
 			status.setText("블록 없음: 생성 위치를 확인하세요. 고정 블록: " + game.getLockedBlockCount());

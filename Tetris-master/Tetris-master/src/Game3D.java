@@ -5,6 +5,7 @@ import javax.swing.Timer;
 public class Game3D
 {
 	public static final int DEFAULT_FALL_INTERVAL_MS = 1000;
+	public enum State { READY, RUNNING, PAUSED, GAME_OVER }
 	// XY 평면의 I는 폭이 4이므로 현재 3x3 보드에 배치할 수 없다.
 	private static final Block3D.Type[] SPAWN_TYPES = {
 		Block3D.Type.O, Block3D.Type.T, Block3D.Type.L,
@@ -15,8 +16,20 @@ public class Game3D
 	private final Random random = new Random();
 	private final Timer fallTimer;
 	private Block3D activeBlock;
-	private boolean running;
+	private State state = State.READY;
 	private int lockedBlockCount;
+
+	public synchronized State getState()
+	{
+		return state;
+	}
+
+	private void gameOver()
+	{
+		fallTimer.stop();
+		activeBlock = null;
+		state = State.GAME_OVER;
+	}
 
 	public synchronized int getLockedBlockCount()
 	{
@@ -27,8 +40,13 @@ public class Game3D
 	{
 		Block3D candidate = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
 				Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
-		activeBlock = board.canPlace(candidate) ? candidate : null;
-		return activeBlock != null;
+		if (!board.canPlace(candidate))
+		{
+			gameOver();
+			return false;
+		}
+		activeBlock = candidate;
+		return true;
 	}
 
 	public Game3D()
@@ -51,28 +69,43 @@ public class Game3D
 		fallTimer = new Timer(fallIntervalMs, event -> fallOneStep());
 	}
 
-	/** 최초 시작 시 랜덤 블록을 생성한다. 정지 후 재시작하면 기존 블록을 이어서 낙하시킨다. */
+	/** 최초 시작 또는 일시 정지에서 이어서 진행한다. GAME_OVER는 restart로만 재시작한다. */
 	public synchronized void start()
 	{
-		if (running)
+		if (state == State.RUNNING || state == State.GAME_OVER)
 			return;
 		if (activeBlock == null && !spawnBlock())
 			return;
 		if (!board.canPlace(activeBlock))
+		{
+			gameOver();
 			return;
-		running = true;
+		}
+		state = State.RUNNING;
 		fallTimer.start();
 	}
 
 	public synchronized void stop()
 	{
-		running = false;
+		if (state == State.RUNNING)
+			state = State.PAUSED;
 		fallTimer.stop();
 	}
 
 	public synchronized boolean isRunning()
 	{
-		return running;
+		return state == State.RUNNING;
+	}
+
+	/** 보드, 회전 중인 블록 및 카운터를 초기화하고 새 게임을 시작한다. */
+	public synchronized void restart()
+	{
+		fallTimer.stop();
+		board.clear();
+		activeBlock = null;
+		lockedBlockCount = 0;
+		state = State.READY;
+		start();
 	}
 
 	/** 외부에서 낙하 중인 블록을 변경하지 못하도록 현재 상태의 복사본을 반환한다. */
@@ -86,7 +119,7 @@ public class Game3D
 	/** 회전 후보가 경계와 고정 블록 검사를 통과한 경우만 반영한다. 기준점은 움직이지 않는다. */
 	public synchronized boolean rotate(Block3D.Axis axis)
 	{
-		if (!running || activeBlock == null)
+		if (state != State.RUNNING || activeBlock == null)
 			return false;
 		Block3D candidate = activeBlock.rotated(axis);
 		if (!board.canPlace(candidate))
@@ -98,7 +131,7 @@ public class Game3D
 	/** X 또는 Y 방향으로 한 칸 이동한다. 정지 상태이거나 충돌하면 위치를 유지한다. */
 	public synchronized boolean move(int dx, int dy)
 	{
-		if (!running || activeBlock == null)
+		if (state != State.RUNNING || activeBlock == null)
 			return false;
 		if (!((dx == -1 || dx == 1) && dy == 0
 				|| (dy == -1 || dy == 1) && dx == 0))
@@ -109,7 +142,7 @@ public class Game3D
 	/** 가능한 최저 위치까지 내려가 즉시 고정한다. 정지 상태에서는 아무것도 변경하지 않는다. */
 	public synchronized boolean hardDrop()
 	{
-		if (!running || activeBlock == null)
+		if (state != State.RUNNING || activeBlock == null)
 			return false;
 		while (tryMoveDown())
 		{
@@ -129,13 +162,12 @@ public class Game3D
 		board.lockBlock(activeBlock);
 		lockedBlockCount++;
 		board.clearCompletedLayers();
-		if (!spawnBlock())
-			stop();
+		spawnBlock();
 	}
 
 	private synchronized void fallOneStep()
 	{
-		if (!running)
+		if (state != State.RUNNING)
 			return;
 		if (!tryMoveDown())
 			lockAndSpawn();

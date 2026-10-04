@@ -67,6 +67,18 @@ public class Board3D
 		return SIZE_Z - destinationZ;
 	}
 
+	/** 새 게임을 위해 점유 상태와 저장된 블록 종류를 모두 초기화한다. */
+	public void clear()
+	{
+		for (int x = 0; x < SIZE_X; x++)
+			for (int y = 0; y < SIZE_Y; y++)
+				for (int z = 0; z < SIZE_Z; z++)
+				{
+					cells[x][y][z] = false;
+					types[x][y][z] = null;
+				}
+	}
+
 	/** 좌표가 보드 내부인지 검사한다. */
 	public boolean isInside(int x, int y, int z)
 	{
