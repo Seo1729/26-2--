@@ -11,6 +11,27 @@ public class Board3D
 
 	/** [x][y][z]: false는 빈칸, true는 채워진 칸. 생성 시 모두 빈칸이다. */
 	private final boolean[][][] cells = new boolean[SIZE_X][SIZE_Y][SIZE_Z];
+	private final Block3D.Type[][][] types = new Block3D.Type[SIZE_X][SIZE_Y][SIZE_Z];
+
+	/** 고정된 블록 종류. 빈칸 또는 setFilled로 만든 종류 없는 칸은 null이다. */
+	public Block3D.Type getType(int x, int y, int z)
+	{
+		if (!isInside(x, y, z))
+			throw new IndexOutOfBoundsException("Outside board");
+		return types[x][y][z];
+	}
+
+	/** 네 절대좌표를 검증한 뒤 종류와 함께 저장한다. 실패 시 보드를 변경하지 않는다. */
+	public void lockBlock(Block3D block)
+	{
+		if (!canPlace(block))
+			throw new IllegalArgumentException("Cannot lock block at occupied or outside cells");
+		for (Block3D.Cube cube : block.getAbsoluteCubes())
+		{
+			cells[cube.getX()][cube.getY()][cube.getZ()] = true;
+			types[cube.getX()][cube.getY()][cube.getZ()] = block.getType();
+		}
+	}
 
 	/** 좌표가 보드 내부인지 검사한다. */
 	public boolean isInside(int x, int y, int z)
@@ -71,5 +92,7 @@ public class Board3D
 		if (!isInside(x, y, z))
 			throw new IndexOutOfBoundsException("Outside board: (" + x + ", " + y + ", " + z + ")");
 		cells[x][y][z] = filled;
+		if (!filled)
+			types[x][y][z] = null;
 	}
 }

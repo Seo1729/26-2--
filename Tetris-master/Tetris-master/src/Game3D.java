@@ -16,6 +16,20 @@ public class Game3D
 	private final Timer fallTimer;
 	private Block3D activeBlock;
 	private boolean running;
+	private int lockedBlockCount;
+
+	public synchronized int getLockedBlockCount()
+	{
+		return lockedBlockCount;
+	}
+
+	private boolean spawnBlock()
+	{
+		Block3D candidate = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
+				Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
+		activeBlock = board.canPlace(candidate) ? candidate : null;
+		return activeBlock != null;
+	}
 
 	public Game3D()
 	{
@@ -42,14 +56,8 @@ public class Game3D
 	{
 		if (running)
 			return;
-		if (activeBlock == null)
-		{
-			Block3D candidate = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
-					Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
-			if (!board.canPlace(candidate))
-				return;
-			activeBlock = candidate;
-		}
+		if (activeBlock == null && !spawnBlock())
+			return;
 		if (!board.canPlace(activeBlock))
 			return;
 		running = true;
@@ -92,11 +100,11 @@ public class Game3D
 			return;
 		if (!tryMoveTo(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1))
 		{
-			stop();
-			return;
+			board.lockBlock(activeBlock);
+			lockedBlockCount++;
+			if (!spawnBlock())
+				stop();
 		}
-		if (activeBlock.getZ() == 0)
-			stop();
 	}
 
 	/** 위치 갱신은 반드시 후보 위치의 충돌 검사를 통과한 뒤 수행한다. */
@@ -108,7 +116,7 @@ public class Game3D
 		return true;
 	}
 
-	/** 기본 실행은 키 입력 창을 연다. --console 옵션은 기존 콘솔 낙하 확인을 실행한다. */
+	/** 기본 실행은 키 입력 창을 연다. --console 옵션은 생성부터 게임 종료까지 확인한다. */
 	public static void main(String[] args) throws InterruptedException
 	{
 		if (args.length == 0 || !"--console".equals(args[0]))
@@ -124,22 +132,31 @@ public class Game3D
 			return;
 		}
 		int previousZ = -1;
+		int previousLocked = 0;
 		try
 		{
 			do
 			{
-				Block3D block = game.getActiveBlock();
-				if (block.getZ() != previousZ)
+				synchronized (game)
 				{
-					System.out.println(block.getType() + " position: (" + block.getX()
-							+ ", " + block.getY() + ", " + block.getZ() + ")");
-					previousZ = block.getZ();
+					int locked = game.getLockedBlockCount();
+					if (locked != previousLocked)
+					{
+						System.out.println("Locked blocks: " + locked);
+						previousLocked = locked;
+						previousZ = -1;
+					}
+					Block3D block = game.getActiveBlock();
+					if (block != null && block.getZ() != previousZ)
+					{
+						System.out.println(block.getType() + " position: (" + block.getX()
+								+ ", " + block.getY() + ", " + block.getZ() + ")");
+						previousZ = block.getZ();
+					}
 				}
-				if (previousZ == 0)
-					break;
 				Thread.sleep(50);
 			} while (game.isRunning());
-			System.out.println("Fall stopped at Z=" + game.getActiveBlock().getZ());
+			System.out.println("Game over. Locked blocks: " + game.getLockedBlockCount());
 		}
 		finally
 		{

@@ -71,10 +71,11 @@ public class Game3DPanel extends JPanel
 	{
 		Block3D block = game.getActiveBlock();
 		if (block == null)
-			status.setText("블록 없음: 생성 위치를 확인하세요.");
+			status.setText("블록 없음: 생성 위치를 확인하세요. 고정 블록: " + game.getLockedBlockCount());
 		else
 			status.setText(block.getType() + "  (X=" + block.getX() + ", Y=" + block.getY()
-					+ ", Z=" + block.getZ() + ")  " + (game.isRunning() ? "낙하 중" : "정지"));
+					+ ", Z=" + block.getZ() + ")  " + (game.isRunning() ? "낙하 중" : "정지")
+					+ "  고정 블록: " + game.getLockedBlockCount());
 	}
 
 	@Override
