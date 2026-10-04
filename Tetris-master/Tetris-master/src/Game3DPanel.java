@@ -22,17 +22,25 @@ public class Game3DPanel extends JPanel
 		this.game = java.util.Objects.requireNonNull(game, "game");
 		setLayout(new BorderLayout(0, 12));
 		setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-		add(new JLabel("W: Y+1   S: Y-1   A: X-1   D: X+1"), BorderLayout.NORTH);
+		add(new JLabel("W: Y+1   S: Y-1   A: X-1   D: X+1   |   J: X축   K: Y축   L: Z축 (90°)"), BorderLayout.NORTH);
 		add(status, BorderLayout.CENTER);
-		add(new JLabel("키를 한 번 누르면 한 칸 이동합니다. 자동 낙하: Z-1"), BorderLayout.SOUTH);
+		add(new JLabel("키를 한 번 누르면 이동 또는 회전합니다. 자동 낙하: Z-1"), BorderLayout.SOUTH);
 		bindMovement(KeyEvent.VK_W, "W", 0, 1);
 		bindMovement(KeyEvent.VK_S, "S", 0, -1);
 		bindMovement(KeyEvent.VK_A, "A", -1, 0);
 		bindMovement(KeyEvent.VK_D, "D", 1, 0);
+		bindKey(KeyEvent.VK_J, "J", () -> game.rotate(Block3D.Axis.X));
+		bindKey(KeyEvent.VK_K, "K", () -> game.rotate(Block3D.Axis.Y));
+		bindKey(KeyEvent.VK_L, "L", () -> game.rotate(Block3D.Axis.Z));
 		refreshStatus();
 	}
 
 	private void bindMovement(final int keyCode, String name, final int dx, final int dy)
+	{
+		bindKey(keyCode, name, () -> game.move(dx, dy));
+	}
+
+	private void bindKey(final int keyCode, String name, final Runnable action)
 	{
 		String pressAction = "press" + name;
 		String releaseAction = "release" + name;
@@ -48,7 +56,7 @@ public class Game3DPanel extends JPanel
 			{
 				// OS 자동 반복으로 들어오는 pressed 이벤트는 무시한다.
 				if (pressedKeys.add(keyCode))
-					game.move(dx, dy);
+					action.run();
 				refreshStatus();
 			}
 		});

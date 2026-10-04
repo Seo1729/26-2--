@@ -14,6 +14,8 @@ public class Block3D
 		I, O, T, L, J, S, Z
 	}
 
+	public enum Axis { X, Y, Z }
+
 	/** 상대좌표와 보드 좌표에 공통으로 사용하는 불변 좌표 값. */
 	public static final class Cube
 	{
@@ -34,7 +36,7 @@ public class Block3D
 	}
 
 	private final Type type;
-	// 현재 형태의 상대좌표를 초기 형태와 분리하여 향후 축별 회전을 추가할 수 있다.
+	// 회전된 형태도 블록의 기준점에 대한 상대좌표로 유지한다.
 	private Cube[] relativeCubes;
 	private int x;
 	private int y;
@@ -48,6 +50,38 @@ public class Block3D
 	}
 
 	public Type getType() { return type; }
+
+	/** 현재 회전 상태를 보존하는 독립적인 복사본. */
+	public Block3D copy()
+	{
+		Block3D result = new Block3D(type, x, y, z);
+		result.relativeCubes = relativeCubes.clone();
+		return result;
+	}
+
+	/** 90도 회전 후보를 반환한다. 원본의 좌표와 형태는 변경하지 않는다. */
+	public Block3D rotated(Axis axis)
+	{
+		Objects.requireNonNull(axis, "axis");
+		int[][] matrix;
+		switch (axis)
+		{
+		case X: matrix = new int[][] { {1, 0, 0}, {0, 0, -1}, {0, 1, 0} }; break;
+		case Y: matrix = new int[][] { {0, 0, 1}, {0, 1, 0}, {-1, 0, 0} }; break;
+		case Z: matrix = new int[][] { {0, -1, 0}, {1, 0, 0}, {0, 0, 1} }; break;
+		default: throw new IllegalArgumentException("Unknown axis: " + axis);
+		}
+		Block3D result = copy();
+		for (int i = 0; i < CUBE_COUNT; i++)
+		{
+			Cube cube = relativeCubes[i];
+			result.relativeCubes[i] = new Cube(
+					matrix[0][0] * cube.x + matrix[0][1] * cube.y + matrix[0][2] * cube.z,
+					matrix[1][0] * cube.x + matrix[1][1] * cube.y + matrix[1][2] * cube.z,
+					matrix[2][0] * cube.x + matrix[2][1] * cube.y + matrix[2][2] * cube.z);
+		}
+		return result;
+	}
 	public int getX() { return x; }
 	public int getY() { return y; }
 	public int getZ() { return z; }

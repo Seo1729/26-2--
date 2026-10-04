@@ -80,7 +80,19 @@ public class Game3D
 	{
 		if (activeBlock == null)
 			return null;
-		return new Block3D(activeBlock.getType(), activeBlock.getX(), activeBlock.getY(), activeBlock.getZ());
+		return activeBlock.copy();
+	}
+
+	/** 회전 후보가 경계와 고정 블록 검사를 통과한 경우만 반영한다. 기준점은 움직이지 않는다. */
+	public synchronized boolean rotate(Block3D.Axis axis)
+	{
+		if (!running || activeBlock == null)
+			return false;
+		Block3D candidate = activeBlock.rotated(axis);
+		if (!board.canPlace(candidate))
+			return false;
+		activeBlock = candidate;
+		return true;
 	}
 
 	/** X 또는 Y 방향으로 한 칸 이동한다. 정지 상태이거나 충돌하면 위치를 유지한다. */
