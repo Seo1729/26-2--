@@ -106,18 +106,39 @@ public class Game3D
 		return tryMoveTo(activeBlock.getX() + dx, activeBlock.getY() + dy, activeBlock.getZ());
 	}
 
+	/** 가능한 최저 위치까지 내려가 즉시 고정한다. 정지 상태에서는 아무것도 변경하지 않는다. */
+	public synchronized boolean hardDrop()
+	{
+		if (!running || activeBlock == null)
+			return false;
+		while (tryMoveDown())
+		{
+			// 자동 낙하와 같은 한 칸 이동 및 충돌 검사를 반복한다.
+		}
+		lockAndSpawn();
+		return true;
+	}
+
+	private boolean tryMoveDown()
+	{
+		return tryMoveTo(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1);
+	}
+
+	private void lockAndSpawn()
+	{
+		board.lockBlock(activeBlock);
+		lockedBlockCount++;
+		board.clearCompletedLayers();
+		if (!spawnBlock())
+			stop();
+	}
+
 	private synchronized void fallOneStep()
 	{
 		if (!running)
 			return;
-		if (!tryMoveTo(activeBlock.getX(), activeBlock.getY(), activeBlock.getZ() - 1))
-		{
-			board.lockBlock(activeBlock);
-			lockedBlockCount++;
-			board.clearCompletedLayers();
-			if (!spawnBlock())
-				stop();
-		}
+		if (!tryMoveDown())
+			lockAndSpawn();
 	}
 
 	/** 위치 갱신은 반드시 후보 위치의 충돌 검사를 통과한 뒤 수행한다. */
