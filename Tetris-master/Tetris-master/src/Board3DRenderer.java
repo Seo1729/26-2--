@@ -4,6 +4,9 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
@@ -22,11 +25,44 @@ public final class Board3DRenderer extends JPanel
     };
     private Game3DScene scene = new Game3DScene(java.util.Collections.emptyList());
     private double scale, originX, originY;
+    private double azimuth = Math.PI / 4, elevation = Math.toRadians(20), zoom = 1;
+    private int dragX, dragY;
+    private boolean dragging;
 
     public Board3DRenderer()
     {
         setPreferredSize(new Dimension(640, 720));
         setBackground(new Color(19, 25, 38));
+        MouseAdapter cameraInput = new MouseAdapter()
+        {
+            @Override public void mousePressed(MouseEvent event)
+            {
+                if (event.getButton() != MouseEvent.BUTTON1) return;
+                dragging = true;
+                dragX = event.getX(); dragY = event.getY();
+            }
+            @Override public void mouseReleased(MouseEvent event)
+            {
+                if (event.getButton() == MouseEvent.BUTTON1) dragging = false;
+            }
+            @Override public void mouseDragged(MouseEvent event)
+            {
+                if (!dragging || (event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == 0) return;
+                azimuth = Math.IEEEremainder(azimuth - (event.getX() - dragX) * .008, Math.PI * 2);
+                elevation = Math.max(Math.toRadians(-85), Math.min(Math.toRadians(85),
+                        elevation + (event.getY() - dragY) * .008));
+                dragX = event.getX(); dragY = event.getY();
+                repaint();
+            }
+            @Override public void mouseWheelMoved(MouseWheelEvent event)
+            {
+                zoom = Math.max(.3, Math.min(4, zoom * Math.pow(1.12, -event.getPreciseWheelRotation())));
+                repaint();
+            }
+        };
+        addMouseListener(cameraInput);
+        addMouseMotionListener(cameraInput);
+        addMouseWheelListener(cameraInput);
     }
 
     public void setScene(Game3DScene scene)
@@ -37,8 +73,12 @@ public final class Board3DRenderer extends JPanel
 
     private Point2D project(double x, double y, double z)
     {
-        return new Point2D.Double(originX + scale * .70710678 * (x - y),
-                originY + scale * (.24184476 * (x + y) - .93969262 * z));
+        x -= Board3D.SIZE_X / 2.0;
+        y -= Board3D.SIZE_Y / 2.0;
+        z -= Board3D.SIZE_Z / 2.0;
+        return new Point2D.Double(originX + scale * (Math.sin(azimuth) * x - Math.cos(azimuth) * y),
+                originY + scale * (Math.sin(elevation) * (Math.cos(azimuth) * x + Math.sin(azimuth) * y)
+                        - Math.cos(elevation) * z));
     }
 
     private void line(Graphics2D g, double x, double y, double z, double a, double b, double c)
@@ -52,11 +92,11 @@ public final class Board3DRenderer extends JPanel
         final Color color;
         final boolean active;
         final double depth;
-        Face(double[][] vertices, Color color, boolean active)
+        Face(double[][] vertices, Color color, boolean active, double nx, double ny, double nz)
         {
             this.vertices = vertices; this.color = color; this.active = active;
             double sum = 0;
-            for (double[] p : vertices) sum += .664463 * (p[0] + p[1]) + .342020 * p[2];
+            for (double[] p : vertices) sum += nx * p[0] + ny * p[1] + nz * p[2];
             depth = sum / vertices.length;
         }
     }
@@ -69,11 +109,15 @@ public final class Board3DRenderer extends JPanel
         try
         {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            double width = .70710678 * (Board3D.SIZE_X + Board3D.SIZE_Y);
-            double height = .93969262 * Board3D.SIZE_Z + .24184476 * (Board3D.SIZE_X + Board3D.SIZE_Y);
-            scale = Math.max(1, Math.min((getWidth() - 100.0) / width, (getHeight() - 110.0) / height));
+            // A constant bounding sphere keeps orbiting from changing the zoom.
+            double diameter = Math.sqrt(Board3D.SIZE_X * Board3D.SIZE_X
+                    + Board3D.SIZE_Y * Board3D.SIZE_Y + Board3D.SIZE_Z * Board3D.SIZE_Z);
+            scale = Math.max(1, Math.min(getWidth() - 100.0, getHeight() - 110.0) / diameter) * zoom;
             originX = getWidth() / 2.0;
-            originY = (getHeight() - scale * height) / 2 + scale * .93969262 * Board3D.SIZE_Z;
+            originY = getHeight() / 2.0;
+            double nx = Math.cos(elevation) * Math.cos(azimuth);
+            double ny = Math.cos(elevation) * Math.sin(azimuth);
+            double nz = Math.sin(elevation);
             g.setColor(new Color(65, 79, 101));
             g.setStroke(new BasicStroke(1));
             // Rear walls and floor identify every cell without covering the cubes.
@@ -95,9 +139,11 @@ public final class Board3DRenderer extends JPanel
                 double x = cell.x + .035, y = cell.y + .035, z = cell.z + .035;
                 double a = cell.x + .965, b = cell.y + .965, c = cell.z + .965;
                 Color color = cell.type == null ? Color.GRAY : COLORS[cell.type.ordinal()];
-                faces.add(new Face(new double[][] {{a,y,z},{a,b,z},{a,b,c},{a,y,c}}, color.darker(), cell.active));
-                faces.add(new Face(new double[][] {{x,b,z},{a,b,z},{a,b,c},{x,b,c}}, color, cell.active));
-                faces.add(new Face(new double[][] {{x,y,c},{a,y,c},{a,b,c},{x,b,c}}, color.brighter(), cell.active));
+                // Choose the visible side on each axis for the current camera.
+                double sideX = nx >= 0 ? a : x, sideY = ny >= 0 ? b : y, sideZ = nz >= 0 ? c : z;
+                faces.add(new Face(new double[][] {{sideX,y,z},{sideX,b,z},{sideX,b,c},{sideX,y,c}}, color.darker(), cell.active, nx, ny, nz));
+                faces.add(new Face(new double[][] {{x,sideY,z},{a,sideY,z},{a,sideY,c},{x,sideY,c}}, color, cell.active, nx, ny, nz));
+                faces.add(new Face(new double[][] {{x,y,sideZ},{a,y,sideZ},{a,b,sideZ},{x,b,sideZ}}, color.brighter(), cell.active, nx, ny, nz));
             }
             faces.sort(Comparator.comparingDouble(face -> face.depth));
             for (Face face : faces)
@@ -123,10 +169,10 @@ public final class Board3DRenderer extends JPanel
                 line(g, 0, 0, z, 3, 0, z); line(g, 3, 0, z, 3, 3, z);
                 line(g, 3, 3, z, 0, 3, z); line(g, 0, 3, z, 0, 0, z);
             }
-            g.drawString("3 x 3 x 14   |   Z up   |   falling: white outline", 16, 22);
+            g.drawString("Left drag: orbit   |   Wheel: zoom   |   falling: white outline", 16, 22);
             Point2D px = project(3, 0, 0), py = project(0, 3, 0);
             g.drawString("X+ (D)", (float) px.getX() + 8, (float) px.getY() + 16);
-            g.drawString("Y+ (W)", (float) py.getX() - 58, (float) py.getY() + 16);
+            g.drawString("Y+ (S)", (float) py.getX() - 58, (float) py.getY() + 16);
             for (Block3D.Type type : Block3D.Type.values())
             {
                 int left = 16 + type.ordinal() * 55;
