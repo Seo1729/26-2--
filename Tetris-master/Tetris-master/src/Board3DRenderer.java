@@ -18,21 +18,12 @@ import javax.swing.JPanel;
 /** Swing software 3D renderer: orthographic camera, shaded faces and depth sorting. */
 public final class Board3DRenderer extends JPanel
 {
-    private static final Color[] COLORS = {
-        new Color(57, 211, 230), new Color(255, 209, 70), new Color(187, 115, 245),
-        new Color(255, 156, 67), new Color(83, 135, 246), new Color(91, 213, 132),
-        new Color(245, 98, 121)
-    };
     private Game3DScene scene = new Game3DScene(java.util.Collections.emptyList());
     private double scale, originX, originY;
     private double azimuth = Math.PI / 4, elevation = Math.toRadians(20), zoom = 1;
     private int dragX, dragY;
     private boolean dragging;
 
-    static Color colorFor(Block3D.Type type)
-    {
-        return type == null ? Color.GRAY : COLORS[type.ordinal()];
-    }
 
     public Board3DRenderer()
     {
@@ -143,7 +134,7 @@ public final class Board3DRenderer extends JPanel
             {
                 double x = cell.x + .035, y = cell.y + .035, z = cell.z + .035;
                 double a = cell.x + .965, b = cell.y + .965, c = cell.z + .965;
-                Color color = colorFor(cell.type);
+                Color color = BlockColors.colorFor(cell.type);
                 // Choose the visible side on each axis for the current camera.
                 double sideX = nx >= 0 ? a : x, sideY = ny >= 0 ? b : y, sideZ = nz >= 0 ? c : z;
                 faces.add(new Face(new double[][] {{sideX,y,z},{sideX,b,z},{sideX,b,c},{sideX,y,c}}, color.darker(), cell.active, nx, ny, nz));
@@ -198,7 +189,7 @@ public final class Board3DRenderer extends JPanel
             for (Block3D.Type type : Block3D.Type.values())
             {
                 int left = 16 + type.ordinal() * 55;
-                g.setColor(COLORS[type.ordinal()]); g.fillRect(left, getHeight() - 27, 12, 12);
+                g.setColor(BlockColors.colorFor(type)); g.fillRect(left, getHeight() - 27, 12, 12);
                 g.drawString(type.name(), left + 18, getHeight() - 16);
             }
         }

@@ -62,13 +62,13 @@ public final class TopViewPanel extends JPanel
                     int px = left + x * cellSize, py = top + y * cellSize;
                     Game3DScene.Cell locked = fixed[x][y], falling = active[x][y];
                     g.setColor(locked == null ? new Color(30, 40, 57)
-                            : Board3DRenderer.colorFor(locked.type).darker());
+                            : BlockColors.colorFor(locked.type).darker());
                     g.fillRect(px, py, cellSize, cellSize);
                     if (falling != null)
                     {
                         int inset = Math.max(3, cellSize / 6);
                         int markerSize = cellSize - inset * 2;
-                        g.setColor(Board3DRenderer.colorFor(falling.type));
+                        g.setColor(BlockColors.colorFor(falling.type));
                         g.fillRect(px + inset, py + inset, markerSize, markerSize);
                         g.setColor(new Color(255, 255, 240));
                         g.setStroke(new BasicStroke(2f));

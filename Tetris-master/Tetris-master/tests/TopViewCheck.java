@@ -39,14 +39,14 @@ public class TopViewCheck
                 int cell = Math.min(size[0] - 64, size[1] - 150) / 3;
                 int left = (size[0] - cell * 3) / 2, top = 78;
                 check(image.getRGB(left + cell / 2, top + cell / 2)
-                        == Board3DRenderer.colorFor(Block3D.Type.I).getRGB(), "Falling projection missing");
+                        == BlockColors.colorFor(Block3D.Type.I).getRGB(), "Falling projection missing");
                 check(image.getRGB(left + 2, top + 2)
-                        == Board3DRenderer.colorFor(Block3D.Type.T).darker().getRGB(),
+                        == BlockColors.colorFor(Block3D.Type.T).darker().getRGB(),
                         "Highest fixed cube hidden or selected in list order");
                 check(image.getRGB(left + 2 * cell + cell / 2, top + cell + cell / 2)
-                        == Board3DRenderer.colorFor(Block3D.Type.O).darker().getRGB(), "XY axes swapped");
+                        == BlockColors.colorFor(Block3D.Type.O).darker().getRGB(), "XY axes swapped");
                 check(image.getRGB(left + cell + cell / 2, top + 2 * cell + cell / 2)
-                        == Board3DRenderer.colorFor(Block3D.Type.I).getRGB(), "Y direction incorrect");
+                        == BlockColors.colorFor(Block3D.Type.I).getRGB(), "Y direction incorrect");
                 int grid = new Color(145, 166, 193).getRGB();
                 for (int i = 0; i <= 3; i++)
                 {

@@ -16,8 +16,21 @@ public class Game3D
 	private final Random random = new Random();
 	private final Timer fallTimer;
 	private Block3D activeBlock;
+	private Block3D.Type nextType;
 	private State state = State.READY;
 	private int lockedBlockCount;
+	private long clearedLayerCount;
+	public static final int POINTS_PER_LAYER = 100;
+
+	public synchronized long getClearedLayerCount()
+	{
+		return clearedLayerCount;
+	}
+
+	public synchronized long getScore()
+	{
+		return clearedLayerCount * POINTS_PER_LAYER;
+	}
 
 	public synchronized State getState()
 	{
@@ -38,7 +51,7 @@ public class Game3D
 
 	private boolean spawnBlock()
 	{
-		Block3D candidate = new Block3D(SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)],
+		Block3D candidate = new Block3D(nextType,
 				Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
 		if (!board.canPlace(candidate))
 		{
@@ -46,7 +59,19 @@ public class Game3D
 			return false;
 		}
 		activeBlock = candidate;
+		nextType = randomSpawnType();
 		return true;
+	}
+
+	private Block3D.Type randomSpawnType()
+	{
+		return SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)];
+	}
+
+	/** The reserved type is consumed only after a successful spawn. */
+	public synchronized Block3D.Type getNextBlockType()
+	{
+		return nextType;
 	}
 
 	public Game3D()
@@ -66,6 +91,7 @@ public class Game3D
 		if (fallIntervalMs <= 0)
 			throw new IllegalArgumentException("Fall interval must be positive");
 		this.board = java.util.Objects.requireNonNull(board, "board");
+		nextType = randomSpawnType();
 		fallTimer = new Timer(fallIntervalMs, event -> fallOneStep());
 	}
 
@@ -104,6 +130,8 @@ public class Game3D
 		board.clear();
 		activeBlock = null;
 		lockedBlockCount = 0;
+		clearedLayerCount = 0;
+		nextType = randomSpawnType();
 		state = State.READY;
 		start();
 	}
@@ -174,10 +202,7 @@ public class Game3D
 	{
 		if (state != State.RUNNING || activeBlock == null)
 			return false;
-		while (tryMoveDown())
-		{
-			// 자동 낙하와 같은 한 칸 이동 및 충돌 검사를 반복한다.
-		}
+		activeBlock = getGhostBlock();
 		lockAndSpawn();
 		return true;
 	}
@@ -191,7 +216,7 @@ public class Game3D
 	{
 		board.lockBlock(activeBlock);
 		lockedBlockCount++;
-		board.clearCompletedLayers();
+		clearedLayerCount += board.clearCompletedLayers();
 		spawnBlock();
 	}
 
