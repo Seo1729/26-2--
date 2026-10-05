@@ -116,6 +116,21 @@ public class Game3D
 		return activeBlock.copy();
 	}
 
+	/** Capture fixed and falling cells together without exposing the mutable board. */
+	public synchronized Game3DScene getScene()
+	{
+		java.util.List<Game3DScene.Cell> cells = new java.util.ArrayList<Game3DScene.Cell>();
+		for (int x = 0; x < Board3D.SIZE_X; x++)
+			for (int y = 0; y < Board3D.SIZE_Y; y++)
+				for (int z = 0; z < Board3D.SIZE_Z; z++)
+					if (board.isFilled(x, y, z))
+						cells.add(new Game3DScene.Cell(x, y, z, board.getType(x, y, z), false));
+		if (activeBlock != null)
+			for (Block3D.Cube cube : activeBlock.getAbsoluteCubes())
+				cells.add(new Game3DScene.Cell(cube.getX(), cube.getY(), cube.getZ(), activeBlock.getType(), true));
+		return new Game3DScene(cells);
+	}
+
 	/** 회전 후보가 경계와 고정 블록 검사를 통과한 경우만 반영한다. 기준점은 움직이지 않는다. */
 	public synchronized boolean rotate(Block3D.Axis axis)
 	{

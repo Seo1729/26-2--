@@ -16,17 +16,21 @@ public class Game3DPanel extends JPanel
 	private final Game3D game;
 	private final Set<Integer> pressedKeys = new HashSet<Integer>();
 	private final JLabel status = new JLabel();
+	private final Board3DRenderer renderer = new Board3DRenderer();
 
 	public Game3DPanel(Game3D game)
 	{
 		this.game = java.util.Objects.requireNonNull(game, "game");
 		setLayout(new BorderLayout(0, 12));
 		setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-		add(new JLabel("W: Y+1   S: Y-1   A: X-1   D: X+1   |   J: X축   K: Y축   L: Z축 (90°)"), BorderLayout.NORTH);
-		add(status, BorderLayout.CENTER);
+		add(new JLabel("W: Y-1   S: Y+1   A: X-1   D: X+1   |   J: X축   K: Y축   L: Z축 (90°)"), BorderLayout.NORTH);
+		JPanel center = new JPanel(new BorderLayout(0, 8));
+		center.add(renderer, BorderLayout.CENTER);
+		center.add(status, BorderLayout.SOUTH);
+		add(center, BorderLayout.CENTER);
 		add(new JLabel("Space: 즉시 낙하·고정   |   R: 게임 오버 후 재시작   |   자동 낙하: Z-1"), BorderLayout.SOUTH);
-		bindMovement(KeyEvent.VK_W, "W", 0, 1);
-		bindMovement(KeyEvent.VK_S, "S", 0, -1);
+		bindMovement(KeyEvent.VK_W, "W", 0, -1);
+		bindMovement(KeyEvent.VK_S, "S", 0, 1);
 		bindMovement(KeyEvent.VK_A, "A", -1, 0);
 		bindMovement(KeyEvent.VK_D, "D", 1, 0);
 		bindKey(KeyEvent.VK_J, "J", () -> game.rotate(Block3D.Axis.X));
@@ -92,6 +96,7 @@ public class Game3DPanel extends JPanel
 
 	public void refreshStatus()
 	{
+		renderer.setScene(game.getScene());
 		if (!game.isRunning())
 			resetPressedKeys();
 		Block3D block = game.getActiveBlock();

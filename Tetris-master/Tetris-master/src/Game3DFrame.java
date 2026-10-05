@@ -12,10 +12,11 @@ public class Game3DFrame extends JFrame
 
 	public Game3DFrame()
 	{
-		super("3D Tetris - Keyboard");
+		super("3D Tetris");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setContentPane(panel);
 		pack();
+		setMinimumSize(new java.awt.Dimension(640, 600));
 		setLocationRelativeTo(null);
 		addWindowFocusListener(new WindowAdapter()
 		{
