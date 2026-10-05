@@ -10,6 +10,12 @@ public class Dodger {
 	public static final int JUMP_HEIGHT = 2;
 	/** 마지막으로 한 칸 걸은 뒤 이 시간(ms) 동안은 걷는 모습으로 그린다 */
 	private static final long WALK_POSE_MS = 150;
+	/** 그리는 위치가 좌우로 1칸 미끄러지는 데 걸리는 시간(ms). 키를 꾹 눌렀을 때 반복 간격과 같게 해서 끊기지 않게 한다. */
+	private static final double SLIDE_X_MS = 90;
+	/** 그리는 위치가 위아래로 1칸 움직이는 데 걸리는 시간(ms). 점프/중력 간격과 같다. */
+	private static final double SLIDE_Y_MS = 80;
+	/** 그리는 위치가 이보다 멀리 떨어지면(다시 시작 등) 미끄러지지 않고 바로 옮긴다 */
+	private static final double SNAP_DISTANCE = 3;
 
 	/** 그리기용 캐릭터 상태 */
 	public enum State {
@@ -26,6 +32,12 @@ public class Dodger {
 	/** 걸을 때마다 0, 1을 번갈아 바꿔 발을 교대로 내딛는 모습을 만든다 */
 	private int walkFrame;
 	private long lastMoveTime;
+	/**
+	 * 화면에 그리는 위치(칸 단위, 소수). 게임 판정은 칸 단위 x, y로 하고,
+	 * 그림만 이 값을 따라 부드럽게 미끄러지게 해서 순간이동처럼 보이지 않게 한다.
+	 */
+	private double drawX;
+	private double drawY;
 
 	public Dodger(GameBoard board, TetrisPlayer tetris) {
 		this.board = board;
@@ -40,6 +52,26 @@ public class Dodger {
 		facingRight = true;
 		walkFrame = 0;
 		lastMoveTime = 0;
+		drawX = x;
+		drawY = y;
+	}
+
+	/** 게임 루프가 매 프레임 호출. 그리는 위치를 실제 칸 쪽으로 조금씩 옮긴다. */
+	public void updateDraw(int elapsedMs) {
+		drawX = slide(drawX, x, elapsedMs / SLIDE_X_MS);
+		drawY = slide(drawY, y, elapsedMs / SLIDE_Y_MS);
+	}
+
+	/** current를 target 쪽으로 step칸만큼 옮긴다. 1칸보다 많이 뒤처지면 그만큼 빨리 따라간다. */
+	private static double slide(double current, int target, double step) {
+		double diff = target - current;
+		double distance = Math.abs(diff);
+		if (distance > SNAP_DISTANCE)
+			return target;
+		double move = step * Math.max(1, distance);
+		if (distance <= move)
+			return target;
+		return current + Math.signum(diff) * move;
 	}
 
 	/** 한 칸 걸었을 때 걷기 애니메이션을 한 프레임 넘긴다 */
@@ -108,6 +140,9 @@ public class Dodger {
 
 	public void crush() {
 		crushed = true;
+		// 깔린 자리에 바로 그려서 블록과 어긋나 보이지 않게 한다
+		drawX = x;
+		drawY = y;
 	}
 
 	public boolean isCrushed() {
@@ -122,7 +157,8 @@ public class Dodger {
 			return State.JUMP;
 		if (!isOnGround())
 			return State.FALL;
-		if (System.currentTimeMillis() - lastMoveTime < WALK_POSE_MS)
+		// 옆 칸으로 미끄러지는 동안에도 걷는 모습
+		if (drawX != x || System.currentTimeMillis() - lastMoveTime < WALK_POSE_MS)
 			return State.WALK;
 		return State.IDLE;
 	}
@@ -141,5 +177,15 @@ public class Dodger {
 
 	public int getY() {
 		return y;
+	}
+
+	/** 화면에 그릴 x (칸 단위, 소수) */
+	public double getDrawX() {
+		return drawX;
+	}
+
+	/** 화면에 그릴 y (칸 단위, 소수) */
+	public double getDrawY() {
+		return drawY;
 	}
 }

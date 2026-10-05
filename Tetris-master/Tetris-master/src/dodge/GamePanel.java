@@ -92,6 +92,7 @@ public class GamePanel extends JPanel implements ActionListener {
 			dodgerElapsed = 0;
 			dodger.physicsStep();
 		}
+		dodger.updateDraw(FRAME_MS);
 
 		refresh();
 	}
@@ -231,8 +232,9 @@ public class GamePanel extends JPanel implements ActionListener {
 			}
 		}
 
-		dodgerSprite.draw(g, dodger, left + dodger.getX() * cell,
-				top + (GameBoard.HEIGHT - dodger.getY() - 1) * cell, cell, cell);
+		// 칸 단위가 아니라 미끄러지는 중인 위치에 그린다
+		dodgerSprite.draw(g, dodger, left + (int) Math.round(dodger.getDrawX() * cell),
+				top + (int) Math.round((GameBoard.HEIGHT - dodger.getDrawY() - 1) * cell), cell, cell);
 
 		g.setColor(Theme.BORDER);
 		g.drawRect(left - 1, top - 1, boardW + 1, boardH + 1);
