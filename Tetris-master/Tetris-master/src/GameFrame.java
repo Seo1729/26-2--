@@ -13,6 +13,9 @@ public class GameFrame extends JFrame
 	static int gameMode = 1;
 	static JFrame jf;
 
+	/** 실행하면 처음 보이는 메인화면. 게임을 시작하면 창에서 떼어 낸다. */
+	private final MainMenuPanel mainMenu;
+
 	GameFrame()
 	{
 		setTitle("Tetris");
@@ -26,6 +29,29 @@ public class GameFrame extends JFrame
 		Container c = this.getContentPane();
 
 		c.setBackground(new Color(30, 160, 255));
+
+		// 게임은 메뉴에서 모드를 고른 뒤 만들고, 처음에는 메인화면만 보여 준다
+		mainMenu = new MainMenuPanel(this);
+		mainMenu.setBounds(0, 0, 360, 640);
+		add(mainMenu);
+
+		setLocationRelativeTo(getParent());
+
+		setVisible(true);
+	}
+
+	/**
+	 * 메인화면에서 고른 모드로 게임을 시작한다. 메인화면을 떼어 내고 같은 창에 게임 화면을 붙인다.
+	 *
+	 * @param mode 시작할 게임 모드(1: 일반, 3: 갤러그 협동)
+	 */
+	public void startGame(int mode)
+	{
+		// 게임 패널과 아이템 처리가 이 값으로 모드를 구분하므로 먼저 정해 둔다
+		gameMode = mode;
+
+		// 메인화면을 창에서 떼어 내고 그 자리에 게임 화면을 만든다
+		remove(mainMenu);
 
 		switch (gameMode)
 		{
@@ -47,9 +73,10 @@ public class GameFrame extends JFrame
 			addKeyListener(galagaLayer.getKeyListener());
 		}
 
-		setLocationRelativeTo(getParent());
-
-		setVisible(true);
+		// 바뀐 화면을 다시 그리고, 버튼에 가 있던 키 입력을 게임 창으로 돌려놓는다
+		revalidate();
+		repaint();
+		requestFocusInWindow();
 	}
 
 	public void remakePanel()
@@ -128,14 +155,6 @@ public class GameFrame extends JFrame
 	public static void main(String[] args)
 	{
 		new ImageSource();
-
-		// 시작 전에 모드를 고르게 하고, 갤러그 협동을 고르면 모드 3으로 바꾼다(창을 닫으면 일반 모드)
-		String[] modes = { "일반", "갤러그 협동" };
-		int choice = JOptionPane.showOptionDialog(null, "게임 모드를 선택하세요", "Tetris",
-				JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, modes, modes[0]);
-		if (choice == 1)
-			gameMode = 3;
-
 		new GameFrame();
 	}
 }
