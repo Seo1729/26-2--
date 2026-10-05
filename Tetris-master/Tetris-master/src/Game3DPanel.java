@@ -17,6 +17,7 @@ public class Game3DPanel extends JPanel
 	private final Set<Integer> pressedKeys = new HashSet<Integer>();
 	private final JLabel status = new JLabel();
 	private final Board3DRenderer renderer = new Board3DRenderer();
+	private final TopViewPanel topView = new TopViewPanel();
 
 	public Game3DPanel(Game3D game)
 	{
@@ -26,6 +27,9 @@ public class Game3DPanel extends JPanel
 		add(new JLabel("W: Y-1   S: Y+1   A: X-1   D: X+1   |   J: X축   K: Y축   L: Z축 (90°)"), BorderLayout.NORTH);
 		JPanel center = new JPanel(new BorderLayout(0, 8));
 		center.add(renderer, BorderLayout.CENTER);
+		JPanel sidebar = new JPanel(new BorderLayout());
+		sidebar.add(topView, BorderLayout.NORTH);
+		center.add(sidebar, BorderLayout.EAST);
 		center.add(status, BorderLayout.SOUTH);
 		add(center, BorderLayout.CENTER);
 		add(new JLabel("Space: 즉시 낙하·고정   |   R: 게임 오버 후 재시작   |   자동 낙하: Z-1"), BorderLayout.SOUTH);
@@ -96,7 +100,9 @@ public class Game3DPanel extends JPanel
 
 	public void refreshStatus()
 	{
-		renderer.setScene(game.getScene());
+		Game3DScene scene = game.getScene();
+		renderer.setScene(scene);
+		topView.setScene(scene);
 		if (!game.isRunning())
 			resetPressedKeys();
 		Block3D block = game.getActiveBlock();

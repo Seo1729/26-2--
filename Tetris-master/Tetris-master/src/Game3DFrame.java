@@ -16,7 +16,7 @@ public class Game3DFrame extends JFrame
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setContentPane(panel);
 		pack();
-		setMinimumSize(new java.awt.Dimension(640, 600));
+		setMinimumSize(new java.awt.Dimension(940, 600));
 		setLocationRelativeTo(null);
 		addWindowFocusListener(new WindowAdapter()
 		{

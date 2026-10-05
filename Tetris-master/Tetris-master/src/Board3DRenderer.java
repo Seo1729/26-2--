@@ -29,6 +29,11 @@ public final class Board3DRenderer extends JPanel
     private int dragX, dragY;
     private boolean dragging;
 
+    static Color colorFor(Block3D.Type type)
+    {
+        return type == null ? Color.GRAY : COLORS[type.ordinal()];
+    }
+
     public Board3DRenderer()
     {
         setPreferredSize(new Dimension(640, 720));
@@ -138,7 +143,7 @@ public final class Board3DRenderer extends JPanel
             {
                 double x = cell.x + .035, y = cell.y + .035, z = cell.z + .035;
                 double a = cell.x + .965, b = cell.y + .965, c = cell.z + .965;
-                Color color = cell.type == null ? Color.GRAY : COLORS[cell.type.ordinal()];
+                Color color = colorFor(cell.type);
                 // Choose the visible side on each axis for the current camera.
                 double sideX = nx >= 0 ? a : x, sideY = ny >= 0 ? b : y, sideZ = nz >= 0 ? c : z;
                 faces.add(new Face(new double[][] {{sideX,y,z},{sideX,b,z},{sideX,b,c},{sideX,y,c}}, color.darker(), cell.active, nx, ny, nz));
