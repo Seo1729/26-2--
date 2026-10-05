@@ -13,6 +13,12 @@ public class GameFrame extends JFrame
 	static int gameMode = 1;
 	static JFrame jf;
 
+	/** 똥피하기 모드의 창 가로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
+	private static final int DODGE_WIDTH = 1100;
+
+	/** 똥피하기 모드의 창 세로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
+	private static final int DODGE_HEIGHT = 1000;
+
 	/** 실행하면 처음 보이는 메인화면. 게임을 시작하면 창에서 떼어 낸다. */
 	private final MainMenuPanel mainMenu;
 
@@ -77,6 +83,32 @@ public class GameFrame extends JFrame
 		revalidate();
 		repaint();
 		requestFocusInWindow();
+	}
+
+	/**
+	 * 메인화면에서 똥피하기 모드를 시작한다. 메인화면을 떼어 내고, 창을 이 모드에 맞는 크기로 키운 뒤
+	 * 같은 창에 똥피하기 화면을 붙인다.
+	 */
+	public void startDodge()
+	{
+		// 메인화면을 창에서 떼어 낸다
+		remove(mainMenu);
+
+		// 똥피하기 화면은 창 전체를 채우도록 배치 방식을 바꾼다(기존 좌표 배치는 게임 모드에서만 쓴다)
+		setLayout(new BorderLayout());
+		setTitle("Tetris X 똥 피하기");
+
+		// 작업 표시줄을 뺀 화면 크기보다 크면 화면에 맞춰 창 크기를 정하고, 화면 가운데로 옮긴다
+		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		setSize(Math.min(DODGE_WIDTH, screen.width), Math.min(DODGE_HEIGHT, screen.height));
+		setLocationRelativeTo(null);
+
+		// 똥피하기 화면을 붙이고, 화면에 붙은 뒤에 시작해야 키 입력 포커스를 받을 수 있다
+		dodge.DodgeMode dodgeMode = new dodge.DodgeMode();
+		add(dodgeMode, BorderLayout.CENTER);
+		revalidate();
+		repaint();
+		dodgeMode.start();
 	}
 
 	public void remakePanel()
