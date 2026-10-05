@@ -8,6 +8,8 @@ public class TetrisPlayer {
 
 	private final GameBoard board;
 	private Shape curPiece = new Shape();
+	/** 다음에 나올 조각 (정보판 미리보기용) */
+	private final Shape nextPiece = new Shape();
 	private int curX = 0;
 	private int curY = 0;
 	private boolean isFallingFinished = false;
@@ -27,6 +29,7 @@ public class TetrisPlayer {
 		isFallingFinished = false;
 		isGameOver = false;
 		numLinesRemoved = 0;
+		nextPiece.setRandomShape();
 		newPiece();
 	}
 
@@ -85,7 +88,8 @@ public class TetrisPlayer {
 	}
 
 	private void newPiece() {
-		curPiece.setRandomShape();
+		curPiece.setShape(nextPiece.getShape());
+		nextPiece.setRandomShape();
 		curX = GameBoard.WIDTH / 2 + 1;
 		curY = GameBoard.HEIGHT - 1 + curPiece.minY();
 
@@ -134,6 +138,10 @@ public class TetrisPlayer {
 
 	public Shape getPiece() {
 		return curPiece;
+	}
+
+	public Shape getNextPiece() {
+		return nextPiece;
 	}
 
 	public int getX() {

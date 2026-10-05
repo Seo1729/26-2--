@@ -1,19 +1,20 @@
 package dodge;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
 /**
  * 게임 화면. 타이머(게임 루프)를 돌리고 보드와 현재 조각을 그린다.
+ * 보드는 칸을 정사각형으로 유지하며 이 패널 가운데에 그린다.
  */
 public class GamePanel extends JPanel implements ActionListener {
 
@@ -30,7 +31,8 @@ public class GamePanel extends JPanel implements ActionListener {
 	private final DodgerSprite dodgerSprite = new DodgerSprite();
 	private final InputHandler input;
 	private final Timer timer;
-	private final JLabel statusbar;
+	/** 화면이 바뀔 때마다 부를 일 (정보판 다시 그리기) */
+	private Runnable onRefresh;
 	private boolean isStarted = false;
 	private boolean isPaused = false;
 	private int fallElapsed = 0;
@@ -38,14 +40,21 @@ public class GamePanel extends JPanel implements ActionListener {
 	/** 게임 시작 후 흐른 시간(ms). 일시정지 중에는 늘지 않는다. */
 	private int playElapsed = 0;
 	private GameRules.Result result = GameRules.Result.NONE;
+	/** 전적. R로 다시 시작해도 유지된다. */
+	private int tetrisWins = 0;
+	private int dodgerWins = 0;
 
-	public GamePanel(JLabel statusbar) {
+	public GamePanel() {
 		setFocusable(true);
+		setBackground(Theme.BACKGROUND);
 		timer = new Timer(FRAME_MS, this);
-		this.statusbar = statusbar;
 		tetris.setDodger(dodger);
 		input = new InputHandler(this, tetris, dodger);
 		addKeyListener(input);
+	}
+
+	public void setOnRefresh(Runnable onRefresh) {
+		this.onRefresh = onRefresh;
 	}
 
 	public void start() {
@@ -108,7 +117,7 @@ public class GamePanel extends JPanel implements ActionListener {
 		input.clear();
 	}
 
-	/** 승패를 판정하고 상태 표시줄을 갱신한 뒤 다시 그린다 */
+	/** 승패를 판정하고 다시 그린다 */
 	public void refresh() {
 		if (isStarted && result == GameRules.Result.NONE) {
 			result = GameRules.judge(tetris, dodger, playElapsed);
@@ -116,18 +125,15 @@ public class GamePanel extends JPanel implements ActionListener {
 				isStarted = false;
 				timer.stop();
 				input.clear();
+				if (result.isTetrisWin())
+					++tetrisWins;
+				else
+					++dodgerWins;
 			}
 		}
-
-		String info = " 줄 " + tetris.getLinesRemoved() + "/" + GameRules.TARGET_LINES + "  |  남은 시간 "
-				+ GameRules.remainingSeconds(playElapsed) + "초";
-		if (result != GameRules.Result.NONE)
-			statusbar.setText(" " + result.getMessage() + "  (R: 다시 시작)");
-		else if (isPaused)
-			statusbar.setText(info + "  |  일시정지");
-		else
-			statusbar.setText(info);
 		repaint();
+		if (onRefresh != null)
+			onRefresh.run();
 	}
 
 	/** 게임이 끝난 뒤 R키로 다시 시작 */
@@ -153,33 +159,65 @@ public class GamePanel extends JPanel implements ActionListener {
 		return isPaused;
 	}
 
-	private int squareWidth() {
-		return (int) getSize().getWidth() / GameBoard.WIDTH;
+	public TetrisPlayer getTetris() {
+		return tetris;
 	}
 
-	private int squareHeight() {
-		return (int) getSize().getHeight() / GameBoard.HEIGHT;
+	public Dodger getDodger() {
+		return dodger;
+	}
+
+	public int getPlayElapsed() {
+		return playElapsed;
+	}
+
+	public int getTetrisWins() {
+		return tetrisWins;
+	}
+
+	public int getDodgerWins() {
+		return dodgerWins;
+	}
+
+	/** 정사각형 한 칸 크기. 패널에 보드 전체가 들어가는 가장 큰 값. */
+	private int cellSize() {
+		return Math.max(1, Math.min(getWidth() / GameBoard.WIDTH, getHeight() / GameBoard.HEIGHT));
+	}
+
+	private int boardLeft() {
+		return (getWidth() - GameBoard.WIDTH * cellSize()) / 2;
+	}
+
+	/** 보드 맨 위 y 좌표 (정보판이 높이를 맞출 때 쓴다) */
+	public int getBoardTop() {
+		return (getHeight() - GameBoard.HEIGHT * cellSize()) / 2;
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
-		Dimension size = getSize();
-		int boardTop = (int) size.getHeight() - GameBoard.HEIGHT * squareHeight();
+		int cell = cellSize();
+		int left = boardLeft();
+		int top = getBoardTop();
+		int boardW = GameBoard.WIDTH * cell;
+		int boardH = GameBoard.HEIGHT * cell;
+
+		g.setColor(Theme.BOARD);
+		g.fillRect(left, top, boardW, boardH);
 
 		// 골 라인: 이 줄에 닿으면 똥피하기 승리
-		int goalTop = boardTop + (GameBoard.HEIGHT - GameRules.GOAL_ROW - 1) * squareHeight();
-		g.setColor(new Color(255, 230, 150));
-		g.fillRect(0, goalTop, GameBoard.WIDTH * squareWidth(), squareHeight());
-		g.setColor(new Color(220, 160, 0));
-		g.drawLine(0, goalTop + squareHeight() - 1, GameBoard.WIDTH * squareWidth(), goalTop + squareHeight() - 1);
+		int goalTop = top + (GameBoard.HEIGHT - GameRules.GOAL_ROW - 1) * cell;
+		g.setColor(Theme.GOAL_FILL);
+		g.fillRect(left, goalTop, boardW, cell);
+		g.setColor(Theme.GOAL_LINE);
+		g.drawLine(left, goalTop + cell - 1, left + boardW - 1, goalTop + cell - 1);
 
 		for (int i = 0; i < GameBoard.HEIGHT; ++i) {
 			for (int j = 0; j < GameBoard.WIDTH; ++j) {
 				Tetrominoes shape = board.shapeAt(j, GameBoard.HEIGHT - i - 1);
 				if (shape != Tetrominoes.NoShape)
-					drawSquare(g, j * squareWidth(), boardTop + i * squareHeight(), shape);
+					Theme.drawSquare(g, left + j * cell, top + i * cell, cell, cell, shape);
 			}
 		}
 
@@ -188,55 +226,54 @@ public class GamePanel extends JPanel implements ActionListener {
 			for (int i = 0; i < 4; ++i) {
 				int x = tetris.getX() + piece.x(i);
 				int y = tetris.getY() - piece.y(i);
-				drawSquare(g, x * squareWidth(), boardTop + (GameBoard.HEIGHT - y - 1) * squareHeight(),
+				Theme.drawSquare(g, left + x * cell, top + (GameBoard.HEIGHT - y - 1) * cell, cell, cell,
 						piece.getShape());
 			}
 		}
 
-		drawDodger(g, dodger.getX() * squareWidth(),
-				boardTop + (GameBoard.HEIGHT - dodger.getY() - 1) * squareHeight());
-		drawResult(g);
+		dodgerSprite.draw(g, dodger, left + dodger.getX() * cell,
+				top + (GameBoard.HEIGHT - dodger.getY() - 1) * cell, cell, cell);
+
+		g.setColor(Theme.BORDER);
+		g.drawRect(left - 1, top - 1, boardW + 1, boardH + 1);
+
+		if (result != GameRules.Result.NONE) {
+			String title = result.isTetrisWin() ? "테트리스 승리!" : "똥피하기 승리!";
+			drawOverlay(g, left, top, boardW, boardH, title, result.getMessage(), "R: 다시 시작");
+		} else if (isPaused) {
+			drawOverlay(g, left, top, boardW, boardH, "일시정지", null, "P: 계속하기");
+		}
 	}
 
-	/** 승패가 나면 화면 가운데에 결과를 띄운다 */
-	private void drawResult(Graphics g) {
-		if (result == GameRules.Result.NONE)
-			return;
-		String title = result.isTetrisWin() ? "테트리스 승리!" : "똥피하기 승리!";
-		g.setColor(new Color(0, 0, 0, 170));
-		int boxH = 60;
-		int boxY = getHeight() / 2 - boxH / 2;
-		g.fillRect(0, boxY, getWidth(), boxH);
-		g.setColor(Color.WHITE);
-		g.setFont(getFont().deriveFont(Font.BOLD, 18f));
+	/** 보드 가운데에 반투명 띠를 깔고 큰 제목과 안내 문구를 띄운다 */
+	private void drawOverlay(Graphics g, int left, int top, int boardW, int boardH, String title, String message,
+			String hint) {
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+		int boxH = message != null ? 130 : 100;
+		int boxY = top + boardH / 2 - boxH / 2;
+		g2.setColor(new Color(0, 0, 0, 180));
+		g2.fillRect(left, boxY, boardW, boxH);
+
+		int y = boxY + 46;
+		g2.setColor(Color.WHITE);
+		g2.setFont(Theme.font(Font.BOLD, 30f));
+		drawCentered(g2, title, left, boardW, y);
+		if (message != null) {
+			y += 34;
+			g2.setColor(Theme.TEXT);
+			g2.setFont(Theme.font(Font.PLAIN, 15f));
+			drawCentered(g2, message, left, boardW, y);
+		}
+		y += 30;
+		g2.setColor(Theme.SUBTEXT);
+		g2.setFont(Theme.font(Font.PLAIN, 14f));
+		drawCentered(g2, hint, left, boardW, y);
+	}
+
+	private static void drawCentered(Graphics g, String text, int left, int width, int baseline) {
 		FontMetrics fm = g.getFontMetrics();
-		g.drawString(title, (getWidth() - fm.stringWidth(title)) / 2, boxY + 26);
-		g.setFont(getFont().deriveFont(12f));
-		fm = g.getFontMetrics();
-		String sub = "R: 다시 시작";
-		g.drawString(sub, (getWidth() - fm.stringWidth(sub)) / 2, boxY + 47);
-	}
-
-	private void drawDodger(Graphics g, int x, int y) {
-		dodgerSprite.draw(g, dodger, x, y, squareWidth(), squareHeight());
-	}
-
-	private static final Color[] COLORS = { new Color(0, 0, 0), new Color(204, 102, 102), new Color(102, 204, 102),
-			new Color(102, 102, 204), new Color(204, 204, 102), new Color(204, 102, 204), new Color(102, 204, 204),
-			new Color(218, 170, 0) };
-
-	private void drawSquare(Graphics g, int x, int y, Tetrominoes shape) {
-		Color color = COLORS[shape.ordinal()];
-
-		g.setColor(color);
-		g.fillRect(x + 1, y + 1, squareWidth() - 2, squareHeight() - 2);
-
-		g.setColor(color.brighter());
-		g.drawLine(x, y + squareHeight() - 1, x, y);
-		g.drawLine(x, y, x + squareWidth() - 1, y);
-
-		g.setColor(color.darker());
-		g.drawLine(x + 1, y + squareHeight() - 1, x + squareWidth() - 1, y + squareHeight() - 1);
-		g.drawLine(x + squareWidth() - 1, y + squareHeight() - 1, x + squareWidth() - 1, y + 1);
+		g.drawString(text, left + (width - fm.stringWidth(text)) / 2, baseline);
 	}
 }
