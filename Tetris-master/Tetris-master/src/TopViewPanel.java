@@ -42,6 +42,13 @@ public final class TopViewPanel extends JPanel
             int top = 78;
             Game3DScene.Cell[][] fixed = new Game3DScene.Cell[3][3];
             Game3DScene.Cell[][] active = new Game3DScene.Cell[3][3];
+            Game3DScene.Cell[][] ghost = new Game3DScene.Cell[3][3];
+            for (Game3DScene.Cell cell : scene.ghostCells)
+            {
+                if (cell.x < 0 || cell.x >= 3 || cell.y < 0 || cell.y >= 3) continue;
+                Game3DScene.Cell previous = ghost[cell.x][cell.y];
+                if (previous == null || cell.z < previous.z) ghost[cell.x][cell.y] = cell;
+            }
             for (Game3DScene.Cell cell : scene.cells)
             {
                 if (cell.x < 0 || cell.x >= 3 || cell.y < 0 || cell.y >= 3) continue;
@@ -67,6 +74,15 @@ public final class TopViewPanel extends JPanel
                         g.setStroke(new BasicStroke(2f));
                         g.drawRect(px + inset, py + inset, markerSize, markerSize);
                     }
+                    if (ghost[x][y] != null)
+                    {
+                        int inset = Math.max(2, cellSize / 14);
+                        g.setColor(new Color(114, 233, 255));
+                        g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                                10f, new float[] {4f, 3f}, 0f));
+                        g.drawRect(px + inset, py + inset, cellSize - inset * 2, cellSize - inset * 2);
+                        g.drawString("Z=" + ghost[x][y].z, px + inset + 3, py + cellSize - inset - 3);
+                    }
                 }
             g.setColor(new Color(145, 166, 193));
             g.setStroke(new BasicStroke(1f));
@@ -83,6 +99,8 @@ public final class TopViewPanel extends JPanel
             g.setColor(new Color(220, 230, 245));
             g.drawString("Falling: bright inset + white outline", 16, top + side + 26);
             g.drawString("Fixed: full cell (highest Z)", 16, top + side + 46);
+            g.setColor(new Color(114, 233, 255));
+            g.drawString("Ghost: cyan dashed / landing Z", 16, top + side + 66);
         }
         finally { g.dispose(); }
     }

@@ -174,7 +174,24 @@ public final class Board3DRenderer extends JPanel
                 line(g, 0, 0, z, 3, 0, z); line(g, 3, 0, z, 3, 3, z);
                 line(g, 3, 3, z, 0, 3, z); line(g, 0, 3, z, 0, 0, z);
             }
-            g.drawString("Left drag: orbit   |   Wheel: zoom   |   falling: white outline", 16, 22);
+            // Draw all twelve ghost edges as an overlay, keeping the landing preview visible.
+            g.setColor(new Color(114, 233, 255, 190));
+            g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
+                    10f, new float[] {5f, 4f}, 0f));
+            for (Game3DScene.Cell cell : scene.ghostCells)
+            {
+                double x = cell.x + .07, y = cell.y + .07, z = cell.z + .07;
+                double a = cell.x + .93, b = cell.y + .93, c = cell.z + .93;
+                for (double zz : new double[] {z, c})
+                {
+                    line(g, x, y, zz, a, y, zz); line(g, a, y, zz, a, b, zz);
+                    line(g, a, b, zz, x, b, zz); line(g, x, b, zz, x, y, zz);
+                }
+                for (double xx : new double[] {x, a})
+                    for (double yy : new double[] {y, b}) line(g, xx, yy, z, xx, yy, c);
+            }
+            g.setColor(new Color(145, 166, 193));
+            g.drawString("Left drag: orbit | Wheel: zoom | Falling: white | Ghost: cyan dashed", 16, 22);
             Point2D px = project(3, 0, 0), py = project(0, 3, 0);
             g.drawString("X+ (D)", (float) px.getX() + 8, (float) px.getY() + 16);
             g.drawString("Y+ (S)", (float) py.getX() - 58, (float) py.getY() + 16);

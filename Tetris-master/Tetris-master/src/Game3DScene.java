@@ -19,9 +19,16 @@ public final class Game3DScene
     }
 
     public final List<Cell> cells;
+    public final List<Cell> ghostCells;
 
     public Game3DScene(List<Cell> cells)
     {
+        this(cells, Collections.emptyList());
+    }
+
+    public Game3DScene(List<Cell> cells, List<Cell> ghostCells)
+    {
         this.cells = Collections.unmodifiableList(new ArrayList<Cell>(cells));
+        this.ghostCells = Collections.unmodifiableList(new ArrayList<Cell>(ghostCells));
     }
 }

@@ -116,7 +116,17 @@ public class Game3D
 		return activeBlock.copy();
 	}
 
-	/** Capture fixed and falling cells together without exposing the mutable board. */
+	/** Independent landing preview preserving XY and the rotated shape. */
+	public synchronized Block3D getGhostBlock()
+	{
+		if (activeBlock == null) return null;
+		Block3D ghost = activeBlock.copy();
+		while (board.canPlace(ghost, ghost.getX(), ghost.getY(), ghost.getZ() - 1))
+			ghost.setPosition(ghost.getX(), ghost.getY(), ghost.getZ() - 1);
+		return ghost;
+	}
+
+	/** Capture fixed, falling and ghost cells without exposing the mutable board. */
 	public synchronized Game3DScene getScene()
 	{
 		java.util.List<Game3DScene.Cell> cells = new java.util.ArrayList<Game3DScene.Cell>();
@@ -128,7 +138,12 @@ public class Game3D
 		if (activeBlock != null)
 			for (Block3D.Cube cube : activeBlock.getAbsoluteCubes())
 				cells.add(new Game3DScene.Cell(cube.getX(), cube.getY(), cube.getZ(), activeBlock.getType(), true));
-		return new Game3DScene(cells);
+		java.util.List<Game3DScene.Cell> ghostCells = new java.util.ArrayList<Game3DScene.Cell>();
+		Block3D ghost = getGhostBlock();
+		if (ghost != null)
+			for (Block3D.Cube cube : ghost.getAbsoluteCubes())
+				ghostCells.add(new Game3DScene.Cell(cube.getX(), cube.getY(), cube.getZ(), ghost.getType(), false));
+		return new Game3DScene(cells, ghostCells);
 	}
 
 	/** 회전 후보가 경계와 고정 블록 검사를 통과한 경우만 반영한다. 기준점은 움직이지 않는다. */
