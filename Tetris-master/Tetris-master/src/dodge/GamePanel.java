@@ -27,6 +27,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	private final GameBoard board = new GameBoard();
 	private final TetrisPlayer tetris = new TetrisPlayer(board);
 	private final Dodger dodger = new Dodger(board, tetris);
+	private final DodgerSprite dodgerSprite = new DodgerSprite();
 	private final InputHandler input;
 	private final Timer timer;
 	private final JLabel statusbar;
@@ -217,12 +218,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	private void drawDodger(Graphics g, int x, int y) {
-		int w = squareWidth();
-		int h = squareHeight();
-		g.setColor(dodger.isCrushed() ? Color.GRAY : new Color(255, 140, 0));
-		g.fillOval(x + 1, y + 1, w - 2, h - 2);
-		g.setColor(Color.BLACK);
-		g.drawOval(x + 1, y + 1, w - 2, h - 2);
+		dodgerSprite.draw(g, dodger, x, y, squareWidth(), squareHeight());
 	}
 
 	private static final Color[] COLORS = { new Color(0, 0, 0), new Color(204, 102, 102), new Color(102, 204, 102),
