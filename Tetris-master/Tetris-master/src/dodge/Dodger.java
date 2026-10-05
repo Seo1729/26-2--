@@ -8,8 +8,12 @@ public class Dodger {
 
 	/** 점프로 올라갈 수 있는 최대 칸 수 */
 	public static final int JUMP_HEIGHT = 2;
-	/** 마지막으로 한 칸 걸은 뒤 이 시간(ms) 동안은 걷는 모습으로 그린다 */
-	private static final long WALK_POSE_MS = 150;
+	/**
+	 * 마지막으로 한 칸 걸은 뒤 이 시간(ms) 동안은 걷는 모습으로 그린다.
+	 * 키를 꾹 눌렀을 때 첫 반복까지 기다리는 시간(InputHandler.REPEAT_DELAY 170ms)보다 길어야
+	 * 그 사이에 잠깐 서 있는 모습으로 바뀌지 않는다.
+	 */
+	private static final long WALK_POSE_MS = 200;
 	/** 그리는 위치가 좌우로 1칸 미끄러지는 데 걸리는 시간(ms). 키를 꾹 눌렀을 때 반복 간격과 같게 해서 끊기지 않게 한다. */
 	private static final double SLIDE_X_MS = 90;
 	/** 그리는 위치가 위아래로 1칸 움직이는 데 걸리는 시간(ms). 점프/중력 간격과 같다. */
