@@ -10,7 +10,7 @@ import javax.swing.JPanel;
 
 /**
  * 게임을 실행하면 처음 보이는 메인화면.
- * 로고와 메뉴 버튼(일반 모드, 갤러그 협동, 조작법, 종료)을 보여 주고, 누른 버튼에 맞는 동작을 한다.
+ * 로고와 메뉴 버튼(일반 모드, 갤러그 협동, 똥피하기, 조작법, 종료)을 보여 주고, 누른 버튼에 맞는 동작을 한다.
  */
 public class MainMenuPanel extends JPanel implements ActionListener
 {
@@ -36,7 +36,11 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			+ "1 : 아이템 내게 쓰기   2 : 아이템 적에게 쓰기   3 : 아이템 지우기\n\n"
 			+ "[전투기] (갤러그 협동 모드)\n"
 			+ "A / D : 좌우 이동\n"
-			+ "W (누르고 있기) : 연사";
+			+ "W (누르고 있기) : 연사\n\n"
+			+ "[똥피하기 모드]\n"
+			+ "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n"
+			+ "P2 피하는 사람 : ← / → 이동, ↑ 점프\n"
+			+ "P : 일시정지   R : 끝난 뒤 다시 시작";
 
 	/** 메뉴에서 고른 게임을 시작해 줄 게임 창 */
 	private final GameFrame frame;
@@ -46,6 +50,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 	/** 갤러그 협동 모드를 시작하는 버튼 */
 	private final JButton galagaButton;
+
+	/** 똥피하기 모드를 시작하는 버튼 */
+	private final JButton dodgeButton;
 
 	/** 조작 키 안내를 보여 주는 버튼 */
 	private final JButton controlsButton;
@@ -74,8 +81,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		// 로고 아래에 메뉴 버튼을 위에서부터 순서대로 놓는다
 		normalButton = makeButton("일반 모드", 0);
 		galagaButton = makeButton("갤러그 협동", 1);
-		controlsButton = makeButton("조작법", 2);
-		exitButton = makeButton("종료", 3);
+		dodgeButton = makeButton("똥피하기", 2);
+		controlsButton = makeButton("조작법", 3);
+		exitButton = makeButton("종료", 4);
 	}
 
 	/**
@@ -113,6 +121,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			frame.startGame(1);
 		else if (e.getSource() == galagaButton)
 			frame.startGame(3);
+		// 똥피하기는 화면 크기가 달라서 게임 창이 별도 메서드로 화면을 바꾼다
+		else if (e.getSource() == dodgeButton)
+			frame.startDodge();
 		// 조작법은 메인화면 위에 안내 창으로 보여 준다
 		else if (e.getSource() == controlsButton)
 			JOptionPane.showMessageDialog(this, CONTROLS_TEXT, "조작법", JOptionPane.INFORMATION_MESSAGE);
