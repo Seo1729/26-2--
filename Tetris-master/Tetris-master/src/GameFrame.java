@@ -111,6 +111,19 @@ public class GameFrame extends JFrame
 		dodgeMode.start();
 	}
 
+	/**
+	 * 메인화면에서 3D 테트리스를 시작한다. 3D 테트리스는 자체 창을 쓰므로, 그 창을 먼저 띄운 뒤
+	 * 이 메인 창은 닫는다. 3D 창을 닫으면 프로그램이 끝난다.
+	 */
+	public void start3D()
+	{
+		// 3D 창을 먼저 띄워야 열린 창이 없어지는 순간이 생기지 않는다
+		new Game3DFrame().setVisible(true);
+
+		// 메인 창은 더 쓰지 않으므로 닫는다
+		dispose();
+	}
+
 	public void remakePanel()
 	{
 		fgp.highestScore.setBounds(255, 200, 205, 30);
