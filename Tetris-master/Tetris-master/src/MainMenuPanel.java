@@ -10,7 +10,8 @@ import javax.swing.JPanel;
 
 /**
  * 게임을 실행하면 처음 보이는 메인화면.
- * 로고와 메뉴 버튼(일반 모드, 갤러그 협동, 똥피하기, 조작법, 종료)을 보여 주고, 누른 버튼에 맞는 동작을 한다.
+ * 로고와 메뉴 버튼(일반 모드, 갤러그 협동, 똥피하기, 3D 테트리스, 조작법, 종료)을 보여 주고,
+ * 누른 버튼에 맞는 동작을 한다.
  */
 public class MainMenuPanel extends JPanel implements ActionListener
 {
@@ -21,10 +22,10 @@ public class MainMenuPanel extends JPanel implements ActionListener
 	private static final int BUTTON_HEIGHT = 44;
 
 	/** 첫 번째 버튼의 y좌표(픽셀). 로고 바로 아래에 둔다. */
-	private static final int FIRST_BUTTON_Y = 290;
+	private static final int FIRST_BUTTON_Y = 260;
 
-	/** 버튼 사이의 세로 간격(위쪽 끝 기준, 픽셀) */
-	private static final int BUTTON_GAP = 56;
+	/** 버튼 사이의 세로 간격(위쪽 끝 기준, 픽셀). 버튼 6개가 창 높이 안에 들어가는 값이다. */
+	private static final int BUTTON_GAP = 52;
 
 	/** 조작법 버튼을 누르면 보여 줄 키 안내 문구 */
 	private static final String CONTROLS_TEXT =
@@ -40,7 +41,12 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			+ "[똥피하기 모드]\n"
 			+ "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n"
 			+ "P2 피하는 사람 : ← / → 이동, ↑ 점프\n"
-			+ "P : 일시정지   R : 끝난 뒤 다시 시작";
+			+ "P : 일시정지   R : 끝난 뒤 다시 시작\n\n"
+			+ "[3D 테트리스]\n"
+			+ "W / A / S / D : 블록 이동\n"
+			+ "J / K / L : X / Y / Z축 회전\n"
+			+ "Space : 바로 떨어뜨리기   R : 다시 시작\n"
+			+ "마우스 : 시점 조작";
 
 	/** 메뉴에서 고른 게임을 시작해 줄 게임 창 */
 	private final GameFrame frame;
@@ -53,6 +59,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 	/** 똥피하기 모드를 시작하는 버튼 */
 	private final JButton dodgeButton;
+
+	/** 3D 테트리스를 시작하는 버튼 */
+	private final JButton threeDButton;
 
 	/** 조작 키 안내를 보여 주는 버튼 */
 	private final JButton controlsButton;
@@ -82,8 +91,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		normalButton = makeButton("일반 모드", 0);
 		galagaButton = makeButton("갤러그 협동", 1);
 		dodgeButton = makeButton("똥피하기", 2);
-		controlsButton = makeButton("조작법", 3);
-		exitButton = makeButton("종료", 4);
+		threeDButton = makeButton("3D 테트리스", 3);
+		controlsButton = makeButton("조작법", 4);
+		exitButton = makeButton("종료", 5);
 	}
 
 	/**
@@ -124,6 +134,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		// 똥피하기는 화면 크기가 달라서 게임 창이 별도 메서드로 화면을 바꾼다
 		else if (e.getSource() == dodgeButton)
 			frame.startDodge();
+		// 3D 테트리스는 자체 창을 쓰므로 게임 창이 그 창을 따로 띄운다
+		else if (e.getSource() == threeDButton)
+			frame.start3D();
 		// 조작법은 메인화면 위에 안내 창으로 보여 준다
 		else if (e.getSource() == controlsButton)
 			JOptionPane.showMessageDialog(this, CONTROLS_TEXT, "조작법", JOptionPane.INFORMATION_MESSAGE);
