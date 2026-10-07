@@ -150,7 +150,6 @@ public class GameFrame extends JFrame
 						// 내게 쓰기
 						((GamePanel) gp).ogp = fgp;
 
-						JLabel labelNum = ((GamePanel) gp).itemLabel.get(0);
 //						if (labelNum.getName().equals("6"))
 //							((GamePanel) gp).ogp = sgp;
 
@@ -186,8 +185,10 @@ public class GameFrame extends JFrame
 
 	public static void main(String[] args)
 	{
-		new ImageSource();
-		new GameFrame();
+		SwingUtilities.invokeLater(() -> {
+			new ImageSource();
+			new GameFrame();
+		});
 	}
 }
 
@@ -877,6 +878,7 @@ class GamePanel extends JPanel implements Runnable
 
 	public void useItem()
 	{
+		if (itemLabel.isEmpty() || ogp == null) return;
 		String numStr = itemLabel.get(0).getName();
 
 		switch (numStr)
@@ -917,42 +919,7 @@ class GamePanel extends JPanel implements Runnable
 
 	public void attackItem()
 	{
-		String numStr = itemLabel.get(0).getName();
-		// System.out.println("공격공격");
-		switch (numStr)
-		{
-		case "0":
-			uItem.blackout();
-			break;
-		case "1":
-			uItem.fast();
-			break;
-		case "2":
-			uItem.oneLineUp();
-			break;
-		case "3":
-			uItem.threeLineUp();
-			break;
-		case "4":
-			uItem.zigzag();
-			break;
-		case "5":
-			uItem.bomb();
-			break;
-		case "6":
-			uItem.change();
-			break;
-		case "7":
-			uItem.oneLineDown();
-			break;
-		case "8":
-			uItem.threeLineDown();
-			break;
-		case "9":
-			uItem.slow();
-			break;
-		}
-		deleteItem();
+		useItem();
 	}
 
 	public void deleteItem()
@@ -1125,6 +1092,9 @@ class GamePanel extends JPanel implements Runnable
 
 	public void move_turn()
 	{
+		// Validate the rotated rectangle before indexing either board array.
+		if (x < 1 || y < 0 || x + blockHSize > array[0].length - 1
+				|| y + blockWSize > array.length - 1) return;
 		int[][] turn = new int[blockWSize][blockHSize];
 		for (int i = 0; i < blockWSize; i++)
 			for (int j = 0; j < blockHSize; j++)
@@ -1427,6 +1397,7 @@ class GamePanel extends JPanel implements Runnable
 
 		public void fast()
 		{
+			if (ogp.gameSpeed <= 200) return;
 			ogp.gameSpeed -= 200;
 			coolDown(ImageSource.item_fast);
 		}
@@ -1540,16 +1511,10 @@ class GamePanel extends JPanel implements Runnable
 			}
 
 			// 쿨타임 후 원래 스피드로 복구
-			String iconName = icon.toString().substring(14);
-			switch (iconName)
-			{
-			case "fast.png":
+			if (icon == ImageSource.item_fast)
 				ogp.gameSpeed += 200;
-				break;
-			case "slow.png":
+			else if (icon == ImageSource.item_slow)
 				ogp.gameSpeed -= 200;
-				break;
-			}
 
 			ogp.item_using.removeAll();
 			ogp.usingItemLabel.remove(this);
