@@ -8,9 +8,11 @@ import javax.swing.*;
  */
 public class GameFrame extends JFrame
 {
+	/** 일반 모드와 갤러그 협동 모드에서 쓰는 테트리스 게임 화면 */
 	GamePanel fgp;
+
+	/** 지금 게임 모드(1: 일반, 3: 갤러그 협동). 게임 화면이 모드에 따라 다르게 동작할 때 쓴다. */
 	static int gameMode = 1;
-	static JFrame jf;
 
 	/** 똥피하기 모드의 창 가로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
 	private static final int DODGE_WIDTH = 1100;
@@ -30,7 +32,6 @@ public class GameFrame extends JFrame
 		setSize(360, 640);
 		setResizable(false);
 
-		jf = this;
 		Container c = this.getContentPane();
 
 		c.setBackground(new Color(30, 160, 255));
@@ -65,7 +66,7 @@ public class GameFrame extends JFrame
 				fgp = new GamePanel();
 				fgp.setBounds(0, 0, 360, 640);
 				add(fgp);
-				MyKey1(fgp);
+				addTetrisKeyListener(fgp);
 				break;
 		}
 
@@ -123,73 +124,71 @@ public class GameFrame extends JFrame
 		dispose();
 	}
 
-	public void remakePanel()
-	{
-		fgp.highestScore.setBounds(255, 200, 205, 30);
-		fgp.time.setBounds(255, 240, 205, 30);
-	}
-
-	public void MyKey1(JPanel gp)
+	/**
+	 * 일반 테트리스 조작 키를 창에 등록한다. 카운트다운이 끝나고 게임이 진행 중일 때만 키를 받는다.
+	 * 키 배치는 FirstPlayerKeySetting에 있다(↓, ←, →, 1, 2, 3, Space, ↑).
+	 *
+	 * @param gp 키 입력을 받을 테트리스 게임 화면
+	 */
+	public void addTetrisKeyListener(GamePanel gp)
 	{
 		this.setFocusable(true);
 		this.addKeyListener(new KeyAdapter()
 		{
 			public void keyPressed(KeyEvent e)
 			{
-				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
+				// 카운트다운 중이거나 게임이 끝났으면 무시한다
+				if (!gp.gameRunning || !gp.started)
 				{
-//					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
-					if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[0])
-					{
-						((GamePanel) gp).move_down();
-						((GamePanel) gp).checkArray();
-						((GamePanel) gp).drawTetris();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[1])
-					{
-						((GamePanel) gp).move_left();
-						((GamePanel) gp).checkArray();
-						((GamePanel) gp).drawTetris();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[2])
-					{
-						((GamePanel) gp).move_right();
-						((GamePanel) gp).checkArray();
-						((GamePanel) gp).drawTetris();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[3])
-					{
-						// 내게 쓰기
-						((GamePanel) gp).ogp = fgp;
+					return;
+				}
 
-//						if (labelNum.getName().equals("6"))
-//							((GamePanel) gp).ogp = sgp;
+				int key = e.getKeyCode();
 
-						((GamePanel) gp).useItem();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[4])
-					{
-						// 적에게 쓰기
-//						((GamePanel) gp).ogp = sgp;
-						((GamePanel) gp).attackItem();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[5])
-					{
-						// 아이템 지우기
-						((GamePanel) gp).deleteItem();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[6])
-					{
-						((GamePanel) gp).move_drop();
-						((GamePanel) gp).checkArray();
-						((GamePanel) gp).drawTetris();
-					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[7])
-					{
-						((GamePanel) gp).move_turn();
-						((GamePanel) gp).checkArray();
-						((GamePanel) gp).drawTetris();
-					}
+				// 블록을 움직인 키는 벽을 바로잡고 화면을 다시 그린다
+				if (key == FirstPlayerKeySetting.FKeyType[0])
+				{
+					gp.moveDown();
+					gp.resetWalls();
+					gp.drawBoard();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[1])
+				{
+					gp.moveLeft();
+					gp.resetWalls();
+					gp.drawBoard();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[2])
+				{
+					gp.moveRight();
+					gp.resetWalls();
+					gp.drawBoard();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[3])
+				{
+					// 1인 모드에서는 내게 쓰기만 있으므로 대상을 자기 화면으로 정한다
+					gp.targetPanel = fgp;
+					gp.useItem();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[4])
+				{
+					gp.attackItem();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[5])
+				{
+					gp.removeFirstItem();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[6])
+				{
+					gp.hardDrop();
+					gp.resetWalls();
+					gp.drawBoard();
+				}
+				else if (key == FirstPlayerKeySetting.FKeyType[7])
+				{
+					gp.rotate();
+					gp.resetWalls();
+					gp.drawBoard();
 				}
 			}
 		});

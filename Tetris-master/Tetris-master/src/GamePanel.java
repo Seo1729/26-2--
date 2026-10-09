@@ -1,65 +1,144 @@
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.util.Vector;
 
-import javax.swing.*;
-import javax.swing.border.AbstractBorder;
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 
 /**
- * 일반 테트리스(원본) 게임 화면. 보드, 블록 이동, 줄 삭제, 아이템, 점수, 낙하 스레드를 담당한다.
- * (원래 GameFrame.java 안에 있던 클래스를 파일로 분리했다)
+ * 일반 테트리스(원본) 게임 화면.
+ * 화면 구성, 블록 이동과 회전, 줄 삭제, 아이템, 점수, 블록 낙하 스레드를 담당한다.
  */
 class GamePanel extends JPanel implements Runnable
 {
+	// ======================== 화면 구성 요소 ========================
+
+	/** 블록이 그려지는 테트리스 영역(20줄 x 10칸) */
 	JPanel tetrisArea = new JPanel();
-	JLabel nextBlock = new JLabel();
-	JLabel score = new JLabel();
-	JLabel highestScore = new JLabel();
-	JPanel item = new JPanel();
-	JPanel item_using = new JPanel();
-	JLabel time = new JLabel();
-	AbstractBorder WhiteLineBorder;
 
-	JLabel[][] fieldLabel = new JLabel[20][10];
+	/** 테트리스 영역의 칸 하나하나를 그리는 라벨 */
+	JLabel[][] cellLabel = new JLabel[20][10];
 
-	Thread th;
-	TimeThread timeTh;
+	/** 다음 블록 미리보기 */
+	JLabel nextBlockLabel = new JLabel();
+
+	/** 현재 점수 */
+	JLabel scoreLabel = new JLabel();
+
+	/** 최고 점수 */
+	JLabel highScoreLabel = new JLabel();
+
+	/** 경과 시간 */
+	JLabel timeLabel = new JLabel();
+
+	/** 가지고 있는 아이템을 보여 주는 칸(테트리스 영역 아래) */
+	JPanel itemPanel = new JPanel();
+
+	/** 사용 중인 아이템의 쿨타임을 보여 주는 칸(테트리스 영역 위) */
+	JPanel usingItemPanel = new JPanel();
+
+	/** 카운트다운, 게임 결과, 블랙아웃 때 테트리스 영역을 덮는 검은 패널 */
+	JPanel coverPanel = new JPanel();
+
+	/** 덮개 패널 위에 쓰는 글자(3, 2, 1, START!!, FAIL 등) */
+	JLabel messageLabel = new JLabel();
+
+	// ======================== 보드 데이터 ========================
+
+	/** 지금 떨어지고 있는 블록과 벽이 들어 있는 배열(21줄 x 12칸) */
+	int[][] blockArray = new int[BoardValue.ROWS][BoardValue.COLS];
+
+	/** 바닥에 고정된 블록, 아이템 블록, 방해 블록이 들어 있는 배열(21줄 x 12칸) */
+	int[][] fieldArray = new int[BoardValue.ROWS][BoardValue.COLS];
+
+	/** 지금 떨어지고 있는 블록의 모양 */
+	int[][] currentBlock;
+
+	/** 지금 떨어지고 있는 블록의 종류(1~7: I, J, L, O, S, T, Z) */
+	int blockType;
+
+	/** 다음에 나올 블록의 종류 */
+	int nextBlockType = (int) (Math.random() * 7 + 1);
+
+	/** 블록의 왼쪽 위 칸의 열 위치 */
+	int blockX;
+
+	/** 블록의 왼쪽 위 칸의 행 위치 */
+	int blockY;
+
+	/** 블록의 가로 칸 수 */
+	int blockWidth;
+
+	/** 블록의 세로 칸 수 */
+	int blockHeight;
+
+	// ======================== 아이템 ========================
+
+	/** 가지고 있는 아이템 아이콘 목록(최대 7개). 맨 앞의 것부터 쓴다. */
+	Vector<JLabel> itemList = new Vector<JLabel>();
+
+	/** 사용 중인 아이템의 쿨타임 아이콘 목록 */
+	Vector<CoolTimeLabel> coolTimeList = new Vector<CoolTimeLabel>();
+
+	/** 아이템 효과를 실행해 주는 객체 */
+	ItemEffect itemEffect = new ItemEffect(this);
+
+	/** 아이템 효과를 받을 게임 화면. 1인 모드에서는 자기 자신이다. */
+	GamePanel targetPanel;
+
+	// ======================== 게임 진행 ========================
+
+	/** 블록을 일정 간격으로 떨어뜨리는 스레드. 블록이 새로 나올 때마다 새로 만든다. */
+	Thread dropThread;
+
+	/** 경과 시간을 재는 스레드 */
+	TimeThread timeThread;
+
+	/** 블록이 한 칸 떨어지는 간격(밀리초). 작을수록 빠르다. */
 	int gameSpeed = 1000;
-	int speedCount = 0;
-	int preSpeed;
 
-	JLabel tube;
-	JLabel ground;
-	JLabel textLabel = new JLabel();
-	JPanel blackPanel = new JPanel();
-	boolean Gaming = false;
+	/** 게임이 진행 중인지 여부. 게임오버가 되면 false가 된다. */
+	boolean gameRunning = true;
 
-	GamePanel ogp; // OtherGamePanel
+	/** 시작 카운트다운이 끝났는지 여부. 끝나기 전에는 키 입력을 받지 않는다. */
+	boolean started = false;
 
+	/**
+	 * 게임 화면을 만들고 첫 블록을 내보낸 뒤 3초 카운트다운을 시작한다.
+	 */
 	GamePanel()
 	{
 		setLayout(null);
 
-		makeComponent(0);
-		makeTetrisArea(0);
+		makeComponents();
+		makeTetrisArea();
 		makeBackground();
 
-		setArray(); // 데이터 배열 테두리 초기화
+		resetWalls();
+		addNewBlock();
 
-		addBlock(); // 블럭추가
-
-		Thread textTh = new Thread()
+		// 3, 2, 1, START!! 를 1초 간격으로 보여 준 뒤 게임을 시작한다
+		Thread countdownThread = new Thread()
 		{
 			public void run()
 			{
-				int textCount = 3;
+				int count = 3;
 
-				while (textCount > -1)
+				while (count > -1)
 				{
-					if (textCount > 0)
-						textLabel.setText(Integer.toString(textCount));
+					if (count > 0)
+					{
+						messageLabel.setText(Integer.toString(count));
+					}
 					else
-						textLabel.setText("START!!");
+					{
+						messageLabel.setText("START!!");
+					}
+
 					try
 					{
 						sleep(1000);
@@ -68,234 +147,231 @@ class GamePanel extends JPanel implements Runnable
 					{
 						e.printStackTrace();
 					}
-					blackPanel.repaint();
-					textCount--;
+					coverPanel.repaint();
+					count--;
 				}
-				tetrisArea.setVisible(true);
-				blackPanel.setVisible(false);
 
-				synchronized (timeTh)
+				// 덮개를 치우고 테트리스 영역을 보여 준다
+				tetrisArea.setVisible(true);
+				coverPanel.setVisible(false);
+
+				// 기다리고 있던 시간 스레드와 낙하 스레드를 깨운다
+				synchronized (timeThread)
 				{
-					timeTh.notify();
+					timeThread.notify();
 				}
-				synchronized (th)
+				synchronized (dropThread)
 				{
-					th.notify();
+					dropThread.notify();
 				}
-				Gaming = true;
-				// repaint();
+				started = true;
 			}
 		};
-		textTh.start();
+		countdownThread.start();
 	}
 
-	GamePanel(GamePanel ogp)
-	{
-		this();
-		this.ogp = ogp;
-	}
+	// ======================== 화면 만들기 ========================
 
+	/**
+	 * 배경(하늘색, 카카오 튜브 그림, 아래쪽 땅 그림)을 만든다.
+	 */
 	public void makeBackground()
 	{
 		setOpaque(false);
 		setBackground(new Color(30, 160, 255));
 
-		tube = new JLabel(ImageSource.kakao_tube);
-		int tubeWidth = ImageSource.kakao_tube.getIconWidth();
-		int tubeHeight = ImageSource.kakao_tube.getIconHeight();
-		tube.setBounds(240, 360, tubeWidth, tubeHeight);
+		JLabel tube = new JLabel(ImageSource.kakao_tube);
+		tube.setBounds(240, 360, ImageSource.kakao_tube.getIconWidth(), ImageSource.kakao_tube.getIconHeight());
 		add(tube);
 
-		ground = new JLabel(ImageSource.bg_ground);
-		int groundWidth = ImageSource.bg_ground.getIconWidth();
+		// 땅 그림은 화면 맨 아래에 붙인다
+		JLabel ground = new JLabel(ImageSource.bg_ground);
 		int groundHeight = ImageSource.bg_ground.getIconHeight();
-		ground.setBounds(0, 640 - groundHeight, groundWidth, groundHeight);
+		ground.setBounds(0, 640 - groundHeight, ImageSource.bg_ground.getIconWidth(), groundHeight);
 		add(ground);
 	}
 
-	public void makeComponent(int n)
+	/**
+	 * 테트리스 영역, 덮개, 정보 칸(다음 블록, 점수, 최고 점수, 시간), 아이템 칸을 만들고 시간 스레드를 시작한다.
+	 */
+	public void makeComponents()
 	{
-		WhiteLineBorder = new LineBorder(Color.WHITE);
+		LineBorder whiteBorder = new LineBorder(Color.WHITE);
 
+		// 테트리스 영역은 카운트다운이 끝날 때까지 덮개로 가려 둔다
 		tetrisArea = new JPanel();
 		tetrisArea.setBounds(10, 60, 240, 480);
 		tetrisArea.setBackground(Color.BLACK);
-		blackPanel.setBounds(10, 60, 240, 480);
-		blackPanel.setBackground(Color.BLACK);
-		add(blackPanel);
+		coverPanel.setBounds(10, 60, 240, 480);
+		coverPanel.setBackground(Color.BLACK);
+		add(coverPanel);
 		add(tetrisArea);
 		tetrisArea.setVisible(false);
 
-		nextBlock = new JLabel(ImageSource.block_L);
-		nextBlock.setFont(new Font("verdana", 0, 12));
-		nextBlock.setForeground(Color.WHITE);
-		nextBlock.setBackground(Color.BLACK);
-		nextBlock.setOpaque(true);
-		nextBlock.setBorder(WhiteLineBorder);
-		nextBlock.setBounds(255, 60, 90, 90);
-		add(nextBlock);
+		// 다음 블록 미리보기
+		nextBlockLabel = new JLabel(ImageSource.block_L);
+		nextBlockLabel.setFont(new Font("verdana", Font.PLAIN, 12));
+		nextBlockLabel.setForeground(Color.WHITE);
+		nextBlockLabel.setBackground(Color.BLACK);
+		nextBlockLabel.setOpaque(true);
+		nextBlockLabel.setBorder(whiteBorder);
+		nextBlockLabel.setBounds(255, 60, 90, 90);
+		add(nextBlockLabel);
 
-		score = new JLabel("0", SwingConstants.RIGHT);
-		score.setText("0");
-		score.setFont(new Font("verdana", 0, 20));
-		score.setForeground(Color.WHITE);
-		score.setBackground(Color.BLACK);
-		score.setOpaque(true);
-		score.setBorder(WhiteLineBorder);
-		score.setBounds(255, 160, 90, 30);
-		add(score);
+		// 점수, 최고 점수, 시간 칸은 모양이 같아서 같은 메서드로 만든다
+		scoreLabel = makeInfoLabel("0", SwingConstants.RIGHT, 20, 160, whiteBorder);
+		highScoreLabel = makeInfoLabel("999999", SwingConstants.RIGHT, 20, 200, whiteBorder);
+		timeLabel = makeInfoLabel("time", SwingConstants.CENTER, 12, 240, whiteBorder);
 
-		highestScore = new JLabel("0", SwingConstants.RIGHT);
-		highestScore.setText("999999");
-		highestScore.setFont(new Font("verdana", 0, 20));
-		highestScore.setForeground(Color.WHITE);
-		highestScore.setBackground(Color.BLACK);
-		highestScore.setOpaque(true);
-		highestScore.setBorder(WhiteLineBorder);
-		highestScore.setBounds(255, 200, 90, 30);
-		add(highestScore);
+		// 시간 스레드는 카운트다운이 끝날 때까지 기다리다가 시작한다
+		timeThread = new TimeThread(this);
+		timeThread.start();
 
-		time = new JLabel("", SwingConstants.CENTER);
-		time.setText("time");
-		time.setFont(new Font("verdana", 0, 12));
-		time.setForeground(Color.WHITE);
-		time.setBackground(Color.BLACK);
-		time.setOpaque(true);
-		time.setBorder(WhiteLineBorder);
-		time.setBounds(255, 240, 90, 30);
-		add(time);
-		timeTh = new TimeThread(this, n);
-		timeTh.start();
+		// 사용 중인 아이템 칸(위)과 가지고 있는 아이템 칸(아래)
+		usingItemPanel = new JPanel(null);
+		usingItemPanel.setBackground(Color.BLACK);
+		usingItemPanel.setBorder(whiteBorder);
+		usingItemPanel.setBounds(10, 25, 240, 30);
+		add(usingItemPanel);
 
-		item_using = new JPanel(null);
-		item_using.setBackground(Color.BLACK);
-		item_using.setBorder(WhiteLineBorder);
-		item_using.setBounds(10, 25, 240, 30);
-		add(item_using);
+		itemPanel = new JPanel(null);
+		itemPanel.setBackground(Color.BLACK);
+		itemPanel.setBorder(whiteBorder);
+		itemPanel.setBounds(10, 545, 240, 30);
+		add(itemPanel);
 
-		item = new JPanel(null);
-		item.setBackground(Color.BLACK);
-		item.setBorder(WhiteLineBorder);
-		item.setBounds(10, 545, 240, 30);
-		add(item);
-
-		blackPanel.setLayout(null);
-		blackPanel.add(textLabel);
-		textLabel.setBounds(20, 50, 200, 50);
-		textLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		textLabel.setFont(new Font("Verdana", 1, 30));
-		textLabel.setOpaque(true);
-		textLabel.setBackground(new Color(255, 255, 255, 0));
-		textLabel.setForeground(new Color(-1));
-		textLabel.setBorder(null);
-
+		// 덮개 위의 글자는 가운데 정렬된 큰 흰 글씨로 쓴다
+		coverPanel.setLayout(null);
+		coverPanel.add(messageLabel);
+		messageLabel.setBounds(20, 50, 200, 50);
+		messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		messageLabel.setFont(new Font("Verdana", Font.BOLD, 30));
+		messageLabel.setOpaque(true);
+		messageLabel.setBackground(new Color(255, 255, 255, 0));
+		messageLabel.setForeground(Color.WHITE);
+		messageLabel.setBorder(null);
 	}
 
-	public void makeTetrisArea(int n)
+	/**
+	 * 오른쪽 정보 칸(검은 바탕, 흰 글씨, 흰 테두리, 90x30) 하나를 만들어 화면에 붙인다.
+	 *
+	 * @param text      처음에 보여 줄 글자
+	 * @param align     글자 정렬(SwingConstants.RIGHT 등)
+	 * @param fontSize  글자 크기
+	 * @param y         칸의 y좌표
+	 * @param border    테두리
+	 * @return 만들어진 정보 칸
+	 */
+	private JLabel makeInfoLabel(String text, int align, int fontSize, int y, LineBorder border)
+	{
+		JLabel label = new JLabel(text, align);
+		label.setFont(new Font("verdana", Font.PLAIN, fontSize));
+		label.setForeground(Color.WHITE);
+		label.setBackground(Color.BLACK);
+		label.setOpaque(true);
+		label.setBorder(border);
+		label.setBounds(255, y, 90, 30);
+		add(label);
+		return label;
+	}
+
+	/**
+	 * 테트리스 영역을 20줄 x 10칸의 라벨로 채운다.
+	 */
+	public void makeTetrisArea()
 	{
 		tetrisArea.setLayout(new GridLayout(20, 10));
 
+		// 칸마다 검은 바탕에 아주 어두운 회색 테두리를 둔다
 		for (int i = 0; i < 20; i++)
 		{
 			for (int j = 0; j < 10; j++)
 			{
-				fieldLabel[i][j] = new JLabel();
-				tetrisArea.add(fieldLabel[i][j]);
-				fieldLabel[i][j].setBackground(Color.BLACK);
-				fieldLabel[i][j].setOpaque(true);
-
-				WhiteLineBorder = new LineBorder(new Color(15, 15, 15));
-				fieldLabel[i][j].setBorder(WhiteLineBorder);
+				cellLabel[i][j] = new JLabel();
+				tetrisArea.add(cellLabel[i][j]);
+				cellLabel[i][j].setBackground(Color.BLACK);
+				cellLabel[i][j].setOpaque(true);
+				cellLabel[i][j].setBorder(new LineBorder(new Color(15, 15, 15)));
 			}
 		}
 	}
 
-	/******************** 테트리스 영역 메소드 ********************/
+	// ======================== 블록 만들기 ========================
 
-	/****************************************
-	 * 표시 레이블, 데이터 배열, 배열 복사본, 아이템 객체
-	 ****************************************/
-	int[][] array = new int[21][12];
-	int[][] field = new int[21][12];
-	int[][] copy;
-
-	Vector<JLabel> itemLabel = new Vector<JLabel>();
-	Vector<UsingItemLabel> usingItemLabel = new Vector<UsingItemLabel>();
-
-	UseItem uItem = new UseItem();
-
-	/******************** 테트리스 동작 그리기 ********************/
-
-	int preBlock = (int) (Math.random() * 7 + 1);
-
-	int[][] block;
-	int x; // 블럭 가로 위치 (점 0,0)
-	int y; // 블럭 세로 위치 (점 0,0)
-	int blockNum;
-	int blockWSize; // 블럭의 너비, 용도 : 목표 범위 초과하여 데이터 손실 막기
-	int blockHSize; // 블럭의 높이, 용도 : 목표 범위 초과하여 데이터 손실 막기
-	boolean gameRun = true;
-
-	public void setArray()
+	/**
+	 * 블록 배열의 양옆과 바닥에 벽을 다시 그린다.
+	 * 블록을 움직일 때 배열 전체를 한 칸씩 옮기기 때문에 벽도 같이 밀리므로, 움직인 뒤에 불러서 바로잡는다.
+	 */
+	public void resetWalls()
 	{
-		/****************************************
-		 * 안내 : 데이터 배열내에 테두리를 표현 단순 테두리 표현으로 실제 데이터에 영향을 안줌. 출력시에만 영향을 주므로 실제 초기
-		 * 테두리 데이터는 0임.
-		 ****************************************/
-		for (int row = 0; row < array.length - 1; row++)
-			for (int col = 1; col < array[0].length - 1; col++)
-				if (array[row][col] == 9)
-					array[row][col] = 0;
-
-		for (int row = 0; row < array.length; row++)
+		// 안쪽에 밀려 들어온 벽 값을 지운다
+		for (int row = 0; row < blockArray.length - 1; row++)
 		{
-			array[row][0] = 9;
-			array[row][array[0].length - 1] = 9;
+			for (int col = 1; col < blockArray[0].length - 1; col++)
+			{
+				if (blockArray[row][col] == BoardValue.WALL)
+				{
+					blockArray[row][col] = BoardValue.EMPTY;
+				}
+			}
 		}
 
-		for (int col = 0; col < array[0].length; col++)
-			array[array.length - 1][col] = 9;
+		// 양옆 벽
+		for (int row = 0; row < blockArray.length; row++)
+		{
+			blockArray[row][0] = BoardValue.WALL;
+			blockArray[row][blockArray[0].length - 1] = BoardValue.WALL;
+		}
+
+		// 바닥 벽
+		for (int col = 0; col < blockArray[0].length; col++)
+		{
+			blockArray[blockArray.length - 1][col] = BoardValue.WALL;
+		}
 	}
 
-	public void addBlock()
+	/**
+	 * 새 블록을 맨 위에 내보내고 낙하 스레드를 새로 시작한다.
+	 * 새 블록이 나올 자리가 이미 막혀 있으면 게임오버다.
+	 */
+	public void addNewBlock()
 	{
-		int[][] block;
-		int start_x;
-		int start_y;
-		int blockNum;
+		Blocks newBlock = new Blocks();
+		pickNextBlock(newBlock);
 
-		Blocks b = new Blocks();
-		nextBlock(b);
+		currentBlock = newBlock.getBlock();
+		blockType = newBlock.getBlockNum();
+		blockX = newBlock.getStart_x();
+		blockY = newBlock.getStart_y();
+		blockWidth = currentBlock[0].length;
+		blockHeight = currentBlock.length;
 
-		block = b.getBlock();
-		blockNum = b.getBlockNum();
-		block = b.getBlock();
-		start_x = b.getStart_x();
-		start_y = b.getStart_y();
-		// System.out.println(start_x + "  " + start_y);
+		// 블록 모양을 블록 배열의 시작 위치에 옮겨 적는다
+		for (int row = 0, h = blockY; row < blockHeight - blockY; row++, h++)
+		{
+			for (int col = blockX, w = 0; col < blockWidth + blockX; col++, w++)
+			{
+				if (currentBlock[h][w] > 0)
+				{
+					blockArray[row][col] = currentBlock[h][w];
+				}
+			}
+		}
 
-		this.block = block;
-		this.blockNum = blockNum;
-		x = start_x;
-		y = start_y;
-		blockWSize = block[0].length;
-		blockHSize = block.length;
+		// 새 블록이 고정 블록과 겹치는 칸을 센다
+		int overlap = 0;
+		for (int row = blockY; row < blockY + blockHeight; row++)
+		{
+			for (int col = blockX; col < blockX + blockWidth; col++)
+			{
+				if (blockArray[row][col] > 0 && fieldArray[row][col] > 0)
+				{
+					overlap++;
+				}
+			}
+		}
 
-		/****************************************
-		 * start_y 의 존재 : 시작위치 0값을 받아옴
-		 ****************************************/
-
-		for (int row = 0, h = 0 + start_y; row < blockHSize - start_y; row++, h++)
-			for (int col = start_x, w = 0; col < blockWSize + start_x; col++, w++)
-				if (block[h][w] > 0)
-					array[row][col] = block[h][w];
-
-		int count = 0;
-		for (int row = y; row < y + blockHSize; row++)
-			for (int col = x; col < x + blockWSize; col++)
-				if (array[row][col] > 0 && field[row][col] > 0)
-					count++;
-		if (count > 0)
+		if (overlap > 0)
 		{
 			// 갤러그 협동 모드는 창을 바로 닫지 않고 두 사람의 패배 결과를 보여 준다
 			if (GameFrame.gameMode == 3)
@@ -304,367 +380,369 @@ class GamePanel extends JPanel implements Runnable
 				return;
 			}
 
-			gameRun = false;
-			th.interrupt();
-			timeTh.interrupt();
-			// th = null;
-			// timeTh = null;
-			// System.gc();
-			// drawEndTetris();
-			if (GameFrame.gameMode == 2)
-			{
-				textLabel.setText("LOSE");
-			}
-			else if (GameFrame.gameMode == 1)
-			{
-				textLabel.setText("FAIL");
-			}
-			textLabel.setVisible(true);
-			blackPanel.setVisible(true);
+			// 일반 모드는 원본 그대로 게임을 멈추고 프로그램을 끝낸다
+			gameRunning = false;
+			dropThread.interrupt();
+			timeThread.interrupt();
+			messageLabel.setText("FAIL");
+			messageLabel.setVisible(true);
+			coverPanel.setVisible(true);
 			tetrisArea.setVisible(false);
-			
+
 			System.exit(0);
 		}
 		else
 		{
-			drawTetris();
-			checkArray();
-			th = new Thread(this);
-			th.start();
+			// 새 블록을 그리고 낙하 스레드를 시작한다
+			drawBoard();
+			resetWalls();
+			dropThread = new Thread(this);
+			dropThread.start();
 		}
-
-		b = null;
 	}
 
-	public void nextBlock(Blocks b)
+	/**
+	 * 미리 뽑아 둔 블록을 이번 블록으로 넘겨주고, 다음 블록을 새로 뽑아 미리보기에 보여 준다.
+	 *
+	 * @param newBlock 이번에 나올 블록 정보를 채울 객체
+	 */
+	public void pickNextBlock(Blocks newBlock)
 	{
-		int currentBlock;
-		currentBlock = preBlock;
-		b.blockNum = currentBlock;
-		preBlock = (int) (Math.random() * 7 + 1);
+		newBlock.blockNum = nextBlockType;
+		nextBlockType = (int) (Math.random() * 7 + 1);
 
-		switch (preBlock)
+		// 블록 종류마다 미리보기 그림이 다르다
+		switch (nextBlockType)
 		{
-		/**********************
-		 * I : red, J : lime, L : orange, O : purple S : cyan T : blue Z : green
-		 **********************/
 		case 1:
-			nextBlock.setIcon(ImageSource.block_I);
+			nextBlockLabel.setIcon(ImageSource.block_I);
 			break;
 		case 2:
-			nextBlock.setIcon(ImageSource.block_J);
+			nextBlockLabel.setIcon(ImageSource.block_J);
 			break;
 		case 3:
-			nextBlock.setIcon(ImageSource.block_L);
+			nextBlockLabel.setIcon(ImageSource.block_L);
 			break;
 		case 4:
-			nextBlock.setIcon(ImageSource.block_O);
+			nextBlockLabel.setIcon(ImageSource.block_O);
 			break;
 		case 5:
-			nextBlock.setIcon(ImageSource.block_S);
+			nextBlockLabel.setIcon(ImageSource.block_S);
 			break;
 		case 6:
-			nextBlock.setIcon(ImageSource.block_T);
+			nextBlockLabel.setIcon(ImageSource.block_T);
 			break;
 		case 7:
-			nextBlock.setIcon(ImageSource.block_Z);
+			nextBlockLabel.setIcon(ImageSource.block_Z);
 			break;
 		}
 	}
 
-	public void drawEndTetris()
-	{
-		for (int row = 0; row < fieldLabel.length; row++)
-			for (int col = 0; col < fieldLabel[0].length; col++)
-			{
-				//
-				// field[row][col] += 10;
-				fieldLabel[row][col].setIcon(ImageSource.block_gray);
-			}
-		// try{Thread.sleep(1000);}
-		// catch (InterruptedException e){e.printStackTrace();}
-	}
+	// ======================== 그리기 ========================
 
-	public void drawTetris()
+	/**
+	 * 블록 배열과 고정 블록 배열을 보고 테트리스 영역의 모든 칸 그림을 다시 정한다.
+	 */
+	public void drawBoard()
 	{
-		for (int row = 0; row < fieldLabel.length; row++)
-			for (int col = 0; col < fieldLabel[0].length; col++)
+		for (int row = 0; row < cellLabel.length; row++)
+		{
+			for (int col = 0; col < cellLabel[0].length; col++)
 			{
-				if (array[row][col + 1] > 0 && array[row][col + 1] < 8)
-					switch (array[row][col + 1])
-					{
-					/**********************
-					 * I : red, J : lime, L : orange, O : purple S : cyan T :
-					 * blue Z : green
-					 **********************/
-					case 1:
-						fieldLabel[row][col].setIcon(ImageSource.block_red);
-						break;
-					case 2:
-						fieldLabel[row][col].setIcon(ImageSource.block_lime);
-						break;
-					case 3:
-						fieldLabel[row][col].setIcon(ImageSource.block_orange);
-						break;
-					case 4:
-						fieldLabel[row][col].setIcon(ImageSource.block_puple);
-						break;
-					case 5:
-						fieldLabel[row][col].setIcon(ImageSource.block_cyan);
-						break;
-					case 6:
-						fieldLabel[row][col].setIcon(ImageSource.block_blue);
-						break;
-					case 7:
-						fieldLabel[row][col].setIcon(ImageSource.block_green);
-						break;
-					}
-				else if (field[row][col + 1] >= 80 && field[row][col + 1] < 90)
+				// 배열은 왼쪽 벽 때문에 화면보다 한 칸 오른쪽에 있다
+				int moving = blockArray[row][col + 1];
+				int fixed = fieldArray[row][col + 1];
+
+				if (moving > 0 && moving < 8)
 				{
-					switch (field[row][col + 1] - 80)
-					{
-					/**********************
-					 * I : red, J : lime, L : orange, O : purple S : cyan T :
-					 * blue Z : green
-					 **********************/
-					case 0:
-						fieldLabel[row][col]
-								.setIcon(ImageSource.block_blackout);
-						break;
-					case 1:
-						fieldLabel[row][col].setIcon(ImageSource.block_fast);
-						break;
-					case 2:
-						fieldLabel[row][col]
-								.setIcon(ImageSource.block_lineup_1);
-						break;
-					case 3:
-						fieldLabel[row][col]
-								.setIcon(ImageSource.block_lineup_3);
-						break;
-					case 4:
-						fieldLabel[row][col].setIcon(ImageSource.block_zigzag);
-						break;
-					case 5:
-						fieldLabel[row][col].setIcon(ImageSource.block_bomb);
-						break;
-					case 6:
-						fieldLabel[row][col].setIcon(ImageSource.block_change);
-						break;
-					case 7:
-						fieldLabel[row][col]
-								.setIcon(ImageSource.block_linedown_1);
-						break;
-					case 8:
-						fieldLabel[row][col]
-								.setIcon(ImageSource.block_linedown_3);
-						break;
-					case 9:
-						fieldLabel[row][col].setIcon(ImageSource.block_slow);
-						break;
-					}
+					// 떨어지고 있는 블록(1~7)
+					cellLabel[row][col].setIcon(getBlockColorIcon(moving));
 				}
-				else if (field[row][col + 1] >= 90 && field[row][col + 1] < 100)
+				else if (fixed >= BoardValue.ITEM_START && fixed < BoardValue.FIXED_START)
 				{
-					switch (field[row][col + 1] - 90)
-					{
-					/**********************
-					 * I : red, J : lime, L : orange, O : purple S : cyan T :
-					 * blue Z : green
-					 **********************/
-					case 1:
-						fieldLabel[row][col].setIcon(ImageSource.block_red);
-						break;
-					case 2:
-						fieldLabel[row][col].setIcon(ImageSource.block_lime);
-						break;
-					case 3:
-						fieldLabel[row][col].setIcon(ImageSource.block_orange);
-						break;
-					case 4:
-						fieldLabel[row][col].setIcon(ImageSource.block_puple);
-						break;
-					case 5:
-						fieldLabel[row][col].setIcon(ImageSource.block_cyan);
-						break;
-					case 6:
-						fieldLabel[row][col].setIcon(ImageSource.block_blue);
-						break;
-					case 7:
-						fieldLabel[row][col].setIcon(ImageSource.block_green);
-						break;
-					}
+					// 아이템 블록(80~89)
+					cellLabel[row][col].setIcon(getItemBlockIcon(fixed - BoardValue.ITEM_START));
 				}
-				else if (field[row][col + 1] >= 100)
-					fieldLabel[row][col].setIcon(ImageSource.block_gray);
+				else if (fixed >= BoardValue.FIXED_START && fixed < BoardValue.GARBAGE)
+				{
+					// 고정된 블록(91~97)
+					cellLabel[row][col].setIcon(getBlockColorIcon(fixed - BoardValue.FIXED_START));
+				}
+				else if (fixed >= BoardValue.GARBAGE)
+				{
+					// 회색 방해 블록(100)
+					cellLabel[row][col].setIcon(ImageSource.block_gray);
+				}
 				else
-					fieldLabel[row][col].setIcon(null);
+				{
+					cellLabel[row][col].setIcon(null);
+				}
 			}
+		}
 	}
 
-	public void drawTurn()
+	/**
+	 * 블록 종류에 맞는 색 칸 그림을 돌려준다.
+	 * I: 빨강, J: 라임, L: 주황, O: 보라, S: 하늘, T: 파랑, Z: 초록
+	 *
+	 * @param type 블록 종류(1~7)
+	 * @return 색 칸 그림. 종류가 잘못되면 null
+	 */
+	private ImageIcon getBlockColorIcon(int type)
 	{
-		for (int row = y, h = 0; h < blockWSize; row++, h++)
-			for (int col = x, w = 0; w < blockHSize; col++, w++)
-				array[row][col] = 0;
-
-		for (int row = y, h = 0; h < blockHSize; row++, h++)
-			for (int col = x, w = 0; w < blockWSize; col++, w++)
-				if (block[h][w] > 0)
-					array[row][col] = block[h][w];
-
-		/****************************************
-		 * 조건 : 우측 벽에서 모형 손실에 대한 예방대책 세울것
-		 ****************************************/
-		if (x + blockWSize > array[0].length - 1)
-			move_left();
+		switch (type)
+		{
+		case 1:
+			return ImageSource.block_red;
+		case 2:
+			return ImageSource.block_lime;
+		case 3:
+			return ImageSource.block_orange;
+		case 4:
+			return ImageSource.block_puple;
+		case 5:
+			return ImageSource.block_cyan;
+		case 6:
+			return ImageSource.block_blue;
+		case 7:
+			return ImageSource.block_green;
+		}
+		return null;
 	}
 
+	/**
+	 * 보드 위에 놓인 아이템 블록의 그림을 돌려준다.
+	 *
+	 * @param itemNumber 아이템 번호(0~9)
+	 * @return 아이템 블록 그림. 번호가 잘못되면 null
+	 */
+	private ImageIcon getItemBlockIcon(int itemNumber)
+	{
+		switch (itemNumber)
+		{
+		case 0:
+			return ImageSource.block_blackout;
+		case 1:
+			return ImageSource.block_fast;
+		case 2:
+			return ImageSource.block_lineup_1;
+		case 3:
+			return ImageSource.block_lineup_3;
+		case 4:
+			return ImageSource.block_zigzag;
+		case 5:
+			return ImageSource.block_bomb;
+		case 6:
+			return ImageSource.block_change;
+		case 7:
+			return ImageSource.block_linedown_1;
+		case 8:
+			return ImageSource.block_linedown_3;
+		case 9:
+			return ImageSource.block_slow;
+		}
+		return null;
+	}
+
+	/**
+	 * 아이템 칸에 넣을 아이템 아이콘을 만든다. 아이템 번호는 라벨 이름에 적어 둔다.
+	 *
+	 * @param itemNumber 아이템 번호(0~9)
+	 * @return 아이템 아이콘 라벨
+	 */
+	private JLabel makeItemLabel(int itemNumber)
+	{
+		JLabel label = new JLabel();
+		label.setName(Integer.toString(itemNumber));
+
+		// 아이템 번호마다 그림이 다르다
+		switch (itemNumber)
+		{
+		case 0:
+			label.setIcon(ImageSource.item_blackout);
+			break;
+		case 1:
+			label.setIcon(ImageSource.item_fast);
+			break;
+		case 2:
+			label.setIcon(ImageSource.item_lineup_1);
+			break;
+		case 3:
+			label.setIcon(ImageSource.item_lineup_3);
+			break;
+		case 4:
+			label.setIcon(ImageSource.item_zigzag);
+			break;
+		case 5:
+			label.setIcon(ImageSource.item_bomb);
+			break;
+		case 6:
+			label.setIcon(ImageSource.item_change);
+			break;
+		case 7:
+			label.setIcon(ImageSource.item_linedown_1);
+			break;
+		case 8:
+			label.setIcon(ImageSource.item_linedown_3);
+			break;
+		case 9:
+			label.setIcon(ImageSource.item_slow);
+			break;
+		}
+		return label;
+	}
+
+	/**
+	 * 회전한 블록을 블록 배열에 다시 적는다. 오른쪽 벽을 넘으면 왼쪽으로 한 칸 민다.
+	 */
+	public void drawTurnedBlock()
+	{
+		// 회전 전 모양(가로세로가 바뀐 크기)이 있던 자리를 지운다
+		for (int row = blockY, h = 0; h < blockWidth; row++, h++)
+		{
+			for (int col = blockX, w = 0; w < blockHeight; col++, w++)
+			{
+				blockArray[row][col] = BoardValue.EMPTY;
+			}
+		}
+
+		// 회전한 모양을 적는다
+		for (int row = blockY, h = 0; h < blockHeight; row++, h++)
+		{
+			for (int col = blockX, w = 0; w < blockWidth; col++, w++)
+			{
+				if (currentBlock[h][w] > 0)
+				{
+					blockArray[row][col] = currentBlock[h][w];
+				}
+			}
+		}
+
+		// 오른쪽 벽 밖으로 나간 부분이 잘리지 않게 왼쪽으로 민다
+		if (blockX + blockWidth > blockArray[0].length - 1)
+		{
+			moveLeft();
+		}
+	}
+
+	// ======================== 블록 고정과 줄 삭제 ========================
+
+	/**
+	 * 바닥에 닿은 블록을 고정 블록 배열로 옮기고(90 + 블록 종류), 꽉 찬 줄이 있는지 검사한다.
+	 */
 	public void fixBlock()
 	{
-		/****************************************
-		 * 조건 : 1. move_drop, move_down의 인터럽트 발생시 바닥에 닿았다는 조건이므로 마지막 데이터 값을 변경해줘
-		 * 고정됨을 표시한다. 2. 데이터 값 >> I:91 J:92 L:93 O:94 S:95 T:96 Z:97 3.
-		 * checkArray()에서 고정된 블럭은 n으로 표시되게끔 코드를 수정한다.
-		 *****************************************/
-
-		for (int row = 0; row < array.length - 1; row++)
-			for (int col = 1; col < array[0].length - 1; col++)
+		for (int row = 0; row < blockArray.length - 1; row++)
+		{
+			for (int col = 1; col < blockArray[0].length - 1; col++)
 			{
-				if (array[row][col] != 0 && array[row][col] != 8)
-					field[row][col] = array[row][col] + 90; // 90: 고정을 의미
-				array[row][col] = 0;
+				if (blockArray[row][col] != BoardValue.EMPTY)
+				{
+					fieldArray[row][col] = blockArray[row][col] + BoardValue.FIXED_START;
+				}
+				blockArray[row][col] = BoardValue.EMPTY;
 			}
-		lineCheck();
+		}
+		checkFullLines();
 	}
 
-	public void lineCheck()
+	/**
+	 * 방금 고정된 블록이 걸친 줄들 중에서 꽉 찬 줄을 지운다.
+	 * 지운 줄에 아이템 블록이 있었으면 아이템을 얻고, 지운 줄 수만큼 점수를 더한다.
+	 */
+	public void checkFullLines()
 	{
 		int deleteCount = 0;
-		// 정지된 y값의 줄부터 블럭의 length까지 계산한다.
-		// System.out.println("마지막 y의 위치 : " + y);
-		
-		for (int i = y; i < y + block.length; i++)
+
+		for (int i = blockY; i < blockY + currentBlock.length; i++)
 		{
+			// 이 줄에 블록이 몇 칸 있는지 센다
 			int count = 0;
-			for (int j = 1; j < field[0].length - 1; j++)
-				if (field[i][j] != 0)
+			for (int j = 1; j < fieldArray[0].length - 1; j++)
+			{
+				if (fieldArray[i][j] != BoardValue.EMPTY)
+				{
 					count++;
-			// System.out.println(i + "번 라인의 1의 개수 : " + count);
-			
+				}
+			}
+
+			// 10칸이 다 차 있으면 지운다
 			if (count == 10)
 			{
-				for (int j = 1; j < field[0].length; j++)
+				// 지울 줄에 있던 아이템 블록은 아이템 칸으로 옮긴다(최대 7개)
+				for (int j = 1; j < fieldArray[0].length; j++)
 				{
-					if (field[i][j] >= 80 && field[i][j] < 90 && itemLabel.size() < 7)
+					int value = fieldArray[i][j];
+					if (value >= BoardValue.ITEM_START && value < BoardValue.FIXED_START && itemList.size() < 7)
 					{
-						JLabel itemL = new JLabel();
-
-						switch (field[i][j] - 80)
-						{
-						case 0:
-							itemL.setIcon(ImageSource.item_blackout);
-							itemL.setName("0");
-							break;
-						case 1:
-							itemL.setIcon(ImageSource.item_fast);
-							itemL.setName("1");
-							break;
-						case 2:
-							itemL.setIcon(ImageSource.item_lineup_1);
-							itemL.setName("2");
-							break;
-						case 3:
-							itemL.setIcon(ImageSource.item_lineup_3);
-							itemL.setName("3");
-							break;
-						case 4:
-							itemL.setIcon(ImageSource.item_zigzag);
-							itemL.setName("4");
-							break;
-						case 5:
-							itemL.setIcon(ImageSource.item_bomb);
-							itemL.setName("5");
-							break;
-						case 6:
-							itemL.setIcon(ImageSource.item_change);
-							itemL.setName("6");
-							break;
-						case 7:
-							itemL.setIcon(ImageSource.item_linedown_1);
-							itemL.setName("7");
-							break;
-						case 8:
-							itemL.setIcon(ImageSource.item_linedown_3);
-							itemL.setName("8");
-							break;
-						case 9:
-							itemL.setIcon(ImageSource.item_slow);
-							itemL.setName("9");
-							break;
-						}
-
-						itemLabel.add(itemL);
-						item.removeAll();
-
-						for (int k = 0; k < itemLabel.size(); k++)
-						{
-							item.add(itemLabel.get(k));
-							itemLabel.get(k).setBounds(30 * k, 0, 30, 30);
-						}
+						itemList.add(makeItemLabel(value - BoardValue.ITEM_START));
+						arrangeItemPanel();
 					}
 				}
 
-				lineDelete(i);
-				// System.out.println("삭제한 줄" + i);
-
+				deleteLine(i);
 				deleteCount++;
 			}
 		}
+
 		if (deleteCount > 0)
 		{
-			addItem(deleteCount);
+			addRandomItems(deleteCount);
 			addScore(deleteCount);
 		}
-
 	}
 
-	public void lineDelete(int num)
+	/**
+	 * 지정한 줄을 지우고 그 위의 줄들을 한 칸씩 내린다.
+	 *
+	 * @param lineNumber 지울 줄 번호
+	 */
+	public void deleteLine(int lineNumber)
 	{
-		/* 전역: int[][] */
-		copy = new int[field.length][field[0].length];
-		
-		for (int row = 0; row < field.length - 1; row++)
-			for (int col = 0; col < field[0].length; col++)
-				if (row < num)
-					copy[row + 1][col] = field[row][col];
+		int[][] copy = new int[fieldArray.length][fieldArray[0].length];
+
+		// 지울 줄보다 위는 한 칸 내리고, 아래는 그대로 둔다
+		for (int row = 0; row < fieldArray.length - 1; row++)
+		{
+			for (int col = 0; col < fieldArray[0].length; col++)
+			{
+				if (row < lineNumber)
+				{
+					copy[row + 1][col] = fieldArray[row][col];
+				}
 				else
-					copy[row + 1][col] = field[row + 1][col];
+				{
+					copy[row + 1][col] = fieldArray[row + 1][col];
+				}
+			}
+		}
 
-		backArray(field, copy);
-
-		copy = null;
+		copyArray(fieldArray, copy);
 	}
 
-	public void addItem(int num)
+	/**
+	 * 줄을 지울 때마다 고정 블록 몇 개를 무작위로 아이템 블록으로 바꾼다(한 번에 최대 2개).
+	 *
+	 * @param lineCount 지운 줄 수. 많이 지울수록 아이템이 생길 기회가 많다.
+	 */
+	public void addRandomItems(int lineCount)
 	{
 		int itemCount = 0;
 
-		for (int i = 0; i < field.length; i++)
+		for (int i = 0; i < fieldArray.length; i++)
 		{
-			for (int j = 1; j < field[0].length - 1; j++)
+			for (int j = 1; j < fieldArray[0].length - 1; j++)
 			{
-				if (field[i][j] > 90)
+				// 고정 블록(90보다 큰 값)만 아이템이 될 수 있다
+				if (fieldArray[i][j] > BoardValue.FIXED_START)
 				{
-					for (int k = 1; k <= num; k++)
+					for (int k = 1; k <= lineCount; k++)
 					{
-						// 전체 아이템 개수 7개로 제한하기 필요.(나중에 추가할것)
+						// 20분의 1 확률로 아이템 블록(80~89)으로 바꾼다
 						int chance = (int) (Math.random() * 20);
-
 						if (chance == 1)
 						{
-							field[i][j] = (int) (Math.random() * 10) + 80;
-//							 field[i][j] = 80;
+							fieldArray[i][j] = (int) (Math.random() * 10) + BoardValue.ITEM_START;
 							itemCount++;
 						}
 						if (itemCount == 2)
@@ -677,315 +755,387 @@ class GamePanel extends JPanel implements Runnable
 		}
 	}
 
-	public void addScore(int num)
+	/**
+	 * 지운 줄 수에 따라 점수를 더한다. 블록이 빨리 떨어질수록 점수가 커진다.
+	 *
+	 * @param lineCount 한 번에 지운 줄 수(1~4)
+	 */
+	public void addScore(int lineCount)
 	{
-		int addScore = Integer.parseInt(score.getText());
+		int score = Integer.parseInt(scoreLabel.getText());
 
-		if (num == 4)
-			addScore += (120 * 1000 / gameSpeed);
-		else if (num == 3)
-			addScore += (70 * 1000 / gameSpeed);
-		else if (num == 2)
-			addScore += (30 * 1000 / gameSpeed);
+		// 한 번에 많이 지울수록 점수가 크다
+		if (lineCount == 4)
+		{
+			score = score + (120 * 1000 / gameSpeed);
+		}
+		else if (lineCount == 3)
+		{
+			score = score + (70 * 1000 / gameSpeed);
+		}
+		else if (lineCount == 2)
+		{
+			score = score + (30 * 1000 / gameSpeed);
+		}
 		else
-			addScore += (10 * 1000 / gameSpeed);
+		{
+			score = score + (10 * 1000 / gameSpeed);
+		}
 
-		score.setText(Integer.toString(addScore));
+		scoreLabel.setText(Integer.toString(score));
 	}
 
+	// ======================== 아이템 사용 ========================
+
+	/**
+	 * 아이템 칸 맨 앞의 아이템을 대상 화면에 사용하고, 그 아이템을 목록에서 뺀다.
+	 */
 	public void useItem()
 	{
-		if (itemLabel.isEmpty() || ogp == null) return;
-		String numStr = itemLabel.get(0).getName();
+		// 아이템이 없거나 대상이 정해지지 않았으면 아무것도 하지 않는다
+		if (itemList.isEmpty() || targetPanel == null)
+		{
+			return;
+		}
 
-		switch (numStr)
+		// 라벨 이름에 적어 둔 아이템 번호로 효과를 고른다
+		String itemNumber = itemList.get(0).getName();
+		switch (itemNumber)
 		{
 		case "0":
-			uItem.blackout();
+			itemEffect.blackout(targetPanel);
 			break;
 		case "1":
-			uItem.fast();
+			itemEffect.fast(targetPanel);
 			break;
 		case "2":
-			uItem.oneLineUp();
+			itemEffect.oneLineUp(targetPanel);
 			break;
 		case "3":
-			uItem.threeLineUp();
+			itemEffect.threeLineUp(targetPanel);
 			break;
 		case "4":
-			uItem.zigzag();
+			itemEffect.zigzag(targetPanel);
 			break;
 		case "5":
-			uItem.bomb();
+			itemEffect.bomb(targetPanel);
 			break;
 		case "6":
-			uItem.change();
+			itemEffect.change(targetPanel);
 			break;
 		case "7":
-			uItem.oneLineDown();
+			itemEffect.oneLineDown(targetPanel);
 			break;
 		case "8":
-			uItem.threeLineDown();
+			itemEffect.threeLineDown(targetPanel);
 			break;
 		case "9":
-			uItem.slow();
+			itemEffect.slow(targetPanel);
 			break;
 		}
-		deleteItem();
+		removeFirstItem();
 	}
 
+	/**
+	 * 상대에게 아이템을 쓴다. 1인 모드에서는 상대가 없으므로 useItem()과 같다.
+	 */
 	public void attackItem()
 	{
 		useItem();
 	}
 
-	public void deleteItem()
+	/**
+	 * 아이템 칸 맨 앞의 아이템을 버린다.
+	 */
+	public void removeFirstItem()
 	{
-		if (itemLabel.size() > 0)
+		if (itemList.size() > 0)
 		{
-			item.removeAll();
-			item.repaint();
-			itemLabel.remove(0);
-
-			for (int i = 0; i < itemLabel.size(); i++)
-			{
-				item.add(itemLabel.get(i));
-				itemLabel.get(i).setBounds(i * 30, 0, 30, 30);
-			}
+			itemList.remove(0);
+			arrangeItemPanel();
 		}
 	}
 
-	/******************** 테트리스 키 이벤트 ********************/
-
-	public void move_left()
+	/**
+	 * 아이템 칸을 비우고 아이템 목록을 왼쪽부터 30픽셀 간격으로 다시 놓는다.
+	 */
+	private void arrangeItemPanel()
 	{
-		/* 전역: int[][] */copy = new int[array.length][array[0].length];
-		for (int row = 0; row < array.length; row++)
-			for (int col = 1; col < array[0].length; col++)
-				copy[row][col - 1] = array[row][col];
-
-		int count = 0;
-		for (int row = y; row < y + blockHSize; row++)
-			for (int col = x - 1; col < x + blockWSize; col++)
-				if (copy[row][col] > 0 && field[row][col] > 0)
-					count++;
-
-		/****************************************
-		 * 조건 : 좌측 데이터의 벽<9> 넘지 않기
-		 ****************************************/
-		if (!(count > 0))
-			if (x > 1)
-			{
-				x--;
-				backArray(array, copy);
-			}
-
-		copy = null;
+		itemPanel.removeAll();
+		itemPanel.repaint();
+		for (int i = 0; i < itemList.size(); i++)
+		{
+			itemPanel.add(itemList.get(i));
+			itemList.get(i).setBounds(i * 30, 0, 30, 30);
+		}
 	}
 
-	public void move_right()
+	// ======================== 블록 움직이기 ========================
+
+	/**
+	 * 블록을 왼쪽으로 한 칸 옮긴다. 벽이나 고정 블록에 막히면 그대로 둔다.
+	 */
+	public void moveLeft()
 	{
-		/* 전역: int[][] */
-		copy = new int[array.length][array[0].length];
-		
-		for (int row = 0; row < array.length; row++)
-			for (int col = 0; col < array[0].length - 1; col++)
-				copy[row][col + 1] = array[row][col];
-
-		int count = 0;
-		
-		for (int row = y; row < y + blockHSize; row++)
-			for (int col = x; col < x + blockWSize + 1; col++)
-				if (copy[row][col] > 0 && field[row][col] > 0)
-					count++;
-
-		/****************************************
-		 * 조건 : 우측 데이터의 벽<9> 넘지 않기
-		 ****************************************/
-		
-		if (!(count > 0))
-			if (x < array[0].length - blockWSize - 1)
+		// 배열 전체를 왼쪽으로 한 칸 민 복사본을 만든다
+		int[][] copy = new int[blockArray.length][blockArray[0].length];
+		for (int row = 0; row < blockArray.length; row++)
+		{
+			for (int col = 1; col < blockArray[0].length; col++)
 			{
-				x++;
-				backArray(array, copy);
+				copy[row][col - 1] = blockArray[row][col];
 			}
+		}
 
-		copy = null;
+		// 옮긴 자리에 고정 블록이 있는지 센다
+		int count = 0;
+		for (int row = blockY; row < blockY + blockHeight; row++)
+		{
+			for (int col = blockX - 1; col < blockX + blockWidth; col++)
+			{
+				if (copy[row][col] > 0 && fieldArray[row][col] > 0)
+				{
+					count++;
+				}
+			}
+		}
+
+		// 막히지 않았고 왼쪽 벽을 넘지 않을 때만 옮긴다
+		if (count == 0 && blockX > 1)
+		{
+			blockX--;
+			copyArray(blockArray, copy);
+		}
 	}
 
-	public void move_down()
+	/**
+	 * 블록을 오른쪽으로 한 칸 옮긴다. 벽이나 고정 블록에 막히면 그대로 둔다.
+	 */
+	public void moveRight()
 	{
-		/* 전역: int[][] */copy = new int[array.length][array[0].length];
-		for (int row = 0; row < array.length - 1; row++)
-			for (int col = 0; col < array[0].length; col++)
-				copy[row + 1][col] = array[row][col];
+		// 배열 전체를 오른쪽으로 한 칸 민 복사본을 만든다
+		int[][] copy = new int[blockArray.length][blockArray[0].length];
+		for (int row = 0; row < blockArray.length; row++)
+		{
+			for (int col = 0; col < blockArray[0].length - 1; col++)
+			{
+				copy[row][col + 1] = blockArray[row][col];
+			}
+		}
 
+		// 옮긴 자리에 고정 블록이 있는지 센다
 		int count = 0;
-		for (int row = y; row < y + blockHSize + 1; row++)
-			for (int col = x; col < x + blockWSize; col++)
-				if (copy[row][col] > 0 && field[row][col] > 0)
+		for (int row = blockY; row < blockY + blockHeight; row++)
+		{
+			for (int col = blockX; col < blockX + blockWidth + 1; col++)
+			{
+				if (copy[row][col] > 0 && fieldArray[row][col] > 0)
+				{
 					count++;
+				}
+			}
+		}
 
-		/****************************************
-		 * 조건 : 하단 데이터의 벽<9> 넘지 않기
-		 ****************************************/
+		// 막히지 않았고 오른쪽 벽을 넘지 않을 때만 옮긴다
+		if (count == 0 && blockX < blockArray[0].length - blockWidth - 1)
+		{
+			blockX++;
+			copyArray(blockArray, copy);
+		}
+	}
+
+	/**
+	 * 블록을 아래로 한 칸 내린다. 더 내려갈 수 없으면 고정하고 새 블록을 내보낸다.
+	 */
+	public void moveDown()
+	{
+		// 배열 전체를 아래로 한 칸 민 복사본을 만든다
+		int[][] copy = new int[blockArray.length][blockArray[0].length];
+		for (int row = 0; row < blockArray.length - 1; row++)
+		{
+			for (int col = 0; col < blockArray[0].length; col++)
+			{
+				copy[row + 1][col] = blockArray[row][col];
+			}
+		}
+
+		// 내린 자리에 고정 블록이 있는지 센다
+		int count = 0;
+		for (int row = blockY; row < blockY + blockHeight + 1; row++)
+		{
+			for (int col = blockX; col < blockX + blockWidth; col++)
+			{
+				if (copy[row][col] > 0 && fieldArray[row][col] > 0)
+				{
+					count++;
+				}
+			}
+		}
+
 		if (count > 0)
 		{
-			th.interrupt();
+			// 고정 블록에 닿았다
+			dropThread.interrupt();
 			fixBlock();
-			addBlock();
+			addNewBlock();
 		}
-		else if (y < (array.length - 1) - blockHSize)
+		else if (blockY < (blockArray.length - 1) - blockHeight)
 		{
-			y++;
-			backArray(array, copy);
+			// 아직 내려갈 수 있다
+			blockY++;
+			copyArray(blockArray, copy);
 		}
 		else
 		{
-			th.interrupt();
+			// 바닥에 닿았다
+			dropThread.interrupt();
 			fixBlock();
-			addBlock();
+			addNewBlock();
 		}
-
-		copy = null;
 	}
 
-	public void move_up()
+	/**
+	 * 블록을 바닥(또는 고정 블록 위)까지 한 번에 떨어뜨린다.
+	 */
+	public void hardDrop()
 	{
-		/* 전역: int[][] */
-		copy = new int[array.length][array[0].length];
-		
-		for (int row = 1; row < array.length - 1; row++)
-			for (int col = 0; col < array[0].length; col++)
-				copy[row - 1][col] = array[row][col];
-
-		y--;
-		backArray(array, copy);
-
-		copy = null;
-	}
-
-	public void move_drop()
-	{
+		// 더 내려갈 수 없을 때까지 한 칸씩 내린다
 		while (true)
 		{
-			/* 전역: int[][] */copy = new int[array.length][array[0].length];
-			for (int row = 0; row < array.length - 1; row++)
-				for (int col = 0; col < array[0].length; col++)
-					copy[row + 1][col] = array[row][col];
+			int[][] copy = new int[blockArray.length][blockArray[0].length];
+			for (int row = 0; row < blockArray.length - 1; row++)
+			{
+				for (int col = 0; col < blockArray[0].length; col++)
+				{
+					copy[row + 1][col] = blockArray[row][col];
+				}
+			}
 
 			int count = 0;
-			for (int row = y; row < y + blockHSize + 1; row++)
-				for (int col = x; col < x + blockWSize + 1; col++)
-					if (copy[row][col] > 0 && field[row][col] > 0)
+			for (int row = blockY; row < blockY + blockHeight + 1; row++)
+			{
+				for (int col = blockX; col < blockX + blockWidth + 1; col++)
+				{
+					if (copy[row][col] > 0 && fieldArray[row][col] > 0)
+					{
 						count++;
+					}
+				}
+			}
 
-			/****************************************
-			 * 조건 : 하단 데이터의 벽<9> 넘지 않기 (move_down() 메소드와 동일함)
-			 ****************************************/
 			if (count > 0)
 			{
-				th.interrupt();
+				// 고정 블록에 닿았다
+				dropThread.interrupt();
 				fixBlock();
-				addBlock();
+				addNewBlock();
 				break;
 			}
-			else if (y < (array.length - 1) - blockHSize)
+			else if (blockY < (blockArray.length - 1) - blockHeight)
 			{
-				y++;
-				backArray(array, copy);
+				blockY++;
+				copyArray(blockArray, copy);
 			}
 			else
 			{
-				/* 무한루프로 끝까지 내린후 바닥에 닿으면 break를 호출하여 루프 종료 */
-				th.interrupt();
+				// 바닥에 닿았다
+				dropThread.interrupt();
 				fixBlock();
-				addBlock();
+				addNewBlock();
 				break;
 			}
-			copy = null;
 		}
 	}
 
-	public void move_turn()
+	/**
+	 * 블록을 시계 방향으로 90도 돌린다. 돌린 자리가 막혀 있으면 돌리지 않는다.
+	 */
+	public void rotate()
 	{
-		// Validate the rotated rectangle before indexing either board array.
-		if (x < 1 || y < 0 || x + blockHSize > array[0].length - 1
-				|| y + blockWSize > array.length - 1) return;
-		int[][] turn = new int[blockWSize][blockHSize];
-		for (int i = 0; i < blockWSize; i++)
-			for (int j = 0; j < blockHSize; j++)
-				turn[i][j] = block[j][(blockWSize - 1) - i];
+		// 돌린 블록이 보드 밖으로 나가면 돌리지 않는다
+		if (blockX < 1 || blockY < 0 || blockX + blockHeight > blockArray[0].length - 1
+				|| blockY + blockWidth > blockArray.length - 1)
+		{
+			return;
+		}
 
+		// 가로세로를 바꾼 새 배열에 돌린 모양을 만든다
+		int[][] turned = new int[blockWidth][blockHeight];
+		for (int i = 0; i < blockWidth; i++)
+		{
+			for (int j = 0; j < blockHeight; j++)
+			{
+				turned[i][j] = currentBlock[j][(blockWidth - 1) - i];
+			}
+		}
+
+		// I 블록은 오른쪽 끝에서 돌리지 않는다
 		int count = 0;
-		if (blockNum == 1 && x >= 9)
+		if (blockType == 1 && blockX >= 9)
+		{
 			count++;
-		if (!(count > 0))
-			for (int row = y, i = 0; i < blockWSize; row++, i++)
-				for (int col = x, j = 0; j < blockHSize; col++, j++)
-					if (turn[i][j] > 0 && field[row][col] > 0)
+		}
+
+		// 돌린 모양이 고정 블록과 겹치는지 센다
+		if (count == 0)
+		{
+			for (int row = blockY, i = 0; i < blockWidth; row++, i++)
+			{
+				for (int col = blockX, j = 0; j < blockHeight; col++, j++)
+				{
+					if (turned[i][j] > 0 && fieldArray[row][col] > 0)
+					{
 						count++;
-
-		if (!(count > 0))
-		{
-			int temp = blockHSize;
-			blockHSize = blockWSize;
-			blockWSize = temp;
-
-			block = null;
-			block = new int[blockHSize][blockWSize];
-			block = turn;
-
-			drawTurn();
+					}
+				}
+			}
 		}
 
-		turn = null;
-	}
-
-	public void backArray(int[][] array, int[][] copy)
-	{
-		/****************************************
-		 * 안내 : backArray(원래 데이터, 복사 데이터) 복사 데이터를 원래 데이터로 재복사
-		 ****************************************/
-
-		for (int row = 0; row < array.length; row++)
-			for (int col = 0; col < array[0].length; col++)
-				array[row][col] = copy[row][col];
-	}
-
-	/******************** 테트리스 검사용 메소드 ********************/
-
-	public void checkArray() // 테트리스 배열데이터 출력
-	{
-		setArray();
-		// System.out.println("블럭좌표 : x " + x + " ---- y " + y);
-		
-		/*
-		for (int row = 0; row < field.length; row++)
+		// 겹치지 않으면 크기와 모양을 바꾸고 다시 그린다
+		if (count == 0)
 		{
-			// System.out.printf("%2d -- ", row);
-			for (int col = 0; col < field[0].length; col++)
-				// if (field[row][col] >= 1)
-					// System.out.print('n' + " ");
-				// else
-					// System.out.print(field[row][col] + " ");
-			// System.out.println();
+			int temp = blockHeight;
+			blockHeight = blockWidth;
+			blockWidth = temp;
+			currentBlock = turned;
+			drawTurnedBlock();
 		}
-		*/
 	}
 
-	/******************** 테트리스 쓰레드 메소드 ********************/
+	/**
+	 * 복사본 배열의 값을 원래 배열에 그대로 옮겨 적는다.
+	 *
+	 * @param original 값을 받을 배열
+	 * @param copy     옮길 값이 들어 있는 배열
+	 */
+	public void copyArray(int[][] original, int[][] copy)
+	{
+		for (int row = 0; row < original.length; row++)
+		{
+			for (int col = 0; col < original[0].length; col++)
+			{
+				original[row][col] = copy[row][col];
+			}
+		}
+	}
 
+	// ======================== 낙하 스레드 ========================
+
+	/**
+	 * 블록을 gameSpeed 간격으로 한 칸씩 떨어뜨린다.
+	 * 첫 블록은 카운트다운이 끝날 때까지 기다렸다가 시작한다.
+	 */
 	public void run()
 	{
-		if (!Gaming)
+		if (!started)
 		{
-			synchronized (th)
+			// 카운트다운 스레드가 깨워 줄 때까지 기다린다
+			synchronized (dropThread)
 			{
 				try
 				{
-					th.wait();
-					while (gameRun)
+					dropThread.wait();
+					while (gameRunning)
 					{
 						try
 						{
@@ -995,9 +1145,8 @@ class GamePanel extends JPanel implements Runnable
 						{
 							return;
 						}
-						move_down();
-						// checkArray();
-						drawTetris();
+						moveDown();
+						drawBoard();
 					}
 				}
 				catch (InterruptedException e)
@@ -1008,7 +1157,7 @@ class GamePanel extends JPanel implements Runnable
 		}
 		else
 		{
-			while (gameRun)
+			while (gameRunning)
 			{
 				try
 				{
@@ -1018,358 +1167,13 @@ class GamePanel extends JPanel implements Runnable
 				{
 					return;
 				}
-				move_down();
-				// checkArray();
-				drawTetris();
+				moveDown();
+				drawBoard();
 			}
 		}
 	}
 
-	/******************** 테트리스 아이템 메소드 ********************/
-
-	class UseItem
-	{
-		int width;
-		int height;
-
-		UseItem()
-		{
-			width = field[0].length;
-			height = field.length;
-		}
-
-		public void bomb()
-		{
-			for (int row = 0; row < height; row++)
-				for (int col = 0; col < width; col++)
-				{
-					ogp.array[row][col] = 0;
-					ogp.field[row][col] = 0;
-				}
-			ogp.th.interrupt();
-			ogp.addBlock();
-		}
-
-		public void change()
-		{
-			int temp[][] = array;
-			array = ogp.array;
-			ogp.array = temp;
-
-			temp = field;
-			field = ogp.field;
-			ogp.field = temp;
-
-			temp = block;
-			block = ogp.block;
-			ogp.block = temp;
-
-			int tempVar = x;
-			x = ogp.x;
-			ogp.x = tempVar;
-
-			tempVar = y;
-			y = ogp.y;
-			ogp.y = tempVar;
-
-			tempVar = blockHSize;
-			blockHSize = ogp.blockHSize;
-			ogp.blockHSize = tempVar;
-
-			tempVar = blockWSize;
-			blockWSize = ogp.blockWSize;
-			ogp.blockWSize = tempVar;
-
-			tempVar = blockNum;
-			blockNum = ogp.blockNum;
-			ogp.blockNum = tempVar;
-
-			drawTetris();
-			ogp.drawTetris();
-
-			temp = null;
-		}
-
-		public void oneLineDown()
-		{
-			ogp.lineDelete((ogp.field.length - 1) - 1);
-			ogp.drawTetris();
-		}
-
-		public void threeLineDown()
-		{
-			for (int i = 3; i >= 1; i--)
-				ogp.lineDelete((ogp.field.length - 1) - i);
-			ogp.drawTetris();
-		}
-
-		public void slow()
-		{
-			ogp.gameSpeed += 200;
-			coolDown(ImageSource.item_slow);
-		}
-
-		public void blackout()
-		{
-			Thread blackTh = new Thread()
-			{
-				public void run()
-				{
-					int alpha = 255;
-					
-					blackPanel.setVisible(true);
-					blackPanel.remove(textLabel);
-					
-					while(alpha > 0)
-					{
-						blackPanel.setBackground(new Color(0,0,0,alpha));
-						alpha -= 25;
-						try { sleep(1000); }
-						catch(InterruptedException e) { e.printStackTrace(); }
-					}
-					blackPanel.setVisible(false);
-				}
-			};
-			blackTh.start();
-			coolDown(ImageSource.item_blackout);
-		}
-
-		public void zigzag()
-		{
-			int row = 0;
-
-			for (int i = 0; i < ogp.field.length; i++)
-			{
-				for (int j = 1; j < ogp.field[0].length - 1; j++)
-				{
-					if (ogp.field[i][j] > 0)
-					{
-						row = i;
-						break;
-					}
-				}
-				if (row > 0)
-					break;
-			}
-
-			if (row > 0)
-			{
-				for (int i = row; i < ogp.field.length; i++)
-				{
-					Vector<Integer> v = new Vector<Integer>();
-
-					for (int j = 1; j < ogp.field[0].length - 1; j++)
-						v.add(ogp.field[i][j]);
-
-					for (int j = 1; j < ogp.field[0].length - 1; j++)
-					{
-						int index = (int) (Math.random() * v.size());
-						ogp.field[i][j] = v.get(index);
-						v.remove(index);
-					}
-				}
-			}
-
-			ogp.drawTetris();
-		}
-
-		public void oneLineUp()
-		{
-			/* 전역: int[][] */ogp.copy = new int[ogp.field.length][ogp.field[0].length];
-			for (int row = 1; row < ogp.field.length - 1; row++)
-				for (int col = 0; col < ogp.field[0].length; col++)
-					ogp.copy[row - 1][col] = ogp.field[row][col];
-
-			backArray(ogp.field, ogp.copy);
-
-			int num = (int) (Math.random() * 10 + 1);
-			for (int col = 1; col < ogp.field[0].length - 1; col++)
-				if (col != num)
-					ogp.field[ogp.field.length - 2][col] = 100;
-
-			ogp.drawTetris();
-
-			ogp.copy = null;
-		}
-
-		public void threeLineUp()
-		{
-			/* 전역: int[][] */ogp.copy = new int[ogp.field.length][ogp.field[0].length];
-			for (int row = 3; row < ogp.field.length - 1; row++)
-				for (int col = 0; col < ogp.field[0].length; col++)
-					ogp.copy[row - 3][col] = ogp.field[row][col];
-
-			backArray(ogp.field, ogp.copy);
-
-			int num = (int) (Math.random() * 10 + 1);
-			for (int row = ogp.field.length - 4; row < ogp.field.length - 1; row++)
-				for (int col = 0; col < ogp.field[0].length - 1; col++)
-					if (col != num)
-						ogp.field[row][col] = 100;
-
-			ogp.drawTetris();
-
-			ogp.copy = null;
-		}
-
-		public void fast()
-		{
-			if (ogp.gameSpeed <= 200) return;
-			ogp.gameSpeed -= 200;
-			coolDown(ImageSource.item_fast);
-		}
-
-		public void coolDown(ImageIcon icon)
-		{
-			ogp.item_using.removeAll();
-			ogp.usingItemLabel.add(new UsingItemLabel(icon));
-
-			for (int i = 0; i < ogp.usingItemLabel.size(); i++)
-			{
-				ogp.item_using.add(ogp.usingItemLabel.get(i));
-				ogp.usingItemLabel.get(i).setLocation(i * 30, 0);
-			}
-			ogp.item_using.repaint();
-		}
-	}
-
-	class UsingItemLabel extends JLabel implements Runnable
-	{
-		int w, h;
-		int colSpeed = 1;
-		int rowSpeed = 1;
-		int x1, x2, x3, x4, x5, x6, x7;
-		int y1, y2, y3, y4, y5, y6, y7;
-		int Switch = 1;
-		int times = 10;
-		boolean End = true;
-		ImageIcon icon;
-
-		UsingItemLabel(ImageIcon icon)
-		{
-			w = 30;
-			h = 30;
-			setSize(w, h);
-
-			this.icon = icon;
-			Thread coolTimeTh = new Thread(this);
-
-			x1 = w / 2;
-			x2 = w / 2;
-			x3 = w;
-			x4 = w;
-			x5 = 0;
-			x6 = w / 2;
-			x7 = 0;
-
-			y1 = 0;
-			y2 = 0;
-			y3 = 0;
-			y4 = h;
-			y5 = h;
-			y6 = h / 2;
-			y7 = 0;
-
-			coolTimeTh.start();
-		}
-
-		public void run()
-		{
-			int i = 0;
-
-			while (End)
-			{
-				if (x2 < w)
-					x2 += colSpeed;
-				else
-				{
-					Switch = 2;
-
-					if (y3 < h)
-						y3 += rowSpeed;
-					else
-					{
-						Switch = 3;
-
-						if (x4 > 0)
-							x4 -= colSpeed;
-						else
-						{
-							Switch = 4;
-
-							if (y5 > 0)
-								y5 -= rowSpeed;
-							else
-							{
-								Switch = 5;
-
-								if (x7 < w / 2)
-									x7 += colSpeed;
-								else
-									End = false;
-							}
-						}
-					}
-				}
-				i++;
-				repaint();
-
-				if (i % 12 == 0)
-					times--;
-
-				try
-				{
-					Thread.sleep(80);
-				}
-				catch (InterruptedException e)
-				{
-					e.printStackTrace();
-				}
-			}
-
-			// 쿨타임 후 원래 스피드로 복구
-			if (icon == ImageSource.item_fast)
-				ogp.gameSpeed += 200;
-			else if (icon == ImageSource.item_slow)
-				ogp.gameSpeed -= 200;
-
-			ogp.item_using.removeAll();
-			ogp.usingItemLabel.remove(this);
-
-			for (int j = 0; j < ogp.usingItemLabel.size(); j++)
-			{
-				ogp.item_using.add(ogp.usingItemLabel.get(j));
-				ogp.usingItemLabel.get(j).setLocation(j * 30, 0);
-			}
-			ogp.item_using.repaint();
-		}
-
-		public void paintComponent(Graphics g)
-		{
-			super.paintComponent(g);
-			g.drawImage(icon.getImage(), 0, 0, this);
-			g.setColor(Color.BLACK);
-			if (Switch == 1)
-				g.fillPolygon(new int[] { x1, x2, x6 },
-						new int[] { y1, y2, y6 }, 3);
-			else if (Switch == 2)
-				g.fillPolygon(new int[] { x1, x2, x3, x6 }, new int[] { y1, y2,
-						y3, y6 }, 4);
-			else if (Switch == 3)
-				g.fillPolygon(new int[] { x1, x2, x3, x4, x6 }, new int[] { y1,
-						y2, y3, y4, y6 }, 5);
-			else if (Switch == 4)
-				g.fillPolygon(new int[] { x1, x2, x3, x4, x5, x6 }, new int[] {
-						y1, y2, y3, y4, y5, y6 }, 6);
-			else
-				g.fillPolygon(new int[] { x1, x2, x3, x4, x5, x7, x6 },
-						new int[] { y1, y2, y3, y4, y5, y7, y6 }, 7);
-
-			g.setColor(Color.WHITE);
-			g.setFont(new Font("Verdana", 1, 20));
-			g.drawString(Integer.toString(times), 7, 22);
-		}
-	}
+	// ======================== 갤러그 협동 모드에서 쓰는 메서드 ========================
 
 	/**
 	 * 갤러그 협동 모드에서 외계인이 착지할 수 있는지 판단할 때 쓴다.
@@ -1382,10 +1186,12 @@ class GamePanel extends JPanel implements Runnable
 	public boolean isBlocked(int row, int col)
 	{
 		// 맨 아래 줄보다 아래는 바닥이므로 막힌 것으로 본다
-		if (row >= fieldLabel.length)
+		if (row >= cellLabel.length)
+		{
 			return true;
-		// field는 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
-		return field[row][col + 1] > 0;
+		}
+		// 배열은 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
+		return fieldArray[row][col + 1] > 0;
 	}
 
 	/**
@@ -1398,11 +1204,10 @@ class GamePanel extends JPanel implements Runnable
 	public void placeGarbage(int row, int col)
 	{
 		// 고정 블록이나 떨어지는 중인 블록과 겹치면 놓지 않는다(블록이 덮어써지는 것을 막기 위해)
-		if (field[row][col + 1] == 0 && array[row][col + 1] == 0)
+		if (fieldArray[row][col + 1] == BoardValue.EMPTY && blockArray[row][col + 1] == BoardValue.EMPTY)
 		{
-			// 100은 기존 줄 올리기 아이템과 같은 회색 방해 블록 값이다
-			field[row][col + 1] = 100;
-			drawTetris();
+			fieldArray[row][col + 1] = BoardValue.GARBAGE;
+			drawBoard();
 		}
 	}
 
@@ -1415,14 +1220,14 @@ class GamePanel extends JPanel implements Runnable
 	public void endGame(String message)
 	{
 		// 블록 낙하 스레드와 시간 스레드를 멈춘다
-		gameRun = false;
-		th.interrupt();
-		timeTh.interrupt();
+		gameRunning = false;
+		dropThread.interrupt();
+		timeThread.interrupt();
 
 		// 테트리스 영역을 가리고 시작 카운트다운에 쓰던 검은 패널에 결과를 띄운다
-		textLabel.setText(message);
-		textLabel.setVisible(true);
-		blackPanel.setVisible(true);
+		messageLabel.setText(message);
+		messageLabel.setVisible(true);
+		coverPanel.setVisible(true);
 		tetrisArea.setVisible(false);
 	}
 
@@ -1433,7 +1238,6 @@ class GamePanel extends JPanel implements Runnable
 	 */
 	public boolean isRunning()
 	{
-		return gameRun;
+		return gameRunning;
 	}
-
 }
