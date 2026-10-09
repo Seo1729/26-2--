@@ -1,14 +1,20 @@
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import javax.swing.JFrame;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 import javax.swing.Timer;
 
-/** 기존 2D GameFrame과 분리된 3D 키 입력 실행 창. Swing EDT에서 생성한다. */
+// 3D 테트리스 창
 public class Game3DFrame extends JFrame
 {
-	private final Game3D game = new Game3D();
-	private final Game3DPanel panel = new Game3DPanel(game);
-	private final Timer statusTimer = new Timer(50, event -> panel.refreshStatus());
+	Game3D game = new Game3D();
+	Game3DPanel panel = new Game3DPanel(game);
+	Timer statusTimer = new Timer(50, new ActionListener()
+	{
+		public void actionPerformed(ActionEvent e)
+		{
+			panel.refreshStatus(); // 0.05초마다 화면 갱신
+		}
+	});
 
 	public Game3DFrame()
 	{
@@ -16,11 +22,10 @@ public class Game3DFrame extends JFrame
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setContentPane(panel);
 		pack();
-		setMinimumSize(new java.awt.Dimension(940, 600));
+		setMinimumSize(new Dimension(940, 600));
 		setLocationRelativeTo(null);
 		addWindowFocusListener(new WindowAdapter()
 		{
-			@Override
 			public void windowLostFocus(WindowEvent event)
 			{
 				panel.resetPressedKeys();
@@ -31,7 +36,7 @@ public class Game3DFrame extends JFrame
 		statusTimer.start();
 	}
 
-	@Override
+	// 창 닫을때 타이머 멈추기
 	public void dispose()
 	{
 		game.stop();

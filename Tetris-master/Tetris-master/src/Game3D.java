@@ -1,25 +1,27 @@
+import java.awt.event.*;
 import java.util.Random;
 import javax.swing.Timer;
 
-/** 블록 생성, 충돌 검사, 자동 낙하 및 수평 이동을 실행하는 3D 게임 로직. */
+// 3D 테트리스 게임 (블록 생성, 이동, 회전, 낙하)
 public class Game3D
 {
 	public static final int DEFAULT_FALL_INTERVAL_MS = 1000;
 	public enum State { READY, RUNNING, PAUSED, GAME_OVER }
-	// XY 평면의 I는 폭이 4이므로 현재 3x3 보드에 배치할 수 없다.
+	// I블록은 길이가 4라서 3x3에 안들어감 -> 뺌
 	private static final Block3D.Type[] SPAWN_TYPES = {
 		Block3D.Type.O, Block3D.Type.T, Block3D.Type.L,
 		Block3D.Type.J, Block3D.Type.S, Block3D.Type.Z
 	};
 
-	private final Board3D board;
-	private final Random random = new Random();
-	private final Timer fallTimer;
+	Board3D board;
+	Random random = new Random();
+	private Timer fallTimer;
 	private Block3D activeBlock;
 	private Block3D.Type nextType;
-	private State state = State.READY;
-	private int lockedBlockCount;
-	private long clearedLayerCount;
+	State state = State.READY;
+	int lockedBlockCount;
+	long clearedLayerCount;
+	int level = 1; // 레벨 올라가면 빨라지게 하려다 못함
 	public static final int POINTS_PER_LAYER = 100;
 
 	public synchronized long getClearedLayerCount()
@@ -29,7 +31,7 @@ public class Game3D
 
 	public synchronized long getScore()
 	{
-		return clearedLayerCount * POINTS_PER_LAYER;
+		return clearedLayerCount * 100;
 	}
 
 	public synchronized State getState()
@@ -51,8 +53,7 @@ public class Game3D
 
 	private boolean spawnBlock()
 	{
-		Block3D candidate = new Block3D(nextType,
-				Board3D.SIZE_X / 2, Board3D.SIZE_Y / 2, Board3D.SIZE_Z - 1);
+		Block3D candidate = new Block3D(nextType, 1, 1, 13); // 맨 위 가운데
 		if (!board.canPlace(candidate))
 		{
 			gameOver();
@@ -68,7 +69,7 @@ public class Game3D
 		return SPAWN_TYPES[random.nextInt(SPAWN_TYPES.length)];
 	}
 
-	/** The reserved type is consumed only after a successful spawn. */
+	// 다음 블록
 	public synchronized Block3D.Type getNextBlockType()
 	{
 		return nextType;
@@ -79,23 +80,27 @@ public class Game3D
 		this(DEFAULT_FALL_INTERVAL_MS);
 	}
 
-	/** 검증이나 속도 설정을 위해 낙하 간격을 지정할 수 있다. */
 	public Game3D(int fallIntervalMs)
 	{
 		this(new Board3D(), fallIntervalMs);
 	}
 
-	/** 미리 고정된 칸이 있는 보드에서도 같은 충돌 검사를 사용한다. */
 	public Game3D(Board3D board, int fallIntervalMs)
 	{
 		if (fallIntervalMs <= 0)
 			throw new IllegalArgumentException("Fall interval must be positive");
 		this.board = java.util.Objects.requireNonNull(board, "board");
 		nextType = randomSpawnType();
-		fallTimer = new Timer(fallIntervalMs, event -> fallOneStep());
+		fallTimer = new Timer(fallIntervalMs, new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				fallOneStep();
+			}
+		});
 	}
 
-	/** 최초 시작 또는 일시 정지에서 이어서 진행한다. GAME_OVER는 restart로만 재시작한다. */
+	// 게임 시작 (게임오버면 restart로만)
 	public synchronized void start()
 	{
 		if (state == State.RUNNING || state == State.GAME_OVER)
@@ -123,7 +128,7 @@ public class Game3D
 		return state == State.RUNNING;
 	}
 
-	/** 보드, 회전 중인 블록 및 카운터를 초기화하고 새 게임을 시작한다. */
+	// 처음부터 다시
 	public synchronized void restart()
 	{
 		fallTimer.stop();
@@ -136,7 +141,6 @@ public class Game3D
 		start();
 	}
 
-	/** 외부에서 낙하 중인 블록을 변경하지 못하도록 현재 상태의 복사본을 반환한다. */
 	public synchronized Block3D getActiveBlock()
 	{
 		if (activeBlock == null)
@@ -144,7 +148,7 @@ public class Game3D
 		return activeBlock.copy();
 	}
 
-	/** Independent landing preview preserving XY and the rotated shape. */
+	// 고스트 (떨어질 위치 미리보기)
 	public synchronized Block3D getGhostBlock()
 	{
 		if (activeBlock == null) return null;
@@ -154,13 +158,13 @@ public class Game3D
 		return ghost;
 	}
 
-	/** Capture fixed, falling and ghost cells without exposing the mutable board. */
+	// 화면에 그릴 칸들 모으기
 	public synchronized Game3DScene getScene()
 	{
 		java.util.List<Game3DScene.Cell> cells = new java.util.ArrayList<Game3DScene.Cell>();
-		for (int x = 0; x < Board3D.SIZE_X; x++)
-			for (int y = 0; y < Board3D.SIZE_Y; y++)
-				for (int z = 0; z < Board3D.SIZE_Z; z++)
+		for (int x = 0; x < 3; x++)
+			for (int y = 0; y < 3; y++)
+				for (int z = 0; z < 14; z++)
 					if (board.isFilled(x, y, z))
 						cells.add(new Game3DScene.Cell(x, y, z, board.getType(x, y, z), false));
 		if (activeBlock != null)
@@ -174,7 +178,7 @@ public class Game3D
 		return new Game3DScene(cells, ghostCells);
 	}
 
-	/** 회전 후보가 경계와 고정 블록 검사를 통과한 경우만 반영한다. 기준점은 움직이지 않는다. */
+	// 회전 (벽이나 블록에 막히면 안돌림)
 	public synchronized boolean rotate(Block3D.Axis axis)
 	{
 		if (state != State.RUNNING || activeBlock == null)
@@ -186,7 +190,7 @@ public class Game3D
 		return true;
 	}
 
-	/** X 또는 Y 방향으로 한 칸 이동한다. 정지 상태이거나 충돌하면 위치를 유지한다. */
+	// 앞뒤좌우 이동
 	public synchronized boolean move(int dx, int dy)
 	{
 		if (state != State.RUNNING || activeBlock == null)
@@ -197,7 +201,7 @@ public class Game3D
 		return tryMoveTo(activeBlock.getX() + dx, activeBlock.getY() + dy, activeBlock.getZ());
 	}
 
-	/** 가능한 최저 위치까지 내려가 즉시 고정한다. 정지 상태에서는 아무것도 변경하지 않는다. */
+	// 하드드롭
 	public synchronized boolean hardDrop()
 	{
 		if (state != State.RUNNING || activeBlock == null)
@@ -228,7 +232,6 @@ public class Game3D
 			lockAndSpawn();
 	}
 
-	/** 위치 갱신은 반드시 후보 위치의 충돌 검사를 통과한 뒤 수행한다. */
 	private boolean tryMoveTo(int x, int y, int z)
 	{
 		if (!board.canPlace(activeBlock, x, y, z))
@@ -237,12 +240,18 @@ public class Game3D
 		return true;
 	}
 
-	/** 기본 실행은 키 입력 창을 연다. --console 옵션은 생성부터 게임 종료까지 확인한다. */
+	// 3D만 따로 실행할때 (--console 붙이면 글자로 테스트)
 	public static void main(String[] args) throws InterruptedException
 	{
 		if (args.length == 0 || !"--console".equals(args[0]))
 		{
-			javax.swing.SwingUtilities.invokeLater(() -> new Game3DFrame().setVisible(true));
+			javax.swing.SwingUtilities.invokeLater(new Runnable()
+			{
+				public void run()
+				{
+					new Game3DFrame().setVisible(true);
+				}
+			});
 			return;
 		}
 		Game3D game = new Game3D();
