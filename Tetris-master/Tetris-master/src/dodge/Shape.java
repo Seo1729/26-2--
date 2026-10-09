@@ -2,18 +2,20 @@ package dodge;
 
 import java.util.Random;
 
+// 테트리스 블록 모양 (학교 tetris2026 코드 가져옴)
+// 모양 번호: 0 없음, 1 Z, 2 S, 3 일자, 4 T, 5 네모, 6 L, 7 반대L
 public class Shape {
 
-	private Tetrominoes pieceShape;
-	private int coords[][];
-	private int[][][] coordsTable;
+	int pieceShape;
+	int coords[][];
+	int[][][] coordsTable;
 
 	public Shape() {
 		coords = new int[4][2];
-		setShape(Tetrominoes.NoShape);
+		setShape(0);
 	}
 
-	public void setShape(Tetrominoes shape) {
+	public void setShape(int shape) {
 
 		coordsTable = new int[][][] { { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } },
 				{ { 0, -1 }, { 0, 0 }, { -1, 0 }, { -1, 1 } }, { { 0, -1 }, { 0, 0 }, { 1, 0 }, { 1, 1 } },
@@ -23,18 +25,18 @@ public class Shape {
 
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 2; ++j) {
-				coords[i][j] = coordsTable[shape.ordinal()][i][j];
+				coords[i][j] = coordsTable[shape][i][j];
 			}
 		}
 		pieceShape = shape;
 
 	}
 
-	private void setX(int index, int x) {
+	void setX(int index, int x) {
 		coords[index][0] = x;
 	}
 
-	private void setY(int index, int y) {
+	void setY(int index, int y) {
 		coords[index][1] = y;
 	}
 
@@ -46,15 +48,14 @@ public class Shape {
 		return coords[index][1];
 	}
 
-	public Tetrominoes getShape() {
+	public int getShape() {
 		return pieceShape;
 	}
 
 	public void setRandomShape() {
 		Random r = new Random();
 		int x = Math.abs(r.nextInt()) % 7 + 1;
-		Tetrominoes[] values = Tetrominoes.values();
-		setShape(values[x]);
+		setShape(x);
 	}
 
 	public int minX() {
@@ -74,7 +75,7 @@ public class Shape {
 	}
 
 	public Shape rotateLeft() {
-		if (pieceShape == Tetrominoes.SquareShape)
+		if (pieceShape == 5) // 네모는 안돌림
 			return this;
 
 		Shape result = new Shape();
@@ -88,7 +89,7 @@ public class Shape {
 	}
 
 	public Shape rotateRight() {
-		if (pieceShape == Tetrominoes.SquareShape)
+		if (pieceShape == 5)
 			return this;
 
 		Shape result = new Shape();

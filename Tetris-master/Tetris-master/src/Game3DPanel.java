@@ -17,38 +17,38 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 
-/** Main view, information sidebar and window-wide game controls. */
+// 3D 화면 + 오른쪽 정보 + 키 설정
 public class Game3DPanel extends JPanel
 {
-	private final Game3D game;
-	private final Set<Integer> pressedKeys = new HashSet<Integer>();
-	private final JLabel status = new JLabel();
-	private final Board3DRenderer renderer = new Board3DRenderer();
-	private final TopViewPanel topView = new TopViewPanel();
-	private final JLabel nextBlock = new JLabel();
-	private final NextBlockPanel nextPreview = new NextBlockPanel();
-	private final JLabel score = new JLabel("0");
-	private final JLabel clearedLayers = new JLabel("0");
-	private final JLabel gameState = new JLabel("READY");
-	private final JLabel restartHint = new JLabel("R : 게임 오버 후 재시작");
-	private static final Color BACKGROUND = new Color(13, 18, 29);
-	private static final Color CARD = new Color(19, 25, 38);
-	private static final Color TEXT = new Color(220, 230, 245);
+	Game3D game;
+	Set<Integer> pressedKeys = new HashSet<Integer>();
+	JLabel status = new JLabel();
+	Board3DRenderer renderer = new Board3DRenderer();
+	TopViewPanel topView = new TopViewPanel();
+	JLabel nextBlock = new JLabel();
+	NextBlockPanel nextPreview = new NextBlockPanel();
+	JLabel score = new JLabel("0");
+	JLabel clearedLayers = new JLabel("0");
+	JLabel gameState = new JLabel("READY");
+	JLabel restartHint = new JLabel("R : 게임 오버 후 재시작");
+	int keyCount = 0; // 키 몇번 눌렀나 세보려고
 
 	public Game3DPanel(Game3D game)
 	{
-		this.game = java.util.Objects.requireNonNull(game, "game");
+		if (game == null)
+			throw new NullPointerException("game");
+		this.game = game;
 		setLayout(new BorderLayout(16, 12));
-		setBackground(BACKGROUND);
+		setBackground(new Color(13, 18, 29));
 		setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 		JLabel title = new JLabel("3D TETRIS");
-		title.setForeground(TEXT);
+		title.setForeground(new Color(220, 230, 245));
 		title.setFont(title.getFont().deriveFont(Font.BOLD, 22f));
 		add(title, BorderLayout.NORTH);
 		JPanel center = new JPanel(new BorderLayout(0, 8));
 		center.setOpaque(false);
 		center.add(renderer, BorderLayout.CENTER);
-		status.setForeground(TEXT);
+		status.setForeground(new Color(220, 230, 245));
 		center.add(status, BorderLayout.SOUTH);
 		add(center, BorderLayout.CENTER);
 		add(buildSidebar(), BorderLayout.EAST);
@@ -56,22 +56,54 @@ public class Game3DPanel extends JPanel
 		bindMovement(KeyEvent.VK_S, "S", 0, 1);
 		bindMovement(KeyEvent.VK_A, "A", -1, 0);
 		bindMovement(KeyEvent.VK_D, "D", 1, 0);
-		bindKey(KeyEvent.VK_J, "J", () -> game.rotate(Block3D.Axis.X));
-		bindKey(KeyEvent.VK_K, "K", () -> game.rotate(Block3D.Axis.Y));
-		bindKey(KeyEvent.VK_L, "L", () -> game.rotate(Block3D.Axis.Z));
-		bindKey(KeyEvent.VK_SPACE, "Space", () -> game.hardDrop());
-		bindKey(KeyEvent.VK_R, "R", () -> {
-			resetPressedKeys();
-			game.restart();
+		// 회전 J K L
+		bindKey(KeyEvent.VK_J, "J", new Runnable()
+		{
+			public void run()
+			{
+				game.rotate(Block3D.Axis.X);
+			}
+		});
+		bindKey(KeyEvent.VK_K, "K", new Runnable()
+		{
+			public void run()
+			{
+				game.rotate(Block3D.Axis.Y);
+			}
+		});
+		bindKey(KeyEvent.VK_L, "L", new Runnable()
+		{
+			public void run()
+			{
+				game.rotate(Block3D.Axis.Z);
+			}
+		});
+		// 하드드롭
+		bindKey(KeyEvent.VK_SPACE, "Space", new Runnable()
+		{
+			public void run()
+			{
+				game.hardDrop();
+			}
+		});
+		// 재시작
+		bindKey(KeyEvent.VK_R, "R", new Runnable()
+		{
+			public void run()
+			{
+				resetPressedKeys();
+				game.restart();
+			}
 		}, Game3D.State.GAME_OVER);
 		refreshStatus();
 	}
 
-	private JScrollPane buildSidebar()
+	// 오른쪽 정보창
+	JScrollPane buildSidebar()
 	{
 		JPanel sidebar = new JPanel();
 		sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-		sidebar.setBackground(BACKGROUND);
+		sidebar.setBackground(new Color(13, 18, 29));
 		topView.setAlignmentX(LEFT_ALIGNMENT);
 		topView.setPreferredSize(new Dimension(280, 280));
 		topView.setMaximumSize(new Dimension(Integer.MAX_VALUE, 280));
@@ -91,18 +123,18 @@ public class Game3DPanel extends JPanel
 		values.add(styledValue(score));
 		JPanel layers = new JPanel(); layers.setOpaque(false);
 		layers.setLayout(new BoxLayout(layers, BoxLayout.Y_AXIS));
-		JLabel layerTitle = new JLabel("삭제한 층 수"); layerTitle.setForeground(TEXT);
+		JLabel layerTitle = new JLabel("삭제한 층 수"); layerTitle.setForeground(new Color(220, 230, 245));
 		layers.add(layerTitle);
 		layers.add(styledValue(clearedLayers));
 		values.add(layers); stats.add(values);
-		JLabel scoringRule = new JLabel("삭제 층당 " + Game3D.POINTS_PER_LAYER + "점");
+		JLabel scoringRule = new JLabel("삭제 층당 " + 100 + "점");
 		scoringRule.setForeground(new Color(145, 166, 193));
 		stats.add(scoringRule);
 		sidebar.add(stats);
 		sidebar.add(Box.createVerticalStrut(10));
 		JPanel state = card("GAME STATUS");
 		state.add(styledValue(gameState));
-		restartHint.setForeground(TEXT);
+		restartHint.setForeground(new Color(220, 230, 245));
 		state.add(restartHint);
 		sidebar.add(state);
 		sidebar.add(Box.createVerticalStrut(10));
@@ -111,7 +143,7 @@ public class Game3DPanel extends JPanel
 				"J / K / L : X / Y / Z축 회전", "Mouse Drag : 카메라 회전",
 				"Mouse Wheel : Zoom", "R : 게임 오버 후 재시작"})
 		{
-			JLabel label = new JLabel(text); label.setForeground(TEXT);
+			JLabel label = new JLabel(text); label.setForeground(new Color(220, 230, 245));
 			controls.add(label);
 		}
 		sidebar.add(controls);
@@ -122,16 +154,16 @@ public class Game3DPanel extends JPanel
 		scroll.setFocusable(false);
 		scroll.getVerticalScrollBar().setFocusable(false);
 		scroll.setPreferredSize(new Dimension(320, 800));
-		scroll.getViewport().setBackground(BACKGROUND);
+		scroll.getViewport().setBackground(new Color(13, 18, 29));
 		scroll.getVerticalScrollBar().setUnitIncrement(20);
 		return scroll;
 	}
 
-	private static JPanel card(String title)
+	static JPanel card(String title)
 	{
 		JPanel panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		panel.setBackground(CARD);
+		panel.setBackground(new Color(19, 25, 38));
 		panel.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
 		panel.setAlignmentX(LEFT_ALIGNMENT);
 		panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
@@ -143,33 +175,39 @@ public class Game3DPanel extends JPanel
 		return panel;
 	}
 
-	private static JLabel styledValue(JLabel label)
+	static JLabel styledValue(JLabel label)
 	{
-		label.setForeground(TEXT);
+		label.setForeground(new Color(220, 230, 245));
 		label.setFont(label.getFont().deriveFont(Font.BOLD, 24f));
 		return label;
 	}
 
-	private void bindMovement(final int keyCode, String name, final int dx, final int dy)
+	// 이동 키 (WASD)
+	void bindMovement(final int keyCode, String name, final int dx, final int dy)
 	{
-		bindKey(keyCode, name, () -> game.move(dx, dy));
+		bindKey(keyCode, name, new Runnable()
+		{
+			public void run()
+			{
+				game.move(dx, dy);
+			}
+		});
 	}
 
-	private void bindKey(final int keyCode, String name, final Runnable action)
+	void bindKey(final int keyCode, String name, final Runnable action)
 	{
 		bindKey(keyCode, name, action, Game3D.State.RUNNING);
 	}
 
-	private void bindKey(final int keyCode, String name, final Runnable action, final Game3D.State requiredState)
+	// 키 누를때, 뗄때 등록 (shift 같은거 눌러도 되게)
+	void bindKey(final int keyCode, String name, final Runnable action, final Game3D.State requiredState)
 	{
 		String pressAction = "press" + name;
 		String releaseAction = "release" + name;
-		// Shift를 누른 경우에도 같은 조작을 제공한다.
 		for (int modifiers : new int[] { 0, InputEvent.SHIFT_DOWN_MASK })
 		{
 			getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(keyCode, modifiers, false), pressAction);
 		}
-		// Modifiers may change between pressing and releasing a game key.
 		int[] masks = {InputEvent.SHIFT_DOWN_MASK, InputEvent.CTRL_DOWN_MASK,
 				InputEvent.ALT_DOWN_MASK, InputEvent.META_DOWN_MASK, InputEvent.ALT_GRAPH_DOWN_MASK};
 		for (int combination = 0; combination < (1 << masks.length); combination++)
@@ -188,7 +226,7 @@ public class Game3DPanel extends JPanel
 					resetPressedKeys();
 					return;
 				}
-				// OS 자동 반복으로 들어오는 pressed 이벤트는 무시한다.
+				// 꾹 누르고 있으면 계속 들어와서 무시
 				if (pressedKeys.add(keyCode))
 					action.run();
 				refreshStatus();
@@ -203,7 +241,6 @@ public class Game3DPanel extends JPanel
 		});
 	}
 
-	/** 창 밖에서 키를 놓아 release 이벤트를 받지 못했을 때 눌림 상태를 초기화한다. */
 	public void resetPressedKeys()
 	{
 		pressedKeys.clear();
@@ -224,7 +261,7 @@ public class Game3DPanel extends JPanel
 			score.setText(Long.toString(game.getScore()));
 			Game3D.State state = game.getState();
 			gameState.setText(state == Game3D.State.GAME_OVER ? "GAME OVER" : state.name());
-			gameState.setForeground(state == Game3D.State.GAME_OVER ? new Color(245, 98, 121) : TEXT);
+			gameState.setForeground(state == Game3D.State.GAME_OVER ? new Color(245, 98, 121) : new Color(220, 230, 245));
 			restartHint.setText(state == Game3D.State.GAME_OVER ? "R 키를 눌러 다시 시작" : " ");
 			if (!game.isRunning())
 				resetPressedKeys();
@@ -239,7 +276,6 @@ public class Game3DPanel extends JPanel
 	}
 
 
-	@Override
 	public void removeNotify()
 	{
 		resetPressedKeys();

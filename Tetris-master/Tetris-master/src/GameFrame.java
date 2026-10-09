@@ -13,14 +13,9 @@ public class GameFrame extends JFrame
 	static int gameMode = 1;
 	static JFrame jf;
 
-	/** 똥피하기 모드의 창 가로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
-	private static final int DODGE_WIDTH = 1100;
-
-	/** 똥피하기 모드의 창 세로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
-	private static final int DODGE_HEIGHT = 1000;
-
-	/** 실행하면 처음 보이는 메인화면. 게임을 시작하면 창에서 떼어 낸다. */
-	private final MainMenuPanel mainMenu;
+	MainMenuPanel mainMenu;
+	dodge.DodgeMode dodgeMode; // 똥피하기
+	int w, h;
 
 	GameFrame()
 	{
@@ -36,7 +31,7 @@ public class GameFrame extends JFrame
 
 		c.setBackground(new Color(30, 160, 255));
 
-		// 게임은 메뉴에서 모드를 고른 뒤 만들고, 처음에는 메인화면만 보여 준다
+		// 메인화면
 		mainMenu = new MainMenuPanel(this);
 		mainMenu.setBounds(0, 0, 360, 640);
 		add(mainMenu);
@@ -46,17 +41,11 @@ public class GameFrame extends JFrame
 		setVisible(true);
 	}
 
-	/**
-	 * 메인화면에서 고른 모드로 게임을 시작한다. 메인화면을 떼어 내고 같은 창에 게임 화면을 붙인다.
-	 *
-	 * @param mode 시작할 게임 모드(1: 일반, 3: 갤러그 협동)
-	 */
+	// 게임 시작 (1 = 일반, 3 = 갤러그)
 	public void startGame(int mode)
 	{
-		// 게임 패널과 아이템 처리가 이 값으로 모드를 구분하므로 먼저 정해 둔다
 		gameMode = mode;
 
-		// 메인화면을 창에서 떼어 내고 그 자리에 게임 화면을 만든다
 		remove(mainMenu);
 
 		switch (gameMode)
@@ -70,8 +59,7 @@ public class GameFrame extends JFrame
 				break;
 		}
 
-		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올리고
-		// 전투기 조작 키도 프레임에서 함께 받도록 등록한다
+		// 갤러그
 		if (gameMode == 3)
 		{
 			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480, fgp);
@@ -79,50 +67,51 @@ public class GameFrame extends JFrame
 			addKeyListener(galagaLayer.getKeyListener());
 		}
 
-		// 바뀐 화면을 다시 그리고, 버튼에 가 있던 키 입력을 게임 창으로 돌려놓는다
 		revalidate();
 		repaint();
-		requestFocusInWindow();
+		requestFocusInWindow(); // 이거 안하면 키 안먹음
 	}
 
-	/**
-	 * 메인화면에서 똥피하기 모드를 시작한다. 메인화면을 떼어 내고, 창을 이 모드에 맞는 크기로 키운 뒤
-	 * 같은 창에 똥피하기 화면을 붙인다.
-	 */
 	public void startDodge()
 	{
-		// 메인화면을 창에서 떼어 낸다
 		remove(mainMenu);
 
-		// 똥피하기 화면은 창 전체를 채우도록 배치 방식을 바꾼다(기존 좌표 배치는 게임 모드에서만 쓴다)
 		setLayout(new BorderLayout());
 		setTitle("Tetris X 똥 피하기");
 
-		// 작업 표시줄을 뺀 화면 크기보다 크면 화면에 맞춰 창 크기를 정하고, 화면 가운데로 옮긴다
+		// 창 크기 (화면보다 크면 줄임)
 		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-		setSize(Math.min(DODGE_WIDTH, screen.width), Math.min(DODGE_HEIGHT, screen.height));
+		w = 1100;
+		h = 1000;
+		if (screen.width < 1100)
+			w = screen.width;
+		if (screen.height < 1000)
+			h = screen.height;
+		setSize(w, h);
 		setLocationRelativeTo(null);
 
-		// 똥피하기 화면을 붙이고, 화면에 붙은 뒤에 시작해야 키 입력 포커스를 받을 수 있다
-		dodge.DodgeMode dodgeMode = new dodge.DodgeMode();
+		dodgeMode = new dodge.DodgeMode();
 		add(dodgeMode, BorderLayout.CENTER);
 		revalidate();
 		repaint();
 		dodgeMode.start();
 	}
 
-	/**
-	 * 메인화면에서 3D 테트리스를 시작한다. 3D 테트리스는 자체 창을 쓰므로, 그 창을 먼저 띄운 뒤
-	 * 이 메인 창은 닫는다. 3D 창을 닫으면 프로그램이 끝난다.
-	 */
 	public void start3D()
 	{
-		// 3D 창을 먼저 띄워야 열린 창이 없어지는 순간이 생기지 않는다
-		new Game3DFrame().setVisible(true);
+		// 3D는 창이 따로 있음
+		Game3DFrame frame3d = new Game3DFrame();
+		frame3d.setVisible(true);
 
-		// 메인 창은 더 쓰지 않으므로 닫는다
 		dispose();
 	}
+
+//	public void backToMenu()
+//	{
+//		removeAll();
+//		mainMenu = new MainMenuPanel(this);
+//		add(mainMenu);
+//	}
 
 	public void remakePanel()
 	{
@@ -493,7 +482,7 @@ class GamePanel extends JPanel implements Runnable
 					count++;
 		if (count > 0)
 		{
-			// 갤러그 협동 모드는 창을 바로 닫지 않고 두 사람의 패배 결과를 보여 준다
+			// 갤러그 모드면 끄지 말고 GAME OVER
 			if (GameFrame.gameMode == 3)
 			{
 				endGame("GAME OVER");
@@ -1567,66 +1556,41 @@ class GamePanel extends JPanel implements Runnable
 		}
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 외계인이 착지할 수 있는지 판단할 때 쓴다.
-	 * 지정한 칸에 고정된 블록이 있거나 그 칸이 바닥 아래인지 알려 준다.
-	 *
-	 * @param row 화면 칸 기준 행(0이 맨 위)
-	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
-	 * @return 고정 블록이 있거나 바닥 아래면 true
-	 */
+	// 갤러그용 -----------------------------------------
+	// 외계인이 내려앉을수 있나 확인 (row, col은 화면 기준)
 	public boolean isBlocked(int row, int col)
 	{
-		// 맨 아래 줄보다 아래는 바닥이므로 막힌 것으로 본다
-		if (row >= fieldLabel.length)
+		if (row >= 20)
 			return true;
-		// field는 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
-		return field[row][col + 1] > 0;
+		if (field[row][col + 1] > 0)
+			return true;
+		else
+			return false;
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 착지한 외계인을 회색 방해 블록으로 바꿀 때 쓴다.
-	 * 지정한 칸이 비어 있을 때만 방해 블록을 놓고 화면을 다시 그린다.
-	 *
-	 * @param row 화면 칸 기준 행(0이 맨 위)
-	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
-	 */
+	// 외계인 착지한 자리에 회색블록
 	public void placeGarbage(int row, int col)
 	{
-		// 고정 블록이나 떨어지는 중인 블록과 겹치면 놓지 않는다(블록이 덮어써지는 것을 막기 위해)
 		if (field[row][col + 1] == 0 && array[row][col + 1] == 0)
 		{
-			// 100은 기존 줄 올리기 아이템과 같은 회색 방해 블록 값이다
-			field[row][col + 1] = 100;
+			field[row][col + 1] = 100; // 회색
 			drawTetris();
 		}
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 게임을 끝내고 결과 메시지를 보여 준다.
-	 * 블록 낙하와 시간 표시를 멈추고, 테트리스 영역을 가린 검은 패널에 메시지를 띄운다.
-	 *
-	 * @param message 화면에 띄울 결과 문구(예: "CLEAR", "GAME OVER")
-	 */
+	// 갤러그 끝났을때 (CLEAR, GAME OVER)
 	public void endGame(String message)
 	{
-		// 블록 낙하 스레드와 시간 스레드를 멈춘다
 		gameRun = false;
 		th.interrupt();
 		timeTh.interrupt();
 
-		// 테트리스 영역을 가리고 시작 카운트다운에 쓰던 검은 패널에 결과를 띄운다
 		textLabel.setText(message);
 		textLabel.setVisible(true);
 		blackPanel.setVisible(true);
 		tetrisArea.setVisible(false);
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 갤러그 쪽도 멈춰야 하는지 판단할 때 쓴다.
-	 *
-	 * @return 게임이 아직 진행 중이면 true, 끝났으면 false
-	 */
 	public boolean isRunning()
 	{
 		return gameRun;

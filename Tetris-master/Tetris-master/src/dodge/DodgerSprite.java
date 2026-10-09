@@ -13,26 +13,14 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-/**
- * P2 캐릭터 그리기.
- *
- * images 폴더(이 클래스와 같은 패키지 아래 images/)에 PNG가 있으면 그 그림을 쓰고,
- * 없으면 코드로 그린 기본 캐릭터를 쓴다. 그림은 모두 "오른쪽을 보는" 모습으로 그리면
- * 왼쪽으로 갈 때는 좌우를 뒤집어서 그린다.
- *
- * 파일 이름 (없는 건 괄호 안 그림으로 대신한다):
- *   dodger_idle.png     가만히 서 있기 (필수, 없으면 기본 캐릭터)
- *   dodger_walk1.png    걷기 1 (idle)
- *   dodger_walk2.png    걷기 2 (walk1)
- *   dodger_jump.png     점프로 올라가는 중 (idle)
- *   dodger_fall.png     떨어지는 중 (jump)
- *   dodger_crushed.png  압사 (idle을 회색으로)
- */
+// 고양이 그리기
+// images 폴더에 그림 있으면 그거 쓰고 없으면 코드로 그림
+// 상태 0 서있음 1 걷기 2 점프 3 떨어짐 4 깔림
 public class DodgerSprite {
 
-	private static final String[] NAMES = { "idle", "walk1", "walk2", "jump", "fall", "crushed" };
+	static String[] NAMES = { "idle", "walk1", "walk2", "jump", "fall", "crushed" };
 
-	private final Map<String, BufferedImage> images = new HashMap<>();
+	Map<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 
 	public DodgerSprite() {
 		for (String name : NAMES) {
@@ -42,7 +30,7 @@ public class DodgerSprite {
 		}
 	}
 
-	private static BufferedImage load(String path) {
+	static BufferedImage load(String path) {
 		URL url = DodgerSprite.class.getResource(path);
 		if (url == null)
 			return null;
@@ -54,57 +42,56 @@ public class DodgerSprite {
 		}
 	}
 
-	/** (x, y)부터 w x h 칸 하나에 캐릭터를 그린다 */
 	public void draw(Graphics g, Dodger dodger, int x, int y, int w, int h) {
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		Dodger.State state = dodger.getState();
-		BufferedImage img = pickImage(state, dodger.getWalkFrame());
+		int state = dodger.getState();
+		BufferedImage img = pickImage(state, dodger.walkFrame);
 		if (img != null) {
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-			if (dodger.isFacingRight())
+			if (dodger.facingRight)
 				g2.drawImage(img, x, y, w, h, null);
 			else
 				g2.drawImage(img, x + w, y, -w, h, null); // 좌우 뒤집기
-			if (state == Dodger.State.CRUSHED && !images.containsKey("crushed")) {
+			if (state == 4 && !images.containsKey("crushed")) {
 				g2.setColor(new Color(128, 128, 128, 160));
 				g2.fillRect(x, y, w, h);
 			}
 		} else {
-			drawDefault(g2, state, dodger.isFacingRight(), dodger.getWalkFrame(), x, y, w, h);
+			drawDefault(g2, state, dodger.facingRight, dodger.walkFrame, x, y, w, h);
 		}
 		g2.dispose();
 	}
 
-	private BufferedImage pickImage(Dodger.State state, int walkFrame) {
+	BufferedImage pickImage(int state, int walkFrame) {
 		BufferedImage idle = images.get("idle");
 		if (idle == null)
 			return null;
 		switch (state) {
-		case WALK:
+		case 1:
 			if (walkFrame == 0)
 				return images.getOrDefault("walk1", idle);
 			return images.getOrDefault("walk2", images.getOrDefault("walk1", idle));
-		case JUMP:
+		case 2:
 			return images.getOrDefault("jump", idle);
-		case FALL:
+		case 3:
 			return images.getOrDefault("fall", images.getOrDefault("jump", idle));
-		case CRUSHED:
+		case 4:
 			return images.getOrDefault("crushed", idle);
 		default:
 			return idle;
 		}
 	}
 
-	/** 그림 파일이 없을 때 쓰는 기본 캐릭터 (동그란 몸 + 눈 + 발) */
-	private static void drawDefault(Graphics2D g, Dodger.State state, boolean right, int walkFrame, int x, int y,
+	// 그림 없을때 기본 캐릭터
+	static void drawDefault(Graphics2D g, int state, boolean right, int walkFrame, int x, int y,
 			int w, int h) {
 		Color body = new Color(255, 140, 0);
 		int dir = right ? 1 : -1;
 		g.setStroke(new BasicStroke(1f));
 
-		if (state == Dodger.State.CRUSHED) {
+		if (state == 4) {
 			// 납작하게 눌린 회색 몸 + X 눈
 			int bh = h / 3;
 			g.setColor(Color.GRAY);
@@ -124,11 +111,11 @@ public class DodgerSprite {
 		int bw = w * 7 / 10;
 		int bh = h * 6 / 10;
 		int by = y + h / 10;
-		if (state == Dodger.State.JUMP) {
+		if (state == 2) {
 			bw = w * 6 / 10;
 			bh = h * 7 / 10;
 			by = y;
-		} else if (state == Dodger.State.FALL) {
+		} else if (state == 3) {
 			bw = w * 8 / 10;
 			bh = h * 55 / 100;
 		}
@@ -141,15 +128,15 @@ public class DodgerSprite {
 		int cx = x + w / 2;
 		int frontX = cx + dir * w / 8;
 		int backX = cx - dir * w / 8;
-		if (state == Dodger.State.WALK) {
+		if (state == 1) {
 			int swing = (walkFrame == 0 ? 1 : -1) * w / 8;
 			frontX += dir * swing;
 			backX -= dir * swing;
-		} else if (state == Dodger.State.JUMP) {
+		} else if (state == 2) {
 			fy = by + bh - fh / 2;
 			frontX = cx + dir * w / 12;
 			backX = cx - dir * w / 12;
-		} else if (state == Dodger.State.FALL) {
+		} else if (state == 3) {
 			frontX = cx + dir * w / 4;
 			backX = cx - dir * w / 4;
 		}
@@ -163,9 +150,9 @@ public class DodgerSprite {
 		int armY = by + bh / 2;
 		int frontSide = right ? bx + bw : bx;
 		int backSide = right ? bx : bx + bw;
-		if (state == Dodger.State.JUMP) {
+		if (state == 2) {
 			g.drawLine(frontSide, armY, frontSide + dir * w / 8, by - h / 10);
-		} else if (state == Dodger.State.FALL) {
+		} else if (state == 3) {
 			g.drawLine(frontSide, armY, frontSide + dir * w / 8, by);
 			g.drawLine(backSide, armY, backSide - dir * w / 8, by);
 		} else {
@@ -189,7 +176,7 @@ public class DodgerSprite {
 		g.drawOval(ex, ey, er, er);
 		int pr = Math.max(2, er / 2);
 		int px = ex + er / 2 - pr / 2 + dir * (er / 4);
-		int py = ey + er / 2 - pr / 2 + (state == Dodger.State.FALL ? -er / 4 : 0);
+		int py = ey + er / 2 - pr / 2 + (state == 3 ? -er / 4 : 0);
 		g.fillOval(px, py, pr, pr);
 	}
 }

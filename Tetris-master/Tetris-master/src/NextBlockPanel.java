@@ -1,13 +1,14 @@
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
-/** Camera-independent preview of the next piece's initial XY shape. */
-public final class NextBlockPanel extends JPanel
+// 다음 블록 미리보기
+public class NextBlockPanel extends JPanel
 {
-    private Block3D.Type type;
+    Block3D.Type type;
 
     public NextBlockPanel()
     {
@@ -24,7 +25,6 @@ public final class NextBlockPanel extends JPanel
         }
     }
 
-    @Override
     protected void paintComponent(Graphics graphics)
     {
         super.paintComponent(graphics);
@@ -49,12 +49,25 @@ public final class NextBlockPanel extends JPanel
             {
                 int x = left + (cube.getX() - minX) * cell;
                 int y = top + (cube.getY() - minY) * cell;
-                g.setColor(BlockColors.colorFor(type));
+                g.setColor(getColor(type));
                 g.fillRect(x + 1, y + 1, cell - 2, cell - 2);
-                g.setColor(BlockColors.colorFor(type).brighter());
+                g.setColor(getColor(type).brighter());
                 g.drawRect(x + 1, y + 1, cell - 3, cell - 3);
             }
         }
         finally { g.dispose(); }
+    }
+
+    // 블록 색 (BlockColors꺼 복사)
+    static Color getColor(Block3D.Type type)
+    {
+        Color[] colors = {
+            new Color(57, 211, 230), new Color(255, 209, 70), new Color(187, 115, 245),
+            new Color(255, 156, 67), new Color(83, 135, 246), new Color(91, 213, 132),
+            new Color(245, 98, 121)
+        };
+        if (type == null)
+            return Color.GRAY;
+        return colors[type.ordinal()];
     }
 }
