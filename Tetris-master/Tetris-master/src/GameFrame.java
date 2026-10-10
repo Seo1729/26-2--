@@ -213,8 +213,6 @@ class GamePanel extends JPanel implements Runnable
 	int speedCount = 0;
 	int preSpeed;
 
-	JLabel tube;
-	JLabel ground;
 	JLabel textLabel = new JLabel();
 	JPanel blackPanel = new JPanel();
 	boolean Gaming = false;
@@ -282,20 +280,9 @@ class GamePanel extends JPanel implements Runnable
 
 	public void makeBackground()
 	{
+		// 배경은 단색(하늘색)만 쓴다. 투명으로 두면 창의 배경색이 그대로 보인다.
 		setOpaque(false);
 		setBackground(new Color(30, 160, 255));
-
-		tube = new JLabel(ImageSource.kakao_tube);
-		int tubeWidth = ImageSource.kakao_tube.getIconWidth();
-		int tubeHeight = ImageSource.kakao_tube.getIconHeight();
-		tube.setBounds(240, 360, tubeWidth, tubeHeight);
-		add(tube);
-
-		ground = new JLabel(ImageSource.bg_ground);
-		int groundWidth = ImageSource.bg_ground.getIconWidth();
-		int groundHeight = ImageSource.bg_ground.getIconHeight();
-		ground.setBounds(0, 640 - groundHeight, groundWidth, groundHeight);
-		add(ground);
 	}
 
 	public void makeComponent(int n)
