@@ -7,6 +7,9 @@ import java.util.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import common.Bgm;
+import common.SoundManager;
+
 // 똥피하기 게임 화면
 // 보드, 테트리스(P1), 키 입력, 승패 판정 다 여기서 함
 public class GamePanel extends JPanel implements ActionListener {
@@ -102,6 +105,7 @@ public class GamePanel extends JPanel implements ActionListener {
 			return;
 
 		requestFocusInWindow();
+		SoundManager.startBgm(Bgm.GAME);
 		isStarted = true;
 		fallElapsed = 0;
 		dodgerElapsed = 0;
@@ -207,6 +211,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	public void stop() {
+		SoundManager.stopBgm();
 		timer.stop();
 		isStarted = false;
 		isPaused = false;
@@ -232,6 +237,7 @@ public class GamePanel extends JPanel implements ActionListener {
 
 			if (result != 0) {
 				isStarted = false;
+				SoundManager.stopBgm();
 				timer.stop();
 				held.clear();
 				nextRepeat.clear();

@@ -3,6 +3,9 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
+import common.Bgm;
+import common.SoundManager;
+
 // 3D 테트리스 창
 public class Game3DFrame extends JFrame
 {
@@ -32,6 +35,7 @@ public class Game3DFrame extends JFrame
 			}
 		});
 		game.start();
+		SoundManager.startBgm(Bgm.GAME);
 		panel.refreshStatus();
 		statusTimer.start();
 	}
@@ -42,6 +46,7 @@ public class Game3DFrame extends JFrame
 		game.stop();
 		statusTimer.stop();
 		panel.resetPressedKeys();
+		SoundManager.stopBgm();
 		super.dispose();
 	}
 }

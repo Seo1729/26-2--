@@ -2,6 +2,11 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Vector;
 
+import common.Bgm;
+import common.Settings;
+import common.Sound;
+import common.SoundManager;
+
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.LineBorder;
@@ -47,6 +52,7 @@ public class GameFrame extends JFrame
 		gameMode = mode;
 
 		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
 
 		switch (gameMode)
 		{
@@ -75,6 +81,7 @@ public class GameFrame extends JFrame
 	public void startDodge()
 	{
 		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
 
 		setLayout(new BorderLayout());
 		setTitle("Tetris X 똥 피하기");
@@ -230,8 +237,6 @@ class GamePanel extends JPanel implements Runnable
 	int speedCount = 0;
 	int preSpeed;
 
-	JLabel tube;
-	JLabel ground;
 	JLabel textLabel = new JLabel();
 	JPanel blackPanel = new JPanel();
 	boolean Gaming = false;
@@ -299,20 +304,9 @@ class GamePanel extends JPanel implements Runnable
 
 	public void makeBackground()
 	{
+		// 배경은 단색(하늘색)만 쓴다. 투명으로 두면 창의 배경색이 그대로 보인다.
 		setOpaque(false);
 		setBackground(new Color(30, 160, 255));
-
-		tube = new JLabel(ImageSource.kakao_tube);
-		int tubeWidth = ImageSource.kakao_tube.getIconWidth();
-		int tubeHeight = ImageSource.kakao_tube.getIconHeight();
-		tube.setBounds(240, 360, tubeWidth, tubeHeight);
-		add(tube);
-
-		ground = new JLabel(ImageSource.bg_ground);
-		int groundWidth = ImageSource.bg_ground.getIconWidth();
-		int groundHeight = ImageSource.bg_ground.getIconHeight();
-		ground.setBounds(0, 640 - groundHeight, groundWidth, groundHeight);
-		add(ground);
 	}
 
 	public void makeComponent(int n)
@@ -499,7 +493,8 @@ class GamePanel extends JPanel implements Runnable
 					count++;
 		if (count > 0)
 		{
-			// 새 블록이 나올 자리가 막혔으니 게임오버 소리를 낸다
+			// 새 블록이 나올 자리가 막혔으니 배경음악을 멈추고 게임오버 소리를 낸다
+			SoundManager.stopBgm();
 			SoundManager.play(Sound.GAME_OVER);
 
 			// 갤러그 모드면 끄지 말고 GAME OVER
@@ -1618,6 +1613,7 @@ class GamePanel extends JPanel implements Runnable
 	// 갤러그 끝났을때 (CLEAR, GAME OVER)
 	public void endGame(String message)
 	{
+		SoundManager.stopBgm();
 		gameRun = false;
 		th.interrupt();
 		timeTh.interrupt();

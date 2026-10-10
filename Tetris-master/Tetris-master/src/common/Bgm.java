@@ -1,3 +1,5 @@
+package common;
+
 /**
  * 배경음악 종류. SoundManager.startBgm()에 넘겨서 재생한다.
  * 음악은 파일이 아니라 SoundManager가 코드로 직접 만든다.

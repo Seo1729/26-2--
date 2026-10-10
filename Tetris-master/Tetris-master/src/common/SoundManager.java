@@ -1,3 +1,5 @@
+package common;
+
 import java.util.Random;
 
 import javax.sound.sampled.AudioFormat;

@@ -1,6 +1,10 @@
 import java.awt.*;
 import java.awt.event.*;
 
+import common.Bgm;
+import common.Sound;
+import common.SoundManager;
+
 import javax.swing.*;
 
 // 메인화면
@@ -15,6 +19,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 	public MainMenuPanel(GameFrame f)
 	{
 		frame = f;
+
+		// 메인화면에서는 차분한 메뉴 음악을 튼다
+		SoundManager.startBgm(Bgm.MENU);
 
 		setLayout(null);
 		setBackground(new Color(30, 160, 255));
@@ -79,6 +86,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 	public void actionPerformed(ActionEvent e)
 	{
+		SoundManager.play(Sound.CLICK);
 		String cmd = e.getActionCommand();
 
 		if (cmd.equals("일반 모드"))
