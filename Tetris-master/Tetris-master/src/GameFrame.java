@@ -131,19 +131,30 @@ public class GameFrame extends JFrame
 //					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
 					if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[0])
 					{
+						// 실제로 한 칸 내려갔을 때만 이동음을 낸다(바닥에 닿아 고정되면 고정음이 난다)
+						int oldY = ((GamePanel) gp).y;
 						((GamePanel) gp).move_down();
+						if (((GamePanel) gp).y > oldY)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
 					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[1])
 					{
+						// 벽이나 블록에 막혀 안 움직였으면 소리를 내지 않는다
+						int oldX = ((GamePanel) gp).x;
 						((GamePanel) gp).move_left();
+						if (((GamePanel) gp).x != oldX)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
 					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[2])
 					{
+						int oldX = ((GamePanel) gp).x;
 						((GamePanel) gp).move_right();
+						if (((GamePanel) gp).x != oldX)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
@@ -176,7 +187,11 @@ public class GameFrame extends JFrame
 					}
 					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[7])
 					{
+						// 회전하면 블록 모양 배열이 새로 바뀌므로, 바뀌었을 때만 회전음을 낸다
+						int[][] oldBlock = ((GamePanel) gp).block;
 						((GamePanel) gp).move_turn();
+						if (((GamePanel) gp).block != oldBlock)
+							SoundManager.play(Sound.ROTATE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
@@ -188,6 +203,8 @@ public class GameFrame extends JFrame
 	public static void main(String[] args)
 	{
 		SwingUtilities.invokeLater(() -> {
+			// 저장된 음량과 음소거 설정을 소리에 적용한 뒤 시작한다
+			Settings.load();
 			new ImageSource();
 			new GameFrame();
 		});
@@ -482,6 +499,9 @@ class GamePanel extends JPanel implements Runnable
 					count++;
 		if (count > 0)
 		{
+			// 새 블록이 나올 자리가 막혔으니 게임오버 소리를 낸다
+			SoundManager.play(Sound.GAME_OVER);
+
 			// 갤러그 모드면 끄지 말고 GAME OVER
 			if (GameFrame.gameMode == 3)
 			{
@@ -507,7 +527,19 @@ class GamePanel extends JPanel implements Runnable
 			textLabel.setVisible(true);
 			blackPanel.setVisible(true);
 			tetrisArea.setVisible(false);
-			
+
+			// 게임오버 소리가 끝까지 들리도록 1초 기다렸다가 끝낸다.
+			// 위에서 th.interrupt()가 이 스레드를 가리켰다면 중단 표시가 남아 sleep이 바로 끝나므로 먼저 지운다.
+			Thread.interrupted();
+			try
+			{
+				Thread.sleep(1000);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+
 			System.exit(0);
 		}
 		else
@@ -707,6 +739,8 @@ class GamePanel extends JPanel implements Runnable
 
 	public void fixBlock()
 	{
+		SoundManager.play(Sound.LOCK);
+
 		/****************************************
 		 * 조건 : 1. move_drop, move_down의 인터럽트 발생시 바닥에 닿았다는 조건이므로 마지막 데이터 값을 변경해줘
 		 * 고정됨을 표시한다. 2. 데이터 값 >> I:91 J:92 L:93 O:94 S:95 T:96 Z:97 3.
@@ -790,6 +824,7 @@ class GamePanel extends JPanel implements Runnable
 						}
 
 						itemLabel.add(itemL);
+						SoundManager.play(Sound.ITEM);
 						item.removeAll();
 
 						for (int k = 0; k < itemLabel.size(); k++)
@@ -808,6 +843,7 @@ class GamePanel extends JPanel implements Runnable
 		}
 		if (deleteCount > 0)
 		{
+			SoundManager.play(Sound.LINE_CLEAR);
 			addItem(deleteCount);
 			addScore(deleteCount);
 		}
@@ -916,6 +952,7 @@ class GamePanel extends JPanel implements Runnable
 			uItem.slow();
 			break;
 		}
+		SoundManager.play(Sound.ITEM);
 		deleteItem();
 	}
 
