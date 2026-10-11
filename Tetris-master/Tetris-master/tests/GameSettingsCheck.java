@@ -32,12 +32,12 @@ public class GameSettingsCheck {
         check(loaded.getTetrisKey(TetrisAction.LEFT) == KeyEvent.VK_J
                 && loaded.getDodgeKey(DodgeAction.LEFT) == KeyEvent.VK_L, "Independent key round trip");
         Files.write(file, ("bgmVolume=-1\nsfxVolume=garbage\ntetris.key.LEFT=2147483647\n"
-                + "dodge.key.LEFT=" + KeyEvent.VK_A + "\ntetris.key.RIGHT=0\n").getBytes(StandardCharsets.UTF_8));
+                + "dodge.key.LEFT=" + KeyEvent.VK_H + "\ntetris.key.RIGHT=0\n").getBytes(StandardCharsets.UTF_8));
         check(loaded.load(), "Readable properties");
         check(loaded.getBgmVolume() == 40 && loaded.getSfxVolume() == 70, "Invalid volume fallback");
         check(loaded.getTetrisKey(TetrisAction.LEFT) == KeyEvent.VK_LEFT
                 && loaded.getTetrisKey(TetrisAction.RIGHT) == KeyEvent.VK_RIGHT, "Invalid key fallback");
-        check(loaded.getDodgeKey(DodgeAction.LEFT) == KeyEvent.VK_A, "Valid item preserved");
+        check(loaded.getDodgeKey(DodgeAction.LEFT) == KeyEvent.VK_H, "Valid item preserved");
         loaded.setBgmVolume(101);
         loaded.setSfxVolume(-1);
         loaded.setDodgeKey(DodgeAction.JUMP, -5);

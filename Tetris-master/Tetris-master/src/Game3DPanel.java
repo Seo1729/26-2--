@@ -32,6 +32,25 @@ public class Game3DPanel extends JPanel
 	JLabel gameState = new JLabel("READY");
 	JLabel restartHint = new JLabel("R : 게임 오버 후 재시작");
 	int keyCount = 0; // 키 몇번 눌렀나 세보려고
+	private final java.util.List<Runnable> keyRegistrations = new java.util.ArrayList<>();
+	private boolean rebuildingKeys;
+	private final Runnable keySettingsChanged = this::rebuildKeys;
+	private final javax.swing.JTextArea controlKeys = new javax.swing.JTextArea();
+	private void rebuildKeys() {
+		resetPressedKeys();
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).clear();
+		rebuildingKeys = true;
+		try { for (Runnable registration : keyRegistrations) registration.run(); }
+		finally { rebuildingKeys = false; }
+		settings.KeySettingsPanel.install(this);
+		controlKeys.setText(settings.KeySettingsPanel.help(settings.GameSettings.Game.THREE_D)
+				+ "마우스 드래그: 시점 회전\n마우스 휠: 확대/축소\nF1: 조작 키 설정");
+	}
+	public void addNotify() {
+		super.addNotify();
+		settings.GameControls.addListener(keySettingsChanged);
+		rebuildKeys();
+	}
 
 	public Game3DPanel(Game3D game)
 	{
@@ -96,6 +115,7 @@ public class Game3DPanel extends JPanel
 			}
 		}, Game3D.State.GAME_OVER);
 		refreshStatus();
+		rebuildKeys();
 	}
 
 	// 오른쪽 정보창
@@ -139,13 +159,10 @@ public class Game3DPanel extends JPanel
 		sidebar.add(state);
 		sidebar.add(Box.createVerticalStrut(10));
 		JPanel controls = card("조작법");
-		for (String text : new String[] {"WASD : 평면 이동", "Space : Hard Drop",
-				"J / K / L : X / Y / Z축 회전", "Mouse Drag : 카메라 회전",
-				"Mouse Wheel : Zoom", "R : 게임 오버 후 재시작"})
-		{
-			JLabel label = new JLabel(text); label.setForeground(new Color(220, 230, 245));
-			controls.add(label);
-		}
+		controlKeys.setEditable(false); controlKeys.setFocusable(false);
+		controlKeys.setOpaque(false); controlKeys.setForeground(new Color(220, 230, 245));
+		controls.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
+		controls.add(controlKeys);
 		sidebar.add(controls);
 		sidebar.add(Box.createVerticalGlue());
 		JScrollPane scroll = new JScrollPane(sidebar, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -202,11 +219,13 @@ public class Game3DPanel extends JPanel
 	// 키 누를때, 뗄때 등록 (shift 같은거 눌러도 되게)
 	void bindKey(final int keyCode, String name, final Runnable action, final Game3D.State requiredState)
 	{
+		if (!rebuildingKeys) keyRegistrations.add(() -> bindKey(keyCode, name, action, requiredState));
+		final int physicalCode = settings.GameControls.physical(settings.GameSettings.Game.THREE_D, keyCode);
 		String pressAction = "press" + name;
 		String releaseAction = "release" + name;
 		for (int modifiers : new int[] { 0, InputEvent.SHIFT_DOWN_MASK })
 		{
-			getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(keyCode, modifiers, false), pressAction);
+			getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(physicalCode, modifiers, false), pressAction);
 		}
 		int[] masks = {InputEvent.SHIFT_DOWN_MASK, InputEvent.CTRL_DOWN_MASK,
 				InputEvent.ALT_DOWN_MASK, InputEvent.META_DOWN_MASK, InputEvent.ALT_GRAPH_DOWN_MASK};
@@ -215,7 +234,7 @@ public class Game3DPanel extends JPanel
 			int modifiers = 0;
 			for (int i = 0; i < masks.length; i++)
 				if ((combination & (1 << i)) != 0) modifiers |= masks[i];
-			getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(keyCode, modifiers, true), releaseAction);
+			getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(physicalCode, modifiers, true), releaseAction);
 		}
 		getActionMap().put(pressAction, new AbstractAction()
 		{
@@ -262,7 +281,8 @@ public class Game3DPanel extends JPanel
 			Game3D.State state = game.getState();
 			gameState.setText(state == Game3D.State.GAME_OVER ? "GAME OVER" : state.name());
 			gameState.setForeground(state == Game3D.State.GAME_OVER ? new Color(245, 98, 121) : new Color(220, 230, 245));
-			restartHint.setText(state == Game3D.State.GAME_OVER ? "R 키를 눌러 다시 시작" : " ");
+			restartHint.setText(state == Game3D.State.GAME_OVER ? java.awt.event.KeyEvent.getKeyText(
+					settings.GameControls.physical(settings.GameSettings.Game.THREE_D, KeyEvent.VK_R)) + " 키를 눌러 다시 시작" : " ");
 			if (!game.isRunning())
 				resetPressedKeys();
 			Block3D block = game.getActiveBlock();
@@ -278,6 +298,7 @@ public class Game3DPanel extends JPanel
 
 	public void removeNotify()
 	{
+		settings.GameControls.removeListener(keySettingsChanged);
 		resetPressedKeys();
 		super.removeNotify();
 	}

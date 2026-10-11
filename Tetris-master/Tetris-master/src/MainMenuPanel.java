@@ -73,10 +73,14 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		add(btn6);
 
 		volumeButton = new JButton("음량 설정");
-		volumeButton.setBounds(90, 572, 180, 28);
+		volumeButton.setBounds(30, 572, 140, 28);
 		volumeButton.addActionListener(event -> JOptionPane.showMessageDialog(
 				this, new VolumeSettingsPanel(), "음량 설정", JOptionPane.PLAIN_MESSAGE));
 		add(volumeButton);
+		JButton keysButton = new JButton("조작 키 설정");
+		keysButton.setBounds(180, 572, 150, 28);
+		keysButton.addActionListener(event -> settings.KeySettingsPanel.show(this));
+		add(keysButton);
 
 //		btn7 = new JButton("설정");
 //		btn7.setBounds(90, 572, 180, 44);
@@ -107,26 +111,9 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		}
 		if (cmd.equals("조작법"))
 		{
-			String msg = "";
-			msg = msg + "[테트리스]\n";
-			msg = msg + "← / → : 좌우 이동\n";
-			msg = msg + "↑ : 회전\n";
-			msg = msg + "↓ : 한 칸 내리기\n";
-			msg = msg + "Space : 바로 떨어뜨리기\n";
-			msg = msg + "C : 홀드 (블록 고정 전까지 한 번)\n";
-			msg = msg + "1 : 아이템 내게 쓰기   2 : 아이템 적에게 쓰기   3 : 아이템 지우기\n\n";
-			msg = msg + "[전투기] (갤러그 협동 모드)\n";
-			msg = msg + "A / D : 좌우 이동\n";
-			msg = msg + "W (누르고 있기) : 연사\n\n";
-			msg = msg + "[똥피하기 모드]\n";
-			msg = msg + "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n";
-			msg = msg + "P2 피하는 사람 : ← / → 이동, ↑ 점프\n";
-			msg = msg + "P : 일시정지   R : 끝난 뒤 다시 시작\n\n";
-			msg = msg + "[3D 테트리스]\n";
-			msg = msg + "W / A / S / D : 블록 이동\n";
-			msg = msg + "J / K / L : X / Y / Z축 회전\n";
-			msg = msg + "Space : 바로 떨어뜨리기   R : 다시 시작\n";
-			msg = msg + "마우스 : 시점 조작";
+			String msg = "F1 : 조작 키 설정\n\n";
+			for (settings.GameSettings.Game game : settings.GameSettings.Game.values())
+				msg += settings.KeySettingsPanel.help(game) + "\n";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
 		}
 		else if (cmd.equals("종료"))

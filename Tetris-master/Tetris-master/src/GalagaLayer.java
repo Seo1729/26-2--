@@ -35,6 +35,11 @@ public class GalagaLayer extends JPanel
 	int score = 0; // 점수 표시 하려다가 안함
 
 	// 키
+	private long keyRevision = -1;
+	private void syncKeySettings() {
+		long revision = settings.GameControls.revision();
+		if (keyRevision != revision) { left = right = shoot = false; keyRevision = revision; }
+	}
 	boolean left = false;
 	boolean right = false;
 	boolean shoot = false;
@@ -64,21 +69,25 @@ public class GalagaLayer extends JPanel
 		{
 			public void keyPressed(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				syncKeySettings();
+				int code = settings.GameControls.canonical(settings.GameSettings.Game.GALAGA, e.getKeyCode());
+				if (code == KeyEvent.VK_A)
 					left = true;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (code == KeyEvent.VK_D)
 					right = true;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (code == KeyEvent.VK_W)
 					shoot = true;
 			}
 
 			public void keyReleased(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				syncKeySettings();
+				int code = settings.GameControls.canonical(settings.GameSettings.Game.GALAGA, e.getKeyCode());
+				if (code == KeyEvent.VK_A)
 					left = false;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (code == KeyEvent.VK_D)
 					right = false;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (code == KeyEvent.VK_W)
 					shoot = false;
 			}
 		};
@@ -99,6 +108,10 @@ public class GalagaLayer extends JPanel
 			}
 		});
 		timer.start();
+		java.awt.Window window = SwingUtilities.getWindowAncestor(b);
+		if (window != null) window.addWindowFocusListener(new WindowAdapter() {
+			public void windowLostFocus(WindowEvent event) { left = right = shoot = false; }
+		});
 	}
 
 	public KeyListener getKeyListener()
@@ -108,6 +121,7 @@ public class GalagaLayer extends JPanel
 
 	public void update()
 	{
+		syncKeySettings();
 		// 외계인 좌우로 흔들기
 		if (offset + dir > 30 || offset + dir < -30)
 			dir = -dir;

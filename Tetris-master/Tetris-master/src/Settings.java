@@ -5,10 +5,10 @@ import settings.GameSettings;
 public final class Settings {
     public static final int DEFAULT_SFX_VOLUME = GameSettings.DEFAULT_SFX_VOLUME;
     public static final int DEFAULT_BGM_VOLUME = GameSettings.DEFAULT_BGM_VOLUME;
-    private static final GameSettings data = new GameSettings();
+    private static final GameSettings data = settings.GameControls.settings();
     private static String saveError;
     private Settings() { }
-    public static synchronized void load() { data.load(); applyToSound(); }
+    public static synchronized void load() { data.load(); settings.GameControls.changed(); applyToSound(); }
     public static synchronized int getSfxVolume() { return data.getSfxVolume(); }
     public static synchronized int getBgmVolume() { return data.getBgmVolume(); }
     public static synchronized boolean isMuted() { return data.isMuted(); }
@@ -27,7 +27,7 @@ public final class Settings {
         data.setMuted(mute); SoundManager.setMuted(mute); save();
     }
     public static synchronized void resetToDefaults() {
-        data.resetToDefaults(); applyToSound(); save();
+        data.resetToDefaults(); settings.GameControls.changed(); applyToSound(); save();
     }
     private static void applyToSound() {
         SoundManager.setSfxVolume(data.getSfxVolume() / 100f);

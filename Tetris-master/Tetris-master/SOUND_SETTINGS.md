@@ -8,7 +8,7 @@
 `GameSettings` 파일 저장을 함께 수행한다. 저장 실패 시 게임은 계속되고,
 설정 화면과 `Settings.getSaveError()`에서 실패를 알린다.
 다른 코드에서 `GameSettings` 객체만 변경하는 것은 재생 음량을 변경하지 않는다.
-키 설정은 기존 파일에 함께 보존되며 입력 처리에는 연결하지 않았다.
+키 설정도 같은 공유 객체와 파일에 보존되며 `GameControls`를 통해 입력에 적용된다.
 
 설정 파일은 사용자 홈의 `.jbnu-tetris/game-settings.properties`이다.
 기존 Preferences 기반 `Settings` 대신 이 파일을 사용한다.

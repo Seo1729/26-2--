@@ -49,8 +49,15 @@ public class GamePanel extends JPanel implements ActionListener {
 			new Color(102, 102, 204), new Color(204, 204, 102), new Color(204, 102, 204), new Color(102, 204, 204),
 			new Color(218, 170, 0) };
 
+	private long keyRevision = -1;
+	private void syncKeySettings() {
+		long revision = settings.GameControls.revision();
+		if (keyRevision != revision) { held.clear(); nextRepeat.clear(); keyRevision = revision; }
+	}
+
 	public GamePanel() {
 		setFocusable(true);
+		settings.KeySettingsPanel.install(this);
 		setBackground(new Color(32, 34, 44));
 		timer = new Timer(20, this);
 
@@ -67,7 +74,9 @@ public class GamePanel extends JPanel implements ActionListener {
 
 		addKeyListener(new KeyAdapter() {
 			public void keyPressed(KeyEvent e) {
-				int code = e.getKeyCode();
+				syncKeySettings();
+				int code = settings.GameControls.canonical(settings.GameSettings.Game.DODGE, e.getKeyCode());
+				if (code == KeyEvent.VK_UNDEFINED) return;
 				// 이미 눌려있으면 무시 (OS 자동반복)
 				if (!held.add(code))
 					return;
@@ -91,8 +100,10 @@ public class GamePanel extends JPanel implements ActionListener {
 			}
 
 			public void keyReleased(KeyEvent e) {
-				held.remove(e.getKeyCode());
-				nextRepeat.remove(e.getKeyCode());
+				syncKeySettings();
+				int code = settings.GameControls.canonical(settings.GameSettings.Game.DODGE, e.getKeyCode());
+				held.remove(code);
+				nextRepeat.remove(code);
 			}
 		});
 	}
@@ -125,6 +136,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	public void actionPerformed(ActionEvent e) {
+		syncKeySettings();
 		// 꾹 누르고 있는 키 반복
 		if (isStarted && !isPaused) {
 			long now = System.currentTimeMillis();

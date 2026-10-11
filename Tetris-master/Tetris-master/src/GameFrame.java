@@ -20,6 +20,7 @@ public class GameFrame extends JFrame
 	GameFrame()
 	{
 		setTitle("Tetris");
+		settings.KeySettingsPanel.install(getRootPane());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		setLayout(null);
@@ -130,31 +131,31 @@ public class GameFrame extends JFrame
 				{
 				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
 				{
-					if (e.getKeyCode() == KeyEvent.VK_C)
+					int code = settings.GameControls.canonical(gameMode == 3 ? settings.GameSettings.Game.GALAGA : settings.GameSettings.Game.TETRIS, e.getKeyCode());
+					if (code == KeyEvent.VK_C)
 					{
 						((GamePanel) gp).holdBlock();
 						return;
 					}
-//					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
-					if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[0])
+					if (code == KeyEvent.VK_DOWN)
 					{
 						((GamePanel) gp).move_down();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[1])
+					else if (code == KeyEvent.VK_LEFT)
 					{
 						((GamePanel) gp).move_left();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[2])
+					else if (code == KeyEvent.VK_RIGHT)
 					{
 						((GamePanel) gp).move_right();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[3])
+					else if (code == KeyEvent.VK_1)
 					{
 						// 내게 쓰기
 						((GamePanel) gp).ogp = fgp;
@@ -164,24 +165,24 @@ public class GameFrame extends JFrame
 
 						((GamePanel) gp).useItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[4])
+					else if (code == KeyEvent.VK_2)
 					{
 						// 적에게 쓰기
 //						((GamePanel) gp).ogp = sgp;
 						((GamePanel) gp).attackItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[5])
+					else if (code == KeyEvent.VK_3)
 					{
 						// 아이템 지우기
 						((GamePanel) gp).deleteItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[6])
+					else if (code == KeyEvent.VK_SPACE)
 					{
 						((GamePanel) gp).move_drop();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[7])
+					else if (code == KeyEvent.VK_UP)
 					{
 						((GamePanel) gp).move_turn();
 						((GamePanel) gp).checkArray();
