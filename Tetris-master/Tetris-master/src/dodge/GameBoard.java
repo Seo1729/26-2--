@@ -47,7 +47,7 @@ public class GameBoard {
 		for (int i = 0; i < 4; ++i) {
 			int x = posX + piece.x(i);
 			int y = posY - piece.y(i);
-			cells[(y * WIDTH) + x] = piece.getShape();
+			cells[(y * WIDTH) + x] = Tetrominoes.values()[piece.getShape()];
 		}
 	}
 

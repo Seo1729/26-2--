@@ -77,6 +77,13 @@ public class SettingsWindowCheck {
             check(!edt(dialog::isShowing) && !GameControls.isInputBlocked(), "ESC closes/unblocks settings");
             key(KeyEvent.VK_H);
             check(edt(() -> board.x) == blockedX - 1, "Tetris remapped key after close");
+            edt(() -> { board.preBlock = 1; GameControls.setKey(Game.TETRIS, "HOLD", KeyEvent.VK_J); return null; });
+            int originalBlock = edt(() -> board.blockNum);
+            key(KeyEvent.VK_C);
+            check(edt(() -> board.holdManager.getHeldBlock()) == 0, "Old hold key still active");
+            key(KeyEvent.VK_J);
+            check(edt(() -> board.holdManager.getHeldBlock()) == originalBlock,
+                "Custom hold key did not reach real Tetris input handler");
             edt(() -> { frame.dispose(); return null; });
 
             GameControls.reset(Game.DODGE);

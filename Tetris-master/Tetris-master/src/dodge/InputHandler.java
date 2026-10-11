@@ -77,7 +77,7 @@ public class InputHandler extends KeyAdapter {
 			panel.restart();
 			return;
 		}
-		if (!panel.isRunning())
+		if (!(panel.isStarted && !panel.isPaused))
 			return;
 
 		act(code);
@@ -94,7 +94,7 @@ public class InputHandler extends KeyAdapter {
 
 	/** 게임 루프가 매 프레임 호출. 꾹 누른 키의 반복 입력을 처리한다. */
 	public void update() {
-		if (!panel.isRunning())
+		if (!(panel.isStarted && !panel.isPaused))
 			return;
 
 		long now = System.currentTimeMillis();

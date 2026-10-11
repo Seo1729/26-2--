@@ -22,7 +22,9 @@ public final class CharacterGameplayCheck {
     }
     public static void main(String[] args) throws Exception {
         Path resources = Paths.get(args[0]);
-        Path settings = Files.createTempDirectory("appearance-game-").resolve("appearance.properties");
+        boolean restoring = args.length > 1;
+        Path settings = restoring ? Paths.get(args[1])
+            : Files.createTempDirectory("appearance-game-").resolve("appearance.properties");
         java.util.List<CharacterItem> items = new ArrayList<>();
         Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW};
         for (CharacterItem.Category category : CharacterItem.Category.values()) {
@@ -46,7 +48,12 @@ public final class CharacterGameplayCheck {
             try {
                 CharacterManager manager = new CharacterManager(settings, items);
                 CharacterAppearance selected = new CharacterAppearance("SKIN", "HAT", "OUTFIT");
-                manager.applyAndSave(selected);
+                if (restoring) {
+                    check(manager.getAppearance().getSkinId().equals("SKIN")
+                        && manager.getAppearance().getHatId().equals("HAT")
+                        && manager.getAppearance().getOutfitId().equals("OUTFIT"), "New process lost appearance");
+                    selected = manager.getAppearance();
+                } else manager.applyAndSave(selected);
                 GamePanel game = new GamePanel(manager);
                 game.setSize(320, 704);
                 Dodger d = game.dodger;
@@ -88,6 +95,14 @@ public final class CharacterGameplayCheck {
                 game.stop();
             } catch (Exception e) { throw new RuntimeException(e); }
         });
+        if (!restoring) {
+            Process child = new ProcessBuilder(
+                Paths.get(System.getProperty("java.home"), "bin", "java.exe").toString(),
+                "-Djava.awt.headless=true", "-Duser.home=" + System.getProperty("user.home"),
+                "-cp", System.getProperty("java.class.path"), CharacterGameplayCheck.class.getName(),
+                resources.toString(), settings.toString()).inheritIO().start();
+            check(child.waitFor() == 0, "Appearance verification in new Java process failed");
+        }
         System.out.println("Gameplay layers, all animation states, smooth movement, preview isolation and restart passed.");
     }
 }

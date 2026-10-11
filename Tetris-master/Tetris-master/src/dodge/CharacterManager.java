@@ -46,7 +46,13 @@ public final class CharacterManager {
         catalog.get(base.getCategory()).put(base.getId(), base);
         // Retain the old procedural fallback when packaged default images are missing.
         images.get(base.getCategory()).put(base.getId(), readImages(base, false));
-        for (CharacterItem item : items) register(item);
+        for (CharacterItem item : items) {
+            try { register(item); }
+            catch (IllegalArgumentException e) {
+                // A broken optional cosmetic must not prevent the game from starting.
+                System.err.println("캐릭터 아이템을 건너뜀: " + e.getMessage());
+            }
+        }
         try { load(); }
         catch (IOException e) { System.err.println("캐릭터 설정을 읽지 못함: " + e.getMessage()); }
     }
