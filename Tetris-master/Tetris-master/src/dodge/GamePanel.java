@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import common.Bgm;
+import common.Sound;
 import common.SoundManager;
 
 // 똥피하기 게임 화면
@@ -173,13 +174,17 @@ public class GamePanel extends JPanel implements ActionListener {
 	void act(int code) {
 		switch (code) {
 		case KeyEvent.VK_A:
-			tryMove(curPiece, curX - 1, curY);
+			// 실제로 움직였을 때만 이동음을 낸다
+			if (tryMove(curPiece, curX - 1, curY))
+				SoundManager.play(Sound.MOVE);
 			break;
 		case KeyEvent.VK_D:
-			tryMove(curPiece, curX + 1, curY);
+			if (tryMove(curPiece, curX + 1, curY))
+				SoundManager.play(Sound.MOVE);
 			break;
 		case KeyEvent.VK_W:
-			tryMove(curPiece.rotateLeft(), curX, curY);
+			if (tryMove(curPiece.rotateLeft(), curX, curY))
+				SoundManager.play(Sound.ROTATE);
 			break;
 		case KeyEvent.VK_S:
 			oneLineDown();
@@ -238,6 +243,11 @@ public class GamePanel extends JPanel implements ActionListener {
 			if (result != 0) {
 				isStarted = false;
 				SoundManager.stopBgm();
+				// 승부가 났으면 결과 소리를 낸다(블록이 천장까지 쌓여 끝난 경우만 게임오버 소리)
+				if (result == 5)
+					SoundManager.play(Sound.GAME_OVER);
+				else
+					SoundManager.play(Sound.WIN);
 				timer.stop();
 				held.clear();
 				nextRepeat.clear();
@@ -270,8 +280,10 @@ public class GamePanel extends JPanel implements ActionListener {
 		if (!tryMove(curPiece, curX, curY - 1)) {
 			// 바닥에 닿음
 			place(curPiece, curX, curY);
+			SoundManager.play(Sound.LOCK);
 			int lines = removeFullLines();
 			if (lines > 0) {
+				SoundManager.play(Sound.LINE_CLEAR);
 				numLinesRemoved += lines;
 				isFallingFinished = true;
 				curPiece.setShape(0);

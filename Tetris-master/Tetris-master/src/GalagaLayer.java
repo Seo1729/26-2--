@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 
+import common.Sound;
+import common.SoundManager;
+
 // 갤러그 협동 모드 (테트리스 영역 위에 겹쳐서 그림)
 public class GalagaLayer extends JPanel
 {
@@ -130,6 +133,7 @@ public class GalagaLayer extends JPanel
 					if (row - 1 >= 0)
 						board.placeGarbage(row - 1, col);
 					alive[i] = false;
+					SoundManager.play(Sound.EXPLODE);
 				}
 			}
 			else
@@ -197,6 +201,7 @@ public class GalagaLayer extends JPanel
 			bx.add(fighterX + 12 - 1);
 			by.add(fighterY - 8);
 			cool = 7;
+			SoundManager.play(Sound.SHOOT);
 		}
 
 		// 총알 이동, 맞았는지 확인
@@ -220,6 +225,7 @@ public class GalagaLayer extends JPanel
 							&& by.get(i) < alienY[j] + 16 && alienY[j] < by.get(i) + 8)
 					{
 						alive[j] = false;
+						SoundManager.play(Sound.EXPLODE);
 						remove = true;
 						break;
 					}
@@ -244,6 +250,7 @@ public class GalagaLayer extends JPanel
 		{
 			if (wave == 3)
 			{
+				SoundManager.play(Sound.WIN);
 				board.endGame("CLEAR");
 			}
 			else

@@ -1,5 +1,8 @@
 package dodge;
 
+import common.Sound;
+import common.SoundManager;
+
 // P2 고양이 (똥피하기 하는 캐릭터)
 // 상태 번호: 0 서있음, 1 걷기, 2 점프, 3 떨어짐, 4 깔림
 public class Dodger {
@@ -84,8 +87,10 @@ public class Dodger {
 	}
 
 	public void jump() {
-		if (!crushed && isOnGround())
+		if (!crushed && isOnGround()) {
 			jumpLeft = 2; // 2칸까지 점프
+			SoundManager.play(Sound.ITEM);
+		}
 	}
 
 	// 점프중이면 올라가고 아니면 떨어짐
@@ -114,6 +119,7 @@ public class Dodger {
 
 	public void crush() {
 		crushed = true;
+		SoundManager.play(Sound.EXPLODE);
 		drawX = x;
 		drawY = y;
 	}

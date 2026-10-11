@@ -2,6 +2,10 @@ import java.awt.event.*;
 import java.util.Random;
 import javax.swing.Timer;
 
+import common.Bgm;
+import common.Sound;
+import common.SoundManager;
+
 // 3D 테트리스 게임 (블록 생성, 이동, 회전, 낙하)
 public class Game3D
 {
@@ -44,6 +48,10 @@ public class Game3D
 		fallTimer.stop();
 		activeBlock = null;
 		state = State.GAME_OVER;
+
+		// 게임오버가 되면 배경음악을 멈추고 게임오버 소리를 낸다
+		SoundManager.stopBgm();
+		SoundManager.play(Sound.GAME_OVER);
 	}
 
 	public synchronized int getLockedBlockCount()
@@ -138,6 +146,9 @@ public class Game3D
 		clearedLayerCount = 0;
 		nextType = randomSpawnType();
 		state = State.READY;
+
+		// 게임오버에서 멈췄던 배경음악을 다시 튼다
+		SoundManager.startBgm(Bgm.GAME);
 		start();
 	}
 
@@ -187,6 +198,7 @@ public class Game3D
 		if (!board.canPlace(candidate))
 			return false;
 		activeBlock = candidate;
+		SoundManager.play(Sound.ROTATE);
 		return true;
 	}
 
@@ -198,7 +210,12 @@ public class Game3D
 		if (!((dx == -1 || dx == 1) && dy == 0
 				|| (dy == -1 || dy == 1) && dx == 0))
 			return false;
-		return tryMoveTo(activeBlock.getX() + dx, activeBlock.getY() + dy, activeBlock.getZ());
+		boolean moved = tryMoveTo(activeBlock.getX() + dx, activeBlock.getY() + dy, activeBlock.getZ());
+
+		// 실제로 움직였을 때만 이동음을 낸다
+		if (moved)
+			SoundManager.play(Sound.MOVE);
+		return moved;
 	}
 
 	// 하드드롭
@@ -220,7 +237,13 @@ public class Game3D
 	{
 		board.lockBlock(activeBlock);
 		lockedBlockCount++;
-		clearedLayerCount += board.clearCompletedLayers();
+		SoundManager.play(Sound.LOCK);
+		int cleared = board.clearCompletedLayers();
+		clearedLayerCount += cleared;
+
+		// 층이 지워졌으면 줄 삭제 소리를 낸다
+		if (cleared > 0)
+			SoundManager.play(Sound.LINE_CLEAR);
 		spawnBlock();
 	}
 
