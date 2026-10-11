@@ -1,103 +1,93 @@
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
 
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 
-/**
- * 갤러그 협동 모드에서 테트리스 영역 위에 겹쳐 그려지는 투명 레이어.
- * 전투기 등 갤러그 요소를 일정 주기로 갱신하고 그리며, 웨이브 진행과 승리 판정을 맡는다.
- */
+// 갤러그 협동 모드 (테트리스 영역 위에 겹쳐서 그림)
 public class GalagaLayer extends JPanel
 {
-	/** 화면 갱신 주기(밀리초). 약 33프레임/초 */
-	private static final int TICK = 30;
+	GamePanel board;
+	Timer timer;
+	KeyListener keyListener;
 
-	/** 연사 간격(타이머 주기 횟수). 7 x 30ms = 약 0.2초마다 한 발 */
-	private static final int FIRE_INTERVAL = 7;
+	// 전투기
+	int fighterX;
+	int fighterY;
 
-	/** 모두 막아내면 승리하는 전체 웨이브 수 */
-	private static final int TOTAL_WAVES = 3;
+	// 총알
+	ArrayList<Integer> bx = new ArrayList<Integer>();
+	ArrayList<Integer> by = new ArrayList<Integer>();
+	int cool = 0;
 
-	/** 하단에서 외계인을 격추하는 전투기 */
-	private final Fighter fighter;
+	// 외계인 (12마리)
+	int[] alienX = new int[12];
+	int[] alienY = new int[12];
+	boolean[] alive = new boolean[12];
+	boolean[] isDive = new boolean[12];
+	int diveSpeed;
+	int diveTime;
+	int diveTimer = 0;
+	int offset = 0;
+	int dir = 1;
 
-	/** 레이어 아래에 있는 테트리스 판. 승리를 알리고 게임 종료 여부를 확인할 때 쓴다. */
-	private final GamePanel board;
+	int wave = 1;
+	int score = 0; // 점수 표시 하려다가 안함
 
-	/** 주기적으로 갤러그 상태를 갱신하는 타이머. 게임이 끝나면 멈춘다. */
-	private final Timer timer;
+	// 키
+	boolean left = false;
+	boolean right = false;
+	boolean shoot = false;
 
-	/** 현재 웨이브의 외계인 편대. 웨이브가 바뀌면 새 편대로 교체된다. */
-	private AlienFleet fleet;
-
-	/** 현재 웨이브 번호(1부터 시작) */
-	private int wave = 1;
-
-	/** 현재 화면에 날아가고 있는 총알 목록 */
-	private final ArrayList<Bullet> bullets = new ArrayList<Bullet>();
-
-	/** 발사 키(W)를 누르고 있는지 여부. 누르고 있는 동안 연사한다. */
-	private boolean fireHeld;
-
-	/** 다음 발사까지 남은 타이머 주기 횟수. 0이면 바로 쏠 수 있다. */
-	private int fireCooldown;
-
-	/** 왼쪽 이동 키(A)를 누르고 있는지 여부 */
-	private boolean leftHeld;
-
-	/** 오른쪽 이동 키(D)를 누르고 있는지 여부 */
-	private boolean rightHeld;
-
-	/** 전투기 조작 키의 눌림 상태를 기록하는 키 리스너 */
-	private final KeyListener keyListener;
-
-	/**
-	 * 지정한 위치와 크기로 투명 레이어를 만들고 갱신 타이머를 시작한다.
-	 *
-	 * @param x      레이어 왼쪽 위 x좌표(프레임 기준 픽셀)
-	 * @param y      레이어 왼쪽 위 y좌표(프레임 기준 픽셀)
-	 * @param width  레이어 너비(픽셀). 테트리스 영역 너비와 같게 준다.
-	 * @param height 레이어 높이(픽셀). 테트리스 영역 높이와 같게 준다.
-	 * @param board  레이어 아래에 있는 테트리스 판. 외계인이 착지하면 여기에 방해 블록을 놓는다.
-	 */
-	public GalagaLayer(int x, int y, int width, int height, GamePanel board)
+	public GalagaLayer(int x, int y, int width, int height, GamePanel b)
 	{
-		// 아래의 테트리스 블록이 비쳐 보이도록 배경을 칠하지 않는다
 		setOpaque(false);
 		setBounds(x, y, width, height);
-		this.board = board;
-		fighter = new Fighter(width, height);
-		fleet = new AlienFleet(width, board, wave);
+		board = b;
 
-		// 키를 누르거나 뗄 때 상태만 기록한다. 실제 이동은 타이머에서 하므로
-		// 테트리스 플레이어가 다른 키를 누르고 있어도 전투기 이동이 끊기지 않는다
+		// 전투기 위치 (아래 가운데)
+		fighterX = (240 - 24) / 2;
+		fighterY = 480 - 20;
+
+		// 외계인 배치
+		for (int i = 0; i < 12; i++)
+		{
+			alienX[i] = 30 + (i % 6) * 32;
+			alienY[i] = 16 + (i / 6) * 24;
+			alive[i] = true;
+			isDive[i] = false;
+		}
+		diveTime = 100;
+		diveSpeed = 2;
+
 		keyListener = new KeyAdapter()
 		{
 			public void keyPressed(KeyEvent e)
 			{
-				setHeld(e.getKeyCode(), true);
+				if (e.getKeyCode() == KeyEvent.VK_A)
+					left = true;
+				else if (e.getKeyCode() == KeyEvent.VK_D)
+					right = true;
+				else if (e.getKeyCode() == KeyEvent.VK_W)
+					shoot = true;
 			}
 
 			public void keyReleased(KeyEvent e)
 			{
-				setHeld(e.getKeyCode(), false);
+				if (e.getKeyCode() == KeyEvent.VK_A)
+					left = false;
+				else if (e.getKeyCode() == KeyEvent.VK_D)
+					right = false;
+				else if (e.getKeyCode() == KeyEvent.VK_W)
+					shoot = false;
 			}
 		};
 
-		// 일정 주기마다 갤러그 상태를 갱신하고 화면을 다시 그린다
-		timer = new Timer(TICK, new ActionListener()
+		timer = new Timer(30, new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
-				// 승리나 패배로 게임이 끝났으면 갱신을 멈추고, 결과 메시지를 가리지 않게 레이어를 숨긴다
+				// 테트리스 끝나면 같이 멈춤
 				if (!board.isRunning())
 				{
 					timer.stop();
@@ -111,99 +101,210 @@ public class GalagaLayer extends JPanel
 		timer.start();
 	}
 
-	/**
-	 * 전투기 조작 키 입력을 받을 키 리스너를 돌려준다. 프레임에 등록해서 사용한다.
-	 *
-	 * @return 전투기 조작용 키 리스너
-	 */
 	public KeyListener getKeyListener()
 	{
 		return keyListener;
 	}
 
-	/**
-	 * 전투기 조작 키의 눌림 상태를 바꾼다. 전투기 키가 아니면 무시한다.
-	 *
-	 * @param keyCode 눌리거나 떼어진 키 코드
-	 * @param held    눌렸으면 true, 떼어졌으면 false
-	 */
-	private void setHeld(int keyCode, boolean held)
+	public void update()
 	{
-		// A는 왼쪽, D는 오른쪽 이동 키, W는 발사 키로 쓴다
-		if (keyCode == KeyEvent.VK_A)
-			leftHeld = held;
-		else if (keyCode == KeyEvent.VK_D)
-			rightHeld = held;
-		else if (keyCode == KeyEvent.VK_W)
-			fireHeld = held;
-	}
+		// 외계인 좌우로 흔들기
+		if (offset + dir > 30 || offset + dir < -30)
+			dir = -dir;
+		offset = offset + dir;
 
-	/**
-	 * 한 주기 동안의 갤러그 상태를 갱신한다. 편대 이동, 전투기 이동, 연사, 총알 이동,
-	 * 웨이브 진행과 승리 판정을 처리한다.
-	 */
-	private void update()
-	{
-		// 외계인 편대를 좌우로 흔든다
-		fleet.update();
-
-		// 누르고 있는 방향으로 전투기를 이동시킨다(둘 다 누르면 제자리)
-		if (leftHeld)
-			fighter.moveLeft();
-		if (rightHeld)
-			fighter.moveRight();
-
-		// 발사 대기 시간을 한 주기만큼 줄인다
-		if (fireCooldown > 0)
-			fireCooldown--;
-
-		// W를 누르고 있고 대기 시간이 끝났으면 한 발 쏘고, 다음 발사까지 간격을 다시 채운다
-		if (fireHeld && fireCooldown == 0)
+		for (int i = 11; i >= 0; i--)
 		{
-			bullets.add(fighter.fire());
-			fireCooldown = FIRE_INTERVAL;
+			if (alive[i] == false)
+				continue;
+
+			if (isDive[i] == true)
+			{
+				alienY[i] = alienY[i] + diveSpeed;
+
+				// 바닥이나 블록에 닿았는지
+				int col = (alienX[i] + 10) / 24;
+				int row = (alienY[i] + 16) / 24;
+				if (board.isBlocked(row, col))
+				{
+					if (row - 1 >= 0)
+						board.placeGarbage(row - 1, col);
+					alive[i] = false;
+				}
+			}
+			else
+			{
+				alienX[i] = alienX[i] + dir;
+			}
 		}
 
-		// 총알을 위로 옮기고, 화면 밖으로 나갔거나 외계인을 맞힌 총알은 지운다
-		// (삭제해도 인덱스가 꼬이지 않게 뒤에서부터 순회)
-		for (int i = bullets.size() - 1; i >= 0; i--)
+		// 지금 내려오는 애가 없으면 시간 재다가 한마리 내려보냄
+		boolean someoneDiving = false;
+		for (int i = 0; i < 12; i++)
 		{
-			bullets.get(i).move();
-			if (bullets.get(i).isOutOfArea() || fleet.hit(bullets.get(i)))
-				bullets.remove(i);
+			if (alive[i] && isDive[i])
+				someoneDiving = true;
+		}
+		if (someoneDiving == false)
+		{
+			diveTimer++;
+
+			int cnt = 0;
+			for (int i = 0; i < 12; i++)
+			{
+				if (alive[i])
+					cnt++;
+			}
+
+			if (diveTimer >= diveTime && cnt > 0)
+			{
+				int pick = (int) (Math.random() * cnt);
+				int n = 0;
+				for (int i = 0; i < 12; i++)
+				{
+					if (alive[i])
+					{
+						if (n == pick)
+						{
+							isDive[i] = true;
+						}
+						n++;
+					}
+				}
+				diveTimer = 0;
+			}
 		}
 
-		// 편대가 모두 없어졌으면 마지막 웨이브는 승리, 아니면 더 어려운 새 편대로 다음 웨이브를 시작한다
-		if (fleet.isEmpty())
+		// 전투기 이동
+		if (left)
 		{
-			if (wave == TOTAL_WAVES)
+			fighterX = fighterX - 4;
+			if (fighterX < 0)
+				fighterX = 0;
+		}
+		if (right)
+		{
+			fighterX = fighterX + 4;
+			if (fighterX > 216)
+				fighterX = 216;
+		}
+
+		// 총 쏘기
+		if (cool > 0)
+			cool--;
+		if (shoot && cool == 0)
+		{
+			bx.add(fighterX + 12 - 1);
+			by.add(fighterY - 8);
+			cool = 7;
+		}
+
+		// 총알 이동, 맞았는지 확인
+		for (int i = bx.size() - 1; i >= 0; i--)
+		{
+			by.set(i, by.get(i) - 10);
+
+			boolean remove = false;
+			if (by.get(i) + 8 < 0)
+			{
+				remove = true;
+			}
+			else
+			{
+				for (int j = 0; j < 12; j++)
+				{
+					if (alive[j] == false)
+						continue;
+					// 사각형 겹치는지
+					if (bx.get(i) < alienX[j] + 20 && alienX[j] < bx.get(i) + 2
+							&& by.get(i) < alienY[j] + 16 && alienY[j] < by.get(i) + 8)
+					{
+						alive[j] = false;
+						remove = true;
+						break;
+					}
+				}
+			}
+
+			if (remove)
+			{
+				bx.remove(i);
+				by.remove(i);
+			}
+		}
+
+		// 다 잡았는지
+		int left2 = 0;
+		for (int i = 0; i < 12; i++)
+		{
+			if (alive[i])
+				left2++;
+		}
+		if (left2 == 0)
+		{
+			if (wave == 3)
+			{
 				board.endGame("CLEAR");
+			}
 			else
 			{
 				wave++;
-				fleet = new AlienFleet(getWidth(), board, wave);
+
+				// 다음 웨이브 (위에꺼 복사)
+				for (int i = 0; i < 12; i++)
+				{
+					alienX[i] = 30 + (i % 6) * 32;
+					alienY[i] = 16 + (i / 6) * 24;
+					alive[i] = true;
+					isDive[i] = false;
+				}
+				diveTime = 100 - (wave - 1) * 20;
+				diveSpeed = 2 + (wave - 1);
+				diveTimer = 0;
+				offset = 0;
+				dir = 1;
 			}
 		}
 	}
 
-	/**
-	 * 레이어 위에 갤러그 요소를 그린다.
-	 *
-	 * @param g 그리기에 사용할 그래픽 객체
-	 */
 	protected void paintComponent(Graphics g)
 	{
 		super.paintComponent(g);
-		fleet.draw(g);
-		fighter.draw(g);
 
-		// 날아가고 있는 총알을 모두 그린다
-		for (int i = 0; i < bullets.size(); i++)
-			bullets.get(i).draw(g);
+		// 외계인
+		for (int i = 0; i < 12; i++)
+		{
+			if (alive[i])
+			{
+				g.setColor(new Color(255, 105, 180));
+				g.fillOval(alienX[i], alienY[i], 20, 16);
+				g.setColor(Color.BLACK);
+				g.fillRect(alienX[i] + 5, alienY[i] + 5, 3, 3);
+				g.fillRect(alienX[i] + 12, alienY[i] + 5, 3, 3);
+			}
+		}
 
-		// 왼쪽 위에 현재 웨이브를 작게 표시한다(편대 첫 줄보다 위)
+		// 전투기
+		g.setColor(Color.CYAN);
+		g.fillPolygon(new int[] { fighterX + 12, fighterX + 24, fighterX },
+				new int[] { fighterY, fighterY + 20, fighterY + 20 }, 3);
+
+		// 총알
+		g.setColor(Color.YELLOW);
+		for (int i = 0; i < bx.size(); i++)
+		{
+			g.fillRect(bx.get(i), by.get(i), 2, 8);
+		}
+
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Verdana", Font.PLAIN, 10));
-		g.drawString("WAVE " + wave + "/" + TOTAL_WAVES, 4, 12);
+		g.drawString("WAVE " + wave + "/" + 3, 4, 12);
+
+//		g.drawString("SCORE " + score, 180, 12);
 	}
+
+	// 외계인도 총 쏘게 하기 (시간 없어서 못함)
+//	public void alienShoot()
+//	{
+//	}
 }
