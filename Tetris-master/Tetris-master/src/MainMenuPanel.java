@@ -107,6 +107,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + "↑ : 회전\n";
 			msg = msg + "↓ : 한 칸 내리기\n";
 			msg = msg + "Space : 바로 떨어뜨리기\n";
+			msg = msg + "C : 홀드 (블록 고정 전까지 한 번)\n";
 			msg = msg + "1 : 아이템 내게 쓰기   2 : 아이템 적에게 쓰기   3 : 아이템 지우기\n\n";
 			msg = msg + "[전투기] (갤러그 협동 모드)\n";
 			msg = msg + "A / D : 좌우 이동\n";
