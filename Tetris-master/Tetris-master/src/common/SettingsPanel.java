@@ -1,20 +1,24 @@
+package common;
+
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import common.Settings;
-import common.Sound;
-import common.SoundManager;
 
 /**
  * 환경 설정 화면. 배경음악/효과음 음량, 음소거, 기본값 복원을 조절한다.
@@ -22,8 +26,8 @@ import common.SoundManager;
  */
 public class SettingsPanel extends JPanel
 {
-	/** 이 화면을 띄운 창. 돌아가기 버튼을 누르면 이 창에 메인화면을 다시 보여 달라고 요청한다. */
-	private GameFrame frame;
+	/** 돌아가기 버튼을 눌렀을 때 실행할 동작. 이 화면을 닫는 일은 화면을 띄운 쪽이 맡는다. */
+	private ActionListener backAction;
 
 	/** 배경음악 음량 슬라이더 */
 	private JSlider bgmSlider;
@@ -46,11 +50,11 @@ public class SettingsPanel extends JPanel
 	/**
 	 * 설정 화면을 만든다.
 	 *
-	 * @param f 이 화면을 띄운 게임 창
+	 * @param back 돌아가기 버튼을 눌렀을 때 실행할 동작
 	 */
-	public SettingsPanel(GameFrame f)
+	public SettingsPanel(ActionListener back)
 	{
-		frame = f;
+		backAction = back;
 
 		setLayout(null);
 		setBackground(new Color(30, 160, 255));
@@ -132,12 +136,51 @@ public class SettingsPanel extends JPanel
 			public void actionPerformed(ActionEvent e)
 			{
 				SoundManager.play(Sound.CLICK);
-				frame.closeSettings();
+				backAction.actionPerformed(e);
 			}
 		});
 		add(backButton);
 
 		showCurrentSettings();
+	}
+
+	/**
+	 * 게임 도중에 설정 화면을 팝업 창으로 띄운다. 창을 닫을 때까지 이 메서드는 돌아오지 않고,
+	 * 그동안 뒤의 게임 창은 조작할 수 없다. 돌아가기 버튼, ESC, 창 닫기 중 무엇으로든 닫을 수 있다.
+	 *
+	 * @param owner 팝업 창의 주인이 될 게임 창
+	 */
+	public static void showDialog(Window owner)
+	{
+		final JDialog dialog = new JDialog(owner, "설정", JDialog.ModalityType.APPLICATION_MODAL);
+		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		dialog.setResizable(false);
+
+		// 돌아가기 버튼을 누르면 팝업 창을 닫는다
+		SettingsPanel panel = new SettingsPanel(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				dialog.dispose();
+			}
+		});
+		panel.setPreferredSize(new Dimension(360, 500));
+		dialog.add(panel);
+
+		// ESC를 다시 누르면 게임으로 돌아간다
+		dialog.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+				.put(KeyStroke.getKeyStroke("ESCAPE"), "closeSettings");
+		dialog.getRootPane().getActionMap().put("closeSettings", new AbstractAction()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				dialog.dispose();
+			}
+		});
+
+		dialog.pack();
+		dialog.setLocationRelativeTo(owner);
+		dialog.setVisible(true);
 	}
 
 	/**

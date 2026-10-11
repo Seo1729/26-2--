@@ -16,6 +16,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+
+import common.SettingsPanel;
 
 // 3D 화면 + 오른쪽 정보 + 키 설정
 public class Game3DPanel extends JPanel
@@ -84,6 +87,17 @@ public class Game3DPanel extends JPanel
 			public void run()
 			{
 				game.hardDrop();
+			}
+		});
+		// ESC: 게임을 멈추고 설정 화면을 띄운 뒤, 닫으면 이어서 진행
+		bindKey(KeyEvent.VK_ESCAPE, "Escape", new Runnable()
+		{
+			public void run()
+			{
+				game.stop();
+				SettingsPanel.showDialog(SwingUtilities.getWindowAncestor(Game3DPanel.this));
+				resetPressedKeys();
+				game.start();
 			}
 		});
 		// 재시작

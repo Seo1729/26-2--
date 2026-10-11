@@ -97,6 +97,14 @@ public class GalagaLayer extends JPanel
 					setVisible(false);
 					return;
 				}
+				// 설정 화면을 보는 동안에는 멈추고, 그 사이 뗀 키가 눌린 채로 남지 않게 지운다
+				if (board.paused)
+				{
+					left = false;
+					right = false;
+					shoot = false;
+					return;
+				}
 				update();
 				repaint();
 			}

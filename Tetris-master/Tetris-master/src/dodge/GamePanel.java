@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import common.Bgm;
+import common.SettingsPanel;
 import common.Sound;
 import common.SoundManager;
 
@@ -82,6 +83,10 @@ public class GamePanel extends JPanel implements ActionListener {
 				}
 				if (code == KeyEvent.VK_R) {
 					restart();
+					return;
+				}
+				if (code == KeyEvent.VK_ESCAPE) {
+					openSettings();
 					return;
 				}
 				if (!(isStarted && !isPaused))
@@ -213,6 +218,21 @@ public class GamePanel extends JPanel implements ActionListener {
 		held.clear();
 		nextRepeat.clear();
 		refresh();
+	}
+
+	// 게임을 멈추고 설정 화면을 띄운다 (닫으면 원래 상태로 돌아감)
+	void openSettings() {
+		if (!isStarted)
+			return;
+
+		// 이미 P로 멈춰 있었다면 설정 화면을 닫아도 계속 멈춘 채로 둔다
+		boolean wasPaused = isPaused;
+		if (!wasPaused)
+			togglePause();
+		SettingsPanel.showDialog(SwingUtilities.getWindowAncestor(this));
+		if (!wasPaused)
+			togglePause();
+		requestFocusInWindow(); // 설정 창이 닫힌 뒤 키 입력을 되찾는다
 	}
 
 	public void stop() {

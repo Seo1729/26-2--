@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import common.Bgm;
 import common.Settings;
+import common.SettingsPanel;
 import common.Sound;
 import common.SoundManager;
 
@@ -110,7 +111,14 @@ public class GameFrame extends JFrame
 	{
 		remove(mainMenu);
 
-		settingsPanel = new SettingsPanel(this);
+		// 돌아가기 버튼을 누르면 메인화면으로 되돌아간다
+		settingsPanel = new SettingsPanel(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				closeSettings();
+			}
+		});
 		settingsPanel.setBounds(0, 0, 360, 640);
 		add(settingsPanel);
 
@@ -157,6 +165,19 @@ public class GameFrame extends JFrame
 		{
 			public void keyPressed(KeyEvent e)
 			{
+				// ESC를 누르면 게임을 멈추고 설정 화면을 띄운다(카운트다운과 게임이 끝난 뒤에는 무시)
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+				{
+					if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
+					{
+						((GamePanel) gp).paused = true;
+						SettingsPanel.showDialog(GameFrame.this);
+						((GamePanel) gp).paused = false;
+						requestFocusInWindow(); // 설정 창이 닫힌 뒤 키 입력을 되찾는다
+					}
+					return;
+				}
+
 				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
 				{
 //					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
@@ -455,6 +476,7 @@ class GamePanel extends JPanel implements Runnable
 	int blockWSize; // 블럭의 너비, 용도 : 목표 범위 초과하여 데이터 손실 막기
 	int blockHSize; // 블럭의 높이, 용도 : 목표 범위 초과하여 데이터 손실 막기
 	boolean gameRun = true;
+	volatile boolean paused = false; // 설정 화면을 보는 동안 true (낙하, 시간, 갤러그가 멈춤)
 
 	public void setArray()
 	{
@@ -1236,6 +1258,9 @@ class GamePanel extends JPanel implements Runnable
 						{
 							return;
 						}
+						// 설정 화면을 보는 동안에는 블록을 내리지 않는다
+						if (paused)
+							continue;
 						move_down();
 						// checkArray();
 						drawTetris();
@@ -1259,6 +1284,8 @@ class GamePanel extends JPanel implements Runnable
 				{
 					return;
 				}
+				if (paused)
+					continue;
 				move_down();
 				// checkArray();
 				drawTetris();
@@ -1704,6 +1731,10 @@ class TimeThread extends Thread
 			{
 				return;
 			}
+
+			// 설정 화면을 보는 동안에는 시간이 흐르지 않는다
+			if (gp.paused)
+				continue;
 
 			time++;
 
