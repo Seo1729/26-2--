@@ -21,12 +21,28 @@ public class DodgerSprite {
 	static String[] NAMES = { "idle", "walk1", "walk2", "jump", "fall", "crushed" };
 
 	Map<String, BufferedImage> images = new HashMap<String, BufferedImage>();
+	private Map<String, BufferedImage> hats = java.util.Collections.emptyMap();
+	private Map<String, BufferedImage> outfits = java.util.Collections.emptyMap();
+	private final CharacterManager characters;
+	private long appearanceRevision = -1;
 
 	public DodgerSprite() {
-		for (String name : NAMES) {
-			BufferedImage img = load("images/dodger_" + name + ".png");
-			if (img != null)
-				images.put(name, img);
+		this(CharacterManager.getInstance());
+	}
+
+	public DodgerSprite(CharacterManager characters) {
+		this.characters = java.util.Objects.requireNonNull(characters);
+		refreshAppearance();
+	}
+
+	private void refreshAppearance() {
+		synchronized (characters) {
+			if (appearanceRevision == characters.getRevision()) return;
+			CharacterAppearance selection = characters.getAppearance();
+			images = characters.frames(CharacterItem.Category.SKIN, selection.getSkinId());
+			hats = characters.frames(CharacterItem.Category.HAT, selection.getHatId());
+			outfits = characters.frames(CharacterItem.Category.OUTFIT, selection.getOutfitId());
+			appearanceRevision = characters.getRevision();
 		}
 	}
 
@@ -43,6 +59,7 @@ public class DodgerSprite {
 	}
 
 	public void draw(Graphics g, Dodger dodger, int x, int y, int w, int h) {
+		refreshAppearance();
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
@@ -61,10 +78,25 @@ public class DodgerSprite {
 		} else {
 			drawDefault(g2, state, dodger.facingRight, dodger.walkFrame, x, y, w, h);
 		}
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		drawLayer(g2, outfits, state, dodger.walkFrame, dodger.facingRight, x, y, w, h);
+		drawLayer(g2, hats, state, dodger.walkFrame, dodger.facingRight, x, y, w, h);
 		g2.dispose();
 	}
 
+	private static void drawLayer(Graphics2D g, Map<String, BufferedImage> frames, int state,
+			int walkFrame, boolean right, int x, int y, int w, int h) {
+		// A standing accessory should not float over a flattened character.
+		if (state == 4 && !frames.containsKey("crushed")) return;
+		BufferedImage image = pickImage(frames, state, walkFrame);
+		if (image != null) g.drawImage(image, right ? x : x + w, y, right ? w : -w, h, null);
+	}
+
 	BufferedImage pickImage(int state, int walkFrame) {
+		return pickImage(images, state, walkFrame);
+	}
+
+	private static BufferedImage pickImage(Map<String, BufferedImage> images, int state, int walkFrame) {
 		BufferedImage idle = images.get("idle");
 		if (idle == null)
 			return null;

@@ -25,7 +25,8 @@ public class GamePanel extends JPanel implements ActionListener {
 
 	// P2 고양이
 	Dodger dodger = new Dodger(this);
-	DodgerSprite dodgerSprite = new DodgerSprite();
+	private final CharacterManager characterManager;
+	DodgerSprite dodgerSprite;
 
 	InfoPanel info; // 오른쪽 정보판
 	Timer timer;
@@ -56,6 +57,12 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	public GamePanel() {
+		this(CharacterManager.getInstance());
+	}
+
+	public GamePanel(CharacterManager characterManager) {
+		this.characterManager = java.util.Objects.requireNonNull(characterManager);
+		dodgerSprite = new DodgerSprite(characterManager);
 		setFocusable(true);
 		settings.KeySettingsPanel.install(this);
 		setBackground(new Color(32, 34, 44));
@@ -107,6 +114,8 @@ public class GamePanel extends JPanel implements ActionListener {
 			}
 		});
 	}
+
+	public CharacterManager getCharacterManager() { return characterManager; }
 
 	public void start() {
 		if (isPaused)
