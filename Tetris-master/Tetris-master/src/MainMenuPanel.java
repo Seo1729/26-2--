@@ -68,19 +68,17 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn6.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn6.setBackground(Color.WHITE);
 		btn6.setFocusPainted(false);
-		btn6.setBounds(90, 520, 180, 44);
+		btn6.setBounds(90, 568, 180, 28);
 		btn6.addActionListener(this);
 		add(btn6);
 
-		volumeButton = new JButton("음량 설정");
-		volumeButton.setBounds(30, 572, 140, 28);
-		volumeButton.addActionListener(event -> JOptionPane.showMessageDialog(
-				this, new VolumeSettingsPanel(), "음량 설정", JOptionPane.PLAIN_MESSAGE));
+		volumeButton = new JButton("환경 설정");
+		volumeButton.setFont(new Font("Dialog", Font.BOLD, 16));
+		volumeButton.setBackground(Color.WHITE);
+		volumeButton.setFocusPainted(false);
+		volumeButton.setBounds(90, 520, 180, 44);
+		volumeButton.addActionListener(event -> settings.EnvironmentSettingsPanel.show(this));
 		add(volumeButton);
-		JButton keysButton = new JButton("조작 키 설정");
-		keysButton.setBounds(180, 572, 150, 28);
-		keysButton.addActionListener(event -> settings.KeySettingsPanel.show(this));
-		add(keysButton);
 
 //		btn7 = new JButton("설정");
 //		btn7.setBounds(90, 572, 180, 44);
@@ -111,7 +109,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		}
 		if (cmd.equals("조작법"))
 		{
-			String msg = "F1 : 조작 키 설정\n\n";
+			String msg = "ESC : 환경 설정\n\n";
 			for (settings.GameSettings.Game game : settings.GameSettings.Game.values())
 				msg += settings.KeySettingsPanel.help(game) + "\n";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);

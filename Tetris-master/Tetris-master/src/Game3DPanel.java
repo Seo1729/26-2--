@@ -44,7 +44,7 @@ public class Game3DPanel extends JPanel
 		finally { rebuildingKeys = false; }
 		settings.KeySettingsPanel.install(this);
 		controlKeys.setText(settings.KeySettingsPanel.help(settings.GameSettings.Game.THREE_D)
-				+ "마우스 드래그: 시점 회전\n마우스 휠: 확대/축소\nF1: 조작 키 설정");
+				+ "마우스 드래그: 시점 회전\n마우스 휠: 확대/축소\nESC: 환경 설정");
 	}
 	public void addNotify() {
 		super.addNotify();
@@ -240,6 +240,7 @@ public class Game3DPanel extends JPanel
 		{
 			public void actionPerformed(ActionEvent event)
 			{
+				if (settings.GameControls.isInputBlocked()) { resetPressedKeys(); return; }
 				if (game.getState() != requiredState)
 				{
 					resetPressedKeys();

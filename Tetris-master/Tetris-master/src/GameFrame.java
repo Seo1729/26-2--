@@ -20,6 +20,7 @@ public class GameFrame extends JFrame
 	GameFrame()
 	{
 		setTitle("Tetris");
+		Settings.load();
 		settings.KeySettingsPanel.install(getRootPane());
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 

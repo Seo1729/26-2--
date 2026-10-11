@@ -13,7 +13,7 @@ import settings.GameSettings.Game;
 public final class KeySettingsPanel extends JPanel {
     private final JComboBox<Game> game = new JComboBox<>(Game.values());
     private final JPanel rows = new JPanel(new GridLayout(0, 2, 8, 6));
-    private final JLabel status = new JLabel("변경할 동작을 누른 후 키를 입력하세요. ESC: 취소 / F1: 설정");
+    private final JLabel status = new JLabel("변경할 동작을 누른 후 키를 입력하세요. ESC: 취소");
     public KeySettingsPanel() {
         super(new BorderLayout(8, 8));
         game.setRenderer(new DefaultListCellRenderer() {
@@ -39,11 +39,11 @@ public final class KeySettingsPanel extends JPanel {
     private void saved() {
         status.setText(GameControls.getSaveError() == null ? "적용하고 저장했습니다." : GameControls.getSaveError());
     }
-    private void refresh() {
+    void refresh() {
         rows.removeAll();
         for (Map.Entry<String, Integer> entry : GameControls.settings().getKeys(selected()).entrySet()) {
             rows.add(new JLabel(actionName(selected(), entry.getKey())));
-            JButton button = new JButton(KeyEvent.getKeyText(entry.getValue()));
+            JButton button = new JButton("변경: " + KeyEvent.getKeyText(entry.getValue()));
             button.addActionListener(event -> capture(entry.getKey()));
             rows.add(button);
         }
@@ -116,13 +116,10 @@ public final class KeySettingsPanel extends JPanel {
         return text.toString();
     }
     public static void show(java.awt.Component owner) {
-        java.awt.Component focus = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        JOptionPane.showMessageDialog(owner, new KeySettingsPanel(), "조작 키 설정", JOptionPane.PLAIN_MESSAGE);
-        if (focus != null) focus.requestFocusInWindow();
-        else owner.requestFocusInWindow();
+        EnvironmentSettingsPanel.show(owner);
     }
     public static void install(JComponent owner) {
-        owner.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), "key-settings");
+        owner.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "key-settings");
         owner.getActionMap().put("key-settings", new AbstractAction() {
             public void actionPerformed(java.awt.event.ActionEvent event) { show(owner); }
         });

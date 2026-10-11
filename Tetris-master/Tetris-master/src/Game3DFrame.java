@@ -19,6 +19,7 @@ public class Game3DFrame extends JFrame
 	public Game3DFrame()
 	{
 		super("3D Tetris");
+		Settings.load();
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setContentPane(panel);
 		pack();

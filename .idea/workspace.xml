@@ -4,7 +4,49 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="" />
+    <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/KEY_SETTINGS.md" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/KEY_SETTINGS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/SOUND_SETTINGS.md" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/SOUND_SETTINGS.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Game3DFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Game3DFrame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Game3DPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Game3DPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/GameFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/GameFrame.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Settings.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/Settings.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/settings/GameControls.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/settings/GameControls.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/settings/KeySettingsPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/settings/KeySettingsPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Blocks.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Blocks.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GalagaLayer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DFrame$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DFrame$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DFrame.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DFrame.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$3.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$3.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$4.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$4.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$5.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$5.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$6.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$6.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$7.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$7.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$8.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel$8.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Game3DPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GameFrame$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GameFrame$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GameFrame.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GameFrame.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GamePanel$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GamePanel$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UseItem$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UseItem$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UseItem.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UseItem.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UsingItemLabel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GamePanel$UsingItemLabel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/GamePanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/GamePanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/MainMenuPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/MainMenuPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/Settings.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/Settings.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/SoundManager$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/SoundManager$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/SoundManager$Wave.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/SoundManager$Wave.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/SoundManager.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/SoundManager.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/TimeThread.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/TimeThread.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel.class" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -80,7 +122,7 @@
       <workItem from="1791702236857" duration="4456000" />
       <workItem from="1791706740778" duration="78000" />
       <workItem from="1791706828878" duration="448000" />
-      <workItem from="1791707283991" duration="577000" />
+      <workItem from="1791707283991" duration="1785000" />
     </task>
     <servers />
   </component>
