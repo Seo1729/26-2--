@@ -12,7 +12,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
-	JButton btn1, btn2, btn3, btn4, btn5, btn6;
+	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7;
 	int selectMode = 0;
 	boolean isOpen = true;
 
@@ -35,7 +35,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn1.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn1.setBackground(Color.WHITE);
 		btn1.setFocusPainted(false);
-		btn1.setBounds(90, 260, 180, 44);
+		btn1.setBounds(90, 250, 180, 40);
 		btn1.addActionListener(this);
 		add(btn1);
 
@@ -43,7 +43,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn2.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn2.setBackground(Color.WHITE);
 		btn2.setFocusPainted(false);
-		btn2.setBounds(90, 312, 180, 44);
+		btn2.setBounds(90, 296, 180, 40);
 		btn2.addActionListener(this);
 		add(btn2);
 
@@ -51,7 +51,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn3.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn3.setBackground(Color.WHITE);
 		btn3.setFocusPainted(false);
-		btn3.setBounds(90, 364, 180, 44);
+		btn3.setBounds(90, 342, 180, 40);
 		btn3.addActionListener(this);
 		add(btn3);
 
@@ -59,7 +59,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn4.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn4.setBackground(Color.WHITE);
 		btn4.setFocusPainted(false);
-		btn4.setBounds(90, 416, 180, 44);
+		btn4.setBounds(90, 388, 180, 40);
 		btn4.addActionListener(this);
 		add(btn4);
 
@@ -67,7 +67,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn5.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn5.setBackground(Color.WHITE);
 		btn5.setFocusPainted(false);
-		btn5.setBounds(90, 468, 180, 44);
+		btn5.setBounds(90, 434, 180, 40);
 		btn5.addActionListener(this);
 		add(btn5);
 
@@ -75,13 +75,17 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn6.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn6.setBackground(Color.WHITE);
 		btn6.setFocusPainted(false);
-		btn6.setBounds(90, 520, 180, 44);
+		btn6.setBounds(90, 526, 180, 40);
 		btn6.addActionListener(this);
 		add(btn6);
 
-//		btn7 = new JButton("설정");
-//		btn7.setBounds(90, 572, 180, 44);
-//		add(btn7);
+		btn7 = new JButton("설정");
+		btn7.setFont(new Font("Dialog", Font.BOLD, 16));
+		btn7.setBackground(Color.WHITE);
+		btn7.setFocusPainted(false);
+		btn7.setBounds(90, 480, 180, 40);
+		btn7.addActionListener(this);
+		add(btn7);
 	}
 
 	public void actionPerformed(ActionEvent e)
@@ -129,6 +133,10 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + "Space : 바로 떨어뜨리기   R : 다시 시작\n";
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
+		}
+		else if (cmd.equals("설정"))
+		{
+			frame.openSettings();
 		}
 		else if (cmd.equals("종료"))
 		{

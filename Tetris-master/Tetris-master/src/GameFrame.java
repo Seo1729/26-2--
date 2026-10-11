@@ -19,6 +19,7 @@ public class GameFrame extends JFrame
 	static JFrame jf;
 
 	MainMenuPanel mainMenu;
+	SettingsPanel settingsPanel; // 환경 설정 화면
 	dodge.DodgeMode dodgeMode; // 똥피하기
 	int w, h;
 
@@ -102,6 +103,29 @@ public class GameFrame extends JFrame
 		revalidate();
 		repaint();
 		dodgeMode.start();
+	}
+
+	// 메인화면에서 환경 설정 화면으로 바꾼다
+	public void openSettings()
+	{
+		remove(mainMenu);
+
+		settingsPanel = new SettingsPanel(this);
+		settingsPanel.setBounds(0, 0, 360, 640);
+		add(settingsPanel);
+
+		revalidate();
+		repaint();
+	}
+
+	// 환경 설정 화면에서 메인화면으로 되돌아간다
+	public void closeSettings()
+	{
+		remove(settingsPanel);
+		add(mainMenu);
+
+		revalidate();
+		repaint();
 	}
 
 	public void start3D()
