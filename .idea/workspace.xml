@@ -5,8 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/GameFrame.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/GameFrame.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +81,7 @@
       <workItem from="1791659636733" duration="43000" />
       <workItem from="1791702236857" duration="4456000" />
       <workItem from="1791706740778" duration="78000" />
-      <workItem from="1791706828878" duration="172000" />
+      <workItem from="1791706828878" duration="448000" />
     </task>
     <servers />
   </component>
