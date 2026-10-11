@@ -15,11 +15,20 @@ public class DodgeKeyCheck {
             if (release) listener.keyReleased(event); else listener.keyPressed(event);
     }
     public static void main(String[] args) throws Exception {
+        // GameControls saves changes: initialize it only after isolating the user settings.
+        String originalHome = System.getProperty("user.home");
+        java.nio.file.Path testHome = java.nio.file.Files.createTempDirectory("dodge-key-check-");
+        System.setProperty("user.home", testHome.toString());
+        try {
         SwingUtilities.invokeAndWait(() -> {
             GameControls.reset(Game.DODGE);
             GamePanel panel = new GamePanel();
             panel.isStarted = true;
             panel.dodger.reset(); panel.dodger.x = 5;
+            press(panel, KeyEvent.VK_LEFT, false);
+            check(panel.dodger.x == 4, "Default left arrow does not move character");
+            press(panel, KeyEvent.VK_LEFT, true);
+            panel.dodger.x = 5;
             GameControls.setKey(Game.DODGE, "LEFT", KeyEvent.VK_H);
             press(panel, KeyEvent.VK_LEFT, false);
             check(panel.dodger.x == 5, "Old dodge key disabled");
@@ -35,6 +44,9 @@ public class DodgeKeyCheck {
             panel.stop();
             GameControls.setKey(Game.DODGE, "LEFT", KeyEvent.VK_H);
         });
+        } finally {
+            System.setProperty("user.home", originalHome);
+        }
         System.out.println("Dodge key checks passed.");
     }
 }

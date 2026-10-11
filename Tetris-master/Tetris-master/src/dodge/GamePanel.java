@@ -26,7 +26,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	// P2 고양이
 	Dodger dodger = new Dodger(this);
 	private final CharacterManager characterManager;
-	DodgerSprite dodgerSprite;
+	final DodgerSprite dodgerSprite;
 
 	InfoPanel info; // 오른쪽 정보판
 	Timer timer;
@@ -268,6 +268,7 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	public void restart() {
+		// Reset gameplay only; keep the manager and its selected cosmetic layers.
 		if (result != 0)
 			start();
 	}
@@ -447,6 +448,7 @@ public class GamePanel extends JPanel implements ActionListener {
 			}
 		}
 
+		// Skin and accessories share the interpolated position, never the collision cells.
 		dodgerSprite.draw(g, dodger, left + (int) Math.round(dodger.drawX * cell),
 				top + (int) Math.round((22 - dodger.drawY - 1) * cell), cell, cell);
 

@@ -5,8 +5,20 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/CHARACTER_CUSTOMIZATION.md" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/CHARACTER_CUSTOMIZATION.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/MainMenuPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/CharacterManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/CharacterManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/DodgeMode.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/DodgeMode.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/DodgerSprite.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/DodgerSprite.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/Tetris-master/Tetris-master/src/dodge/GamePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/MainMenuPanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/MainMenuPanel.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/DodgeMode.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/DodgeMode.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/DodgerSprite.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/DodgerSprite.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$1.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$1.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$2.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel$2.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel.class" beforeDir="false" afterPath="$PROJECT_DIR$/out/production/26-2--/dodge/GamePanel.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -83,7 +95,8 @@
       <workItem from="1791702236857" duration="4456000" />
       <workItem from="1791706740778" duration="78000" />
       <workItem from="1791706828878" duration="448000" />
-      <workItem from="1791707283991" duration="2123000" />
+      <workItem from="1791707283991" duration="2632000" />
+      <workItem from="1791709942026" duration="325000" />
     </task>
     <servers />
   </component>

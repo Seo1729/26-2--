@@ -80,6 +80,16 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		volumeButton.addActionListener(event -> settings.EnvironmentSettingsPanel.show(this));
 		add(volumeButton);
 
+		// Keep all eight menu actions inside the existing 360 x 640 window.
+		JButton characters = new JButton("캐릭터 관리");
+		characters.setFont(new Font("Dialog", Font.BOLD, 16));
+		characters.setBackground(Color.WHITE);
+		characters.setFocusPainted(false);
+		characters.addActionListener(event -> dodge.CharacterCustomizationPanel.show(this));
+		add(characters);
+		JButton[] menuButtons = { btn1, btn2, btn3, btn4, btn5, volumeButton, characters, btn6 };
+		for (int i = 0; i < menuButtons.length; i++) menuButtons[i].setBounds(90, 248 + i * 43, 180, 36);
+
 //		btn7 = new JButton("설정");
 //		btn7.setBounds(90, 572, 180, 44);
 //		add(btn7);

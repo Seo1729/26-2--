@@ -134,6 +134,13 @@ public final class CharacterManager {
             }
         } finally { Files.deleteIfExists(temporary); }
     }
+    /** Apply only if persistence succeeds; a failed write restores the live selection. */
+    public synchronized void applyAndSave(CharacterAppearance selection) throws IOException {
+        CharacterAppearance previous = appearance;
+        select(selection);
+        try { save(); }
+        catch (IOException e) { select(previous); throw e; }
+    }
     synchronized Map<String, BufferedImage> frames(CharacterItem.Category category, String id) {
         return images.get(category).getOrDefault(id, Collections.emptyMap());
     }

@@ -3,8 +3,8 @@
     <option name="ALTERNATIVE_JRE_PATH" value="openjdk-25" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="GameFrame" />
-    <option name="VM_PARAMETERS" value="-classpath &quot;$PROJECT_DIR$/out/production/26-2--;$PROJECT_DIR$/Tetris-master/Tetris-master/images&quot;" />
     <module name="26-2--" />
+    <option name="VM_PARAMETERS" value="-classpath &quot;$PROJECT_DIR$/out/production/26-2--&quot;" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/Tetris-master/Tetris-master" />
     <method v="2">
       <option name="Make" enabled="true" />
