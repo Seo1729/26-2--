@@ -16,13 +16,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 /**
- * 환경 설정 화면. 배경음악/효과음 음량, 음소거, 기본값 복원을 조절한다.
- * 바꾼 값은 Settings를 통해 바로 적용되고 저장된다.
+ * 환경 설정 화면. 배경음악/효과음 음량, 음소거, 키 설정, 기본값 복원을 조절한다.
+ * 바꾼 값은 Settings와 KeySettings를 통해 바로 적용되고 저장된다.
  */
 public class SettingsPanel extends JPanel
 {
@@ -116,13 +117,26 @@ public class SettingsPanel extends JPanel
 		});
 		add(muteBox);
 
+		// 키 설정 창 열기
+		JButton keyButton = makeButton("키 설정", 340);
+		keyButton.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				SoundManager.play(Sound.CLICK);
+				KeySettingsDialog.show(SwingUtilities.getWindowAncestor(SettingsPanel.this));
+			}
+		});
+		add(keyButton);
+
 		// 기본값으로 되돌리기
-		JButton resetButton = makeButton("기본값으로 되돌리기", 360);
+		JButton resetButton = makeButton("기본값으로 되돌리기", 394);
 		resetButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
 			{
 				Settings.resetToDefaults();
+				KeySettings.resetToDefaults();
 				showCurrentSettings();
 				SoundManager.play(Sound.CLICK);
 			}
@@ -130,7 +144,7 @@ public class SettingsPanel extends JPanel
 		add(resetButton);
 
 		// 메인화면으로 돌아가기
-		JButton backButton = makeButton("돌아가기", 420);
+		JButton backButton = makeButton("돌아가기", 448);
 		backButton.addActionListener(new ActionListener()
 		{
 			public void actionPerformed(ActionEvent e)
@@ -164,7 +178,7 @@ public class SettingsPanel extends JPanel
 				dialog.dispose();
 			}
 		});
-		panel.setPreferredSize(new Dimension(360, 500));
+		panel.setPreferredSize(new Dimension(360, 520));
 		dialog.add(panel);
 
 		// ESC를 다시 누르면 게임으로 돌아간다

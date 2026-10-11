@@ -2,6 +2,8 @@ import java.awt.*;
 import java.awt.event.*;
 
 import common.Bgm;
+import common.KeyAction;
+import common.KeySettings;
 import common.Sound;
 import common.SoundManager;
 
@@ -115,15 +117,18 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		{
 			String msg = "";
 			msg = msg + "[테트리스]\n";
-			msg = msg + "← / → : 좌우 이동\n";
-			msg = msg + "↑ : 회전\n";
-			msg = msg + "↓ : 한 칸 내리기\n";
-			msg = msg + "Space : 바로 떨어뜨리기\n";
-			msg = msg + "1 : 아이템 내게 쓰기   2 : 아이템 적에게 쓰기   3 : 아이템 지우기\n";
+			// 테트리스와 전투기 키는 설정에서 바꿀 수 있으므로 지금 지정된 키를 보여 준다
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_LEFT) + " / " + KeySettings.getKeyName(KeyAction.TETRIS_RIGHT) + " : 좌우 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ROTATE) + " : 회전\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DOWN) + " : 한 칸 내리기\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DROP) + " : 바로 떨어뜨리기\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ITEM_SELF) + " : 아이템 내게 쓰기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_ENEMY) + " : 아이템 적에게 쓰기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_DELETE) + " : 아이템 지우기\n";
 			msg = msg + "ESC : 설정 (모든 모드에서 게임을 멈추고 설정 화면 열기)\n\n";
 			msg = msg + "[전투기] (갤러그 협동 모드)\n";
-			msg = msg + "A / D : 좌우 이동\n";
-			msg = msg + "W (누르고 있기) : 연사\n\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_LEFT) + " / " + KeySettings.getKeyName(KeyAction.GALAGA_RIGHT) + " : 좌우 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_SHOOT) + " (누르고 있기) : 연사\n\n";
 			msg = msg + "[똥피하기 모드]\n";
 			msg = msg + "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n";
 			msg = msg + "P2 피하는 사람 : ← / → 이동, ↑ 점프\n";

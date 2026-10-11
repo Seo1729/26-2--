@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 
+import common.KeyAction;
+import common.KeySettings;
 import common.Sound;
 import common.SoundManager;
 
@@ -67,21 +69,21 @@ public class GalagaLayer extends JPanel
 		{
 			public void keyPressed(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_LEFT))
 					left = true;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_RIGHT))
 					right = true;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_SHOOT))
 					shoot = true;
 			}
 
 			public void keyReleased(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_LEFT))
 					left = false;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_RIGHT))
 					right = false;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_SHOOT))
 					shoot = false;
 			}
 		};

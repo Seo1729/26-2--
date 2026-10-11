@@ -3,6 +3,8 @@ import java.awt.event.*;
 import java.util.Vector;
 
 import common.Bgm;
+import common.KeyAction;
+import common.KeySettings;
 import common.Settings;
 import common.SettingsPanel;
 import common.Sound;
@@ -180,8 +182,7 @@ public class GameFrame extends JFrame
 
 				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
 				{
-//					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
-					if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[0])
+					if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_DOWN))
 					{
 						// 실제로 한 칸 내려갔을 때만 이동음을 낸다(바닥에 닿아 고정되면 고정음이 난다)
 						int oldY = ((GamePanel) gp).y;
@@ -191,7 +192,7 @@ public class GameFrame extends JFrame
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[1])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_LEFT))
 					{
 						// 벽이나 블록에 막혀 안 움직였으면 소리를 내지 않는다
 						int oldX = ((GamePanel) gp).x;
@@ -201,7 +202,7 @@ public class GameFrame extends JFrame
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[2])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_RIGHT))
 					{
 						int oldX = ((GamePanel) gp).x;
 						((GamePanel) gp).move_right();
@@ -210,7 +211,7 @@ public class GameFrame extends JFrame
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[3])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_SELF))
 					{
 						// 내게 쓰기
 						((GamePanel) gp).ogp = fgp;
@@ -220,24 +221,24 @@ public class GameFrame extends JFrame
 
 						((GamePanel) gp).useItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[4])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_ENEMY))
 					{
 						// 적에게 쓰기
 //						((GamePanel) gp).ogp = sgp;
 						((GamePanel) gp).attackItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[5])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_DELETE))
 					{
 						// 아이템 지우기
 						((GamePanel) gp).deleteItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[6])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_DROP))
 					{
 						((GamePanel) gp).move_drop();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[7])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ROTATE))
 					{
 						// 회전하면 블록 모양 배열이 새로 바뀌므로, 바뀌었을 때만 회전음을 낸다
 						int[][] oldBlock = ((GamePanel) gp).block;
