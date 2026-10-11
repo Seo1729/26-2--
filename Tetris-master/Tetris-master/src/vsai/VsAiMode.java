@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
@@ -25,6 +26,12 @@ import javax.swing.Timer;
 public class VsAiMode extends JPanel implements ActionListener {
 
 	private static final int FRAME_MS = 20;
+	// AI 실력 (보통 수준): 0.23초마다 한 동작, 블록마다 0.25초 생각,
+	// 25% 확률로 가장 좋은 자리 대신 2~6등 자리 중 하나에 둔다
+	private static final int AI_STEP_MS = 230;
+	private static final int AI_THINK_MS = 250;
+	private static final double AI_MISTAKE_RATE = 0.25;
+	private static final int AI_MISTAKE_CHOICES = 6;
 	private static final Color PLAYER_COLOR = new Color(110, 170, 255);
 	private static final Color AI_COLOR = new Color(255, 120, 120);
 
@@ -41,7 +48,7 @@ public class VsAiMode extends JPanel implements ActionListener {
 	private int elapsedMs;
 
 	public VsAiMode() {
-		this(new HeuristicBrain());
+		this(new HeuristicBrain(AI_MISTAKE_RATE, AI_MISTAKE_CHOICES, new Random()));
 	}
 
 	/** brain을 바꿔 끼우면 다른 AI와 대결한다 (예: 나중에 ClaudeBrain) */
@@ -50,6 +57,8 @@ public class VsAiMode extends JPanel implements ActionListener {
 		setBackground(BoardView.BACKGROUND);
 		setFocusable(true);
 		aiController = new AiController(ai, brain);
+		aiController.setStepMs(AI_STEP_MS);
+		aiController.setThinkMs(AI_THINK_MS);
 
 		status.setForeground(new Color(235, 236, 242));
 		status.setFont(BoardView.font(Font.BOLD, 16f));

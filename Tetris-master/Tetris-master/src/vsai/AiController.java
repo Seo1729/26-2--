@@ -16,7 +16,7 @@ public class AiController {
 	private static final long TIMEOUT_MS = 2000;
 
 	private final PlayerBoard side;
-	private final AiBrain brain;
+	private AiBrain brain;
 	private final AiBrain fallback = new HeuristicBrain();
 	private final ExecutorService worker = Executors.newSingleThreadExecutor(r -> {
 		Thread t = new Thread(r, "vsai-brain");
@@ -26,6 +26,8 @@ public class AiController {
 
 	/** 한 동작 사이 간격(ms). 작을수록 AI가 빠르고 어렵다. */
 	private int stepMs = 120;
+	/** 새 블록이 나온 뒤 움직이기 시작할 때까지 기다리는 시간(ms). 사람이 생각하는 것처럼 보인다. */
+	private int thinkMs = 0;
 	private int handledPieceId = -1;
 	private Future<Move> pending;
 	private long askedAt;
@@ -40,6 +42,15 @@ public class AiController {
 
 	public void setStepMs(int stepMs) {
 		this.stepMs = stepMs;
+	}
+
+	public void setThinkMs(int thinkMs) {
+		this.thinkMs = thinkMs;
+	}
+
+	/** 다음 블록부터 이 AI가 둘 자리를 정한다 */
+	public void setBrain(AiBrain brain) {
+		this.brain = brain;
 	}
 
 	public void reset() {
@@ -61,6 +72,8 @@ public class AiController {
 
 		if (plan == null && !receivePlan())
 			return;
+		if (System.currentTimeMillis() - askedAt < thinkMs)
+			return;
 
 		stepElapsed += elapsedMs;
 		if (stepElapsed < stepMs)
@@ -80,8 +93,9 @@ public class AiController {
 		Board snapshot = askedBoard.copy();
 		Tetromino current = side.getCurrent();
 		Tetromino next = side.getNext();
+		AiBrain asked = brain;
 		askedAt = System.currentTimeMillis();
-		pending = worker.submit(() -> brain.decide(snapshot, current, next));
+		pending = worker.submit(() -> asked.decide(snapshot, current, next));
 	}
 
 	/** 답이 왔거나 시간이 지났으면 plan을 정한다. 아직 기다리는 중이면 false */
