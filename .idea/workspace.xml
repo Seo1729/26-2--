@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/GameFrame.xml" afterDir="false" />
-    </list>
+    <list default="true" id="342c980f-4126-4710-9228-db00900a1eb7" name="변경" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -82,6 +80,7 @@
       <workItem from="1791702236857" duration="4456000" />
       <workItem from="1791706740778" duration="78000" />
       <workItem from="1791706828878" duration="448000" />
+      <workItem from="1791707283991" duration="577000" />
     </task>
     <servers />
   </component>

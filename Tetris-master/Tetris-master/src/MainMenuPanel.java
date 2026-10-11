@@ -8,7 +8,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
-	JButton btn1, btn2, btn3, btn4, btn5, btn6;
+	JButton btn1, btn2, btn3, btn4, btn5, btn6, volumeButton;
 	int selectMode = 0;
 	boolean isOpen = true;
 
@@ -71,6 +71,12 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn6.setBounds(90, 520, 180, 44);
 		btn6.addActionListener(this);
 		add(btn6);
+
+		volumeButton = new JButton("음량 설정");
+		volumeButton.setBounds(90, 572, 180, 28);
+		volumeButton.addActionListener(event -> JOptionPane.showMessageDialog(
+				this, new VolumeSettingsPanel(), "음량 설정", JOptionPane.PLAIN_MESSAGE));
+		add(volumeButton);
 
 //		btn7 = new JButton("설정");
 //		btn7.setBounds(90, 572, 180, 44);

@@ -50,6 +50,7 @@ public final class GameSettings {
     private final Path file;
     private int bgmVolume;
     private int sfxVolume;
+    private boolean muted;
     private final EnumMap<TetrisAction, Integer> tetrisKeys = new EnumMap<>(TetrisAction.class);
     private final EnumMap<DodgeAction, Integer> dodgeKeys = new EnumMap<>(DodgeAction.class);
 
@@ -66,6 +67,8 @@ public final class GameSettings {
     public Path getFile() { return file; }
     public synchronized int getBgmVolume() { return bgmVolume; }
     public synchronized int getSfxVolume() { return sfxVolume; }
+    public synchronized boolean isMuted() { return muted; }
+    public synchronized void setMuted(boolean value) { muted = value; }
     public synchronized void setBgmVolume(int value) { bgmVolume = volume(value, DEFAULT_BGM_VOLUME); }
     public synchronized void setSfxVolume(int value) { sfxVolume = volume(value, DEFAULT_SFX_VOLUME); }
     public synchronized int getTetrisKey(TetrisAction action) { return tetrisKeys.get(Objects.requireNonNull(action)); }
@@ -83,6 +86,7 @@ public final class GameSettings {
     public synchronized void resetToDefaults() {
         bgmVolume = DEFAULT_BGM_VOLUME;
         sfxVolume = DEFAULT_SFX_VOLUME;
+        muted = false;
         for (TetrisAction action : TetrisAction.values()) tetrisKeys.put(action, action.defaultKey);
         for (DodgeAction action : DodgeAction.values()) dodgeKeys.put(action, action.defaultKey);
     }
@@ -98,6 +102,7 @@ public final class GameSettings {
         }
         setBgmVolume(integer(properties, "bgmVolume", DEFAULT_BGM_VOLUME));
         setSfxVolume(integer(properties, "sfxVolume", DEFAULT_SFX_VOLUME));
+        muted = "true".equalsIgnoreCase(properties.getProperty("muted", "false").trim());
         for (TetrisAction action : TetrisAction.values())
             setTetrisKey(action, integer(properties, "tetris.key." + action.name(), action.defaultKey));
         for (DodgeAction action : DodgeAction.values())
@@ -110,6 +115,7 @@ public final class GameSettings {
         Properties properties = new Properties();
         properties.setProperty("bgmVolume", Integer.toString(bgmVolume));
         properties.setProperty("sfxVolume", Integer.toString(sfxVolume));
+        properties.setProperty("muted", Boolean.toString(muted));
         for (TetrisAction action : TetrisAction.values())
             properties.setProperty("tetris.key." + action.name(), Integer.toString(tetrisKeys.get(action)));
         for (DodgeAction action : DodgeAction.values())
