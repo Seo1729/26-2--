@@ -1,6 +1,12 @@
 import java.awt.*;
 import java.awt.event.*;
 
+import common.Bgm;
+import common.KeyAction;
+import common.KeySettings;
+import common.Sound;
+import common.SoundManager;
+
 import javax.swing.*;
 
 // 메인화면
@@ -8,13 +14,16 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
-	JButton btn1, btn2, btn3, btn4, btn5, btn6;
+	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7;
 	int selectMode = 0;
 	boolean isOpen = true;
 
 	public MainMenuPanel(GameFrame f)
 	{
 		frame = f;
+
+		// 메인화면에서는 차분한 메뉴 음악을 튼다
+		SoundManager.startBgm(Bgm.MENU);
 
 		setLayout(null);
 		setBackground(new Color(30, 160, 255));
@@ -28,7 +37,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn1.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn1.setBackground(Color.WHITE);
 		btn1.setFocusPainted(false);
-		btn1.setBounds(90, 260, 180, 44);
+		btn1.setBounds(90, 250, 180, 40);
 		btn1.addActionListener(this);
 		add(btn1);
 
@@ -36,7 +45,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn2.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn2.setBackground(Color.WHITE);
 		btn2.setFocusPainted(false);
-		btn2.setBounds(90, 312, 180, 44);
+		btn2.setBounds(90, 296, 180, 40);
 		btn2.addActionListener(this);
 		add(btn2);
 
@@ -44,7 +53,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn3.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn3.setBackground(Color.WHITE);
 		btn3.setFocusPainted(false);
-		btn3.setBounds(90, 364, 180, 44);
+		btn3.setBounds(90, 342, 180, 40);
 		btn3.addActionListener(this);
 		add(btn3);
 
@@ -52,7 +61,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn4.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn4.setBackground(Color.WHITE);
 		btn4.setFocusPainted(false);
-		btn4.setBounds(90, 416, 180, 44);
+		btn4.setBounds(90, 388, 180, 40);
 		btn4.addActionListener(this);
 		add(btn4);
 
@@ -60,7 +69,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn5.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn5.setBackground(Color.WHITE);
 		btn5.setFocusPainted(false);
-		btn5.setBounds(90, 468, 180, 44);
+		btn5.setBounds(90, 434, 180, 40);
 		btn5.addActionListener(this);
 		add(btn5);
 
@@ -68,17 +77,22 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn6.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn6.setBackground(Color.WHITE);
 		btn6.setFocusPainted(false);
-		btn6.setBounds(90, 520, 180, 44);
+		btn6.setBounds(90, 526, 180, 40);
 		btn6.addActionListener(this);
 		add(btn6);
 
-//		btn7 = new JButton("설정");
-//		btn7.setBounds(90, 572, 180, 44);
-//		add(btn7);
+		btn7 = new JButton("설정");
+		btn7.setFont(new Font("Dialog", Font.BOLD, 16));
+		btn7.setBackground(Color.WHITE);
+		btn7.setFocusPainted(false);
+		btn7.setBounds(90, 480, 180, 40);
+		btn7.addActionListener(this);
+		add(btn7);
 	}
 
 	public void actionPerformed(ActionEvent e)
 	{
+		SoundManager.play(Sound.CLICK);
 		String cmd = e.getActionCommand();
 
 		if (cmd.equals("일반 모드"))
@@ -103,24 +117,42 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		{
 			String msg = "";
 			msg = msg + "[테트리스]\n";
-			msg = msg + "← / → : 좌우 이동\n";
-			msg = msg + "↑ : 회전\n";
-			msg = msg + "↓ : 한 칸 내리기\n";
-			msg = msg + "Space : 바로 떨어뜨리기\n";
-			msg = msg + "1 : 아이템 내게 쓰기   2 : 아이템 적에게 쓰기   3 : 아이템 지우기\n\n";
+			// 테트리스와 전투기 키는 설정에서 바꿀 수 있으므로 지금 지정된 키를 보여 준다
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_LEFT) + " / " + KeySettings.getKeyName(KeyAction.TETRIS_RIGHT) + " : 좌우 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ROTATE) + " : 회전\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DOWN) + " : 한 칸 내리기\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DROP) + " : 바로 떨어뜨리기\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ITEM_SELF) + " : 아이템 내게 쓰기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_ENEMY) + " : 아이템 적에게 쓰기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_DELETE) + " : 아이템 지우기\n";
+			msg = msg + "ESC : 설정 (모든 모드에서 게임을 멈추고 설정 화면 열기)\n\n";
 			msg = msg + "[전투기] (갤러그 협동 모드)\n";
-			msg = msg + "A / D : 좌우 이동\n";
-			msg = msg + "W (누르고 있기) : 연사\n\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_LEFT) + " / " + KeySettings.getKeyName(KeyAction.GALAGA_RIGHT) + " : 좌우 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_SHOOT) + " (누르고 있기) : 연사\n\n";
 			msg = msg + "[똥피하기 모드]\n";
-			msg = msg + "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n";
-			msg = msg + "P2 피하는 사람 : ← / → 이동, ↑ 점프\n";
-			msg = msg + "P : 일시정지   R : 끝난 뒤 다시 시작\n\n";
+			msg = msg + "P1 테트리스 : " + KeySettings.getKeyName(KeyAction.DODGE_BLOCK_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_RIGHT) + " 좌우 이동, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_ROTATE) + " 회전, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_DOWN) + " 내리기\n";
+			msg = msg + "P2 피하는 사람 : " + KeySettings.getKeyName(KeyAction.DODGE_CAT_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_RIGHT) + " 이동, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 점프\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + " : 일시정지   "
+					+ KeySettings.getKeyName(KeyAction.DODGE_RESTART) + " : 끝난 뒤 다시 시작\n\n";
 			msg = msg + "[3D 테트리스]\n";
-			msg = msg + "W / A / S / D : 블록 이동\n";
-			msg = msg + "J / K / L : X / Y / Z축 회전\n";
-			msg = msg + "Space : 바로 떨어뜨리기   R : 다시 시작\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_UP) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_DOWN) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_RIGHT)
+					+ " : 블록 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_X) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Y) + " / "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Z) + " : X / Y / Z축 회전\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_DROP) + " : 바로 떨어뜨리기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_RESTART) + " : 다시 시작\n";
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
+		}
+		else if (cmd.equals("설정"))
+		{
+			frame.openSettings();
 		}
 		else if (cmd.equals("종료"))
 		{

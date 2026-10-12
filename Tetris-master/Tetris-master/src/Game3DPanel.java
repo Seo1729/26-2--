@@ -6,6 +6,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.AbstractAction;
@@ -16,6 +17,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+
+import common.KeyAction;
+import common.KeySettings;
+import common.SettingsPanel;
 
 // 3D 화면 + 오른쪽 정보 + 키 설정
 public class Game3DPanel extends JPanel
@@ -30,7 +36,8 @@ public class Game3DPanel extends JPanel
 	JLabel score = new JLabel("0");
 	JLabel clearedLayers = new JLabel("0");
 	JLabel gameState = new JLabel("READY");
-	JLabel restartHint = new JLabel("R : 게임 오버 후 재시작");
+	JLabel restartHint = new JLabel(" ");
+	ArrayList<JLabel> controlLabels = new ArrayList<JLabel>(); // 조작법 안내 글들
 	int keyCount = 0; // 키 몇번 눌렀나 세보려고
 
 	public Game3DPanel(Game3D game)
@@ -52,26 +59,35 @@ public class Game3DPanel extends JPanel
 		center.add(status, BorderLayout.SOUTH);
 		add(center, BorderLayout.CENTER);
 		add(buildSidebar(), BorderLayout.EAST);
-		bindMovement(KeyEvent.VK_W, "W", 0, -1);
-		bindMovement(KeyEvent.VK_S, "S", 0, 1);
-		bindMovement(KeyEvent.VK_A, "A", -1, 0);
-		bindMovement(KeyEvent.VK_D, "D", 1, 0);
+		bindAllKeys();
+	}
+
+	// 지금 설정된 키로 모든 키를 (다시) 등록한다
+	void bindAllKeys()
+	{
+		// 이전에 등록한 키를 모두 지워서 설정에서 바꾼 키가 바로 적용되게 한다
+		getInputMap(WHEN_IN_FOCUSED_WINDOW).clear();
+		getActionMap().clear();
+		bindMovement(KeyAction.TETRIS3D_UP, 0, -1);
+		bindMovement(KeyAction.TETRIS3D_DOWN, 0, 1);
+		bindMovement(KeyAction.TETRIS3D_LEFT, -1, 0);
+		bindMovement(KeyAction.TETRIS3D_RIGHT, 1, 0);
 		// 회전 J K L
-		bindKey(KeyEvent.VK_J, "J", new Runnable()
+		bindKey(KeyAction.TETRIS3D_ROTATE_X, new Runnable()
 		{
 			public void run()
 			{
 				game.rotate(Block3D.Axis.X);
 			}
 		});
-		bindKey(KeyEvent.VK_K, "K", new Runnable()
+		bindKey(KeyAction.TETRIS3D_ROTATE_Y, new Runnable()
 		{
 			public void run()
 			{
 				game.rotate(Block3D.Axis.Y);
 			}
 		});
-		bindKey(KeyEvent.VK_L, "L", new Runnable()
+		bindKey(KeyAction.TETRIS3D_ROTATE_Z, new Runnable()
 		{
 			public void run()
 			{
@@ -79,15 +95,30 @@ public class Game3DPanel extends JPanel
 			}
 		});
 		// 하드드롭
-		bindKey(KeyEvent.VK_SPACE, "Space", new Runnable()
+		bindKey(KeyAction.TETRIS3D_DROP, new Runnable()
 		{
 			public void run()
 			{
 				game.hardDrop();
 			}
 		});
+		// ESC: 게임을 멈추고 설정 화면을 띄운 뒤, 닫으면 이어서 진행
+		bindKey(KeyEvent.VK_ESCAPE, "Escape", new Runnable()
+		{
+			public void run()
+			{
+				game.stop();
+				SettingsPanel.showDialog(SwingUtilities.getWindowAncestor(Game3DPanel.this));
+
+				// 설정에서 키를 바꿨을 수 있으니 키 등록과 조작법 안내를 새로 고친다
+				bindAllKeys();
+				refreshControlTexts();
+				resetPressedKeys();
+				game.start();
+			}
+		});
 		// 재시작
-		bindKey(KeyEvent.VK_R, "R", new Runnable()
+		bindKey(KeyAction.TETRIS3D_RESTART, new Runnable()
 		{
 			public void run()
 			{
@@ -139,11 +170,11 @@ public class Game3DPanel extends JPanel
 		sidebar.add(state);
 		sidebar.add(Box.createVerticalStrut(10));
 		JPanel controls = card("조작법");
-		for (String text : new String[] {"WASD : 평면 이동", "Space : Hard Drop",
-				"J / K / L : X / Y / Z축 회전", "Mouse Drag : 카메라 회전",
-				"Mouse Wheel : Zoom", "R : 게임 오버 후 재시작"})
+		String[] texts = controlTexts();
+		for (int i = 0; i < texts.length; i++)
 		{
-			JLabel label = new JLabel(text); label.setForeground(new Color(220, 230, 245));
+			JLabel label = new JLabel(texts[i]); label.setForeground(new Color(220, 230, 245));
+			controlLabels.add(label);
 			controls.add(label);
 		}
 		sidebar.add(controls);
@@ -157,6 +188,30 @@ public class Game3DPanel extends JPanel
 		scroll.getViewport().setBackground(new Color(13, 18, 29));
 		scroll.getVerticalScrollBar().setUnitIncrement(20);
 		return scroll;
+	}
+
+	// 지금 설정된 키로 조작법 안내 글을 만든다
+	static String[] controlTexts()
+	{
+		return new String[] {
+				KeySettings.getKeyName(KeyAction.TETRIS3D_UP) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_LEFT)
+						+ " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_DOWN) + " / "
+						+ KeySettings.getKeyName(KeyAction.TETRIS3D_RIGHT) + " : 평면 이동",
+				KeySettings.getKeyName(KeyAction.TETRIS3D_DROP) + " : Hard Drop",
+				KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_X) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Y)
+						+ " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Z) + " : X / Y / Z축 회전",
+				"Mouse Drag : 카메라 회전",
+				"Mouse Wheel : Zoom",
+				KeySettings.getKeyName(KeyAction.TETRIS3D_RESTART) + " : 게임 오버 후 재시작",
+				"ESC : 설정" };
+	}
+
+	// 조작법 안내 글을 지금 설정된 키로 다시 쓴다
+	void refreshControlTexts()
+	{
+		String[] texts = controlTexts();
+		for (int i = 0; i < texts.length; i++)
+			controlLabels.get(i).setText(texts[i]);
 	}
 
 	static JPanel card(String title)
@@ -182,16 +237,28 @@ public class Game3DPanel extends JPanel
 		return label;
 	}
 
-	// 이동 키 (WASD)
-	void bindMovement(final int keyCode, String name, final int dx, final int dy)
+	// 이동 키
+	void bindMovement(KeyAction action, final int dx, final int dy)
 	{
-		bindKey(keyCode, name, new Runnable()
+		bindKey(action, new Runnable()
 		{
 			public void run()
 			{
 				game.move(dx, dy);
 			}
 		});
+	}
+
+	// 설정에 지정된 키를 등록한다 (게임 중에만 동작)
+	void bindKey(KeyAction keyAction, Runnable action)
+	{
+		bindKey(keyAction, action, Game3D.State.RUNNING);
+	}
+
+	// 설정에 지정된 키를 등록한다 (requiredState일 때만 동작)
+	void bindKey(KeyAction keyAction, Runnable action, Game3D.State requiredState)
+	{
+		bindKey(KeySettings.getKey(keyAction), keyAction.name(), action, requiredState);
 	}
 
 	void bindKey(final int keyCode, String name, final Runnable action)
@@ -262,7 +329,7 @@ public class Game3DPanel extends JPanel
 			Game3D.State state = game.getState();
 			gameState.setText(state == Game3D.State.GAME_OVER ? "GAME OVER" : state.name());
 			gameState.setForeground(state == Game3D.State.GAME_OVER ? new Color(245, 98, 121) : new Color(220, 230, 245));
-			restartHint.setText(state == Game3D.State.GAME_OVER ? "R 키를 눌러 다시 시작" : " ");
+			restartHint.setText(state == Game3D.State.GAME_OVER ? KeySettings.getKeyName(KeyAction.TETRIS3D_RESTART) + " 키를 눌러 다시 시작" : " ");
 			if (!game.isRunning())
 				resetPressedKeys();
 			Block3D block = game.getActiveBlock();

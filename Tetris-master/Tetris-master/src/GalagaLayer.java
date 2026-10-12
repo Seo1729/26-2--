@@ -4,6 +4,11 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 
+import common.KeyAction;
+import common.KeySettings;
+import common.Sound;
+import common.SoundManager;
+
 // 갤러그 협동 모드 (테트리스 영역 위에 겹쳐서 그림)
 public class GalagaLayer extends JPanel
 {
@@ -64,21 +69,21 @@ public class GalagaLayer extends JPanel
 		{
 			public void keyPressed(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_LEFT))
 					left = true;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_RIGHT))
 					right = true;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_SHOOT))
 					shoot = true;
 			}
 
 			public void keyReleased(KeyEvent e)
 			{
-				if (e.getKeyCode() == KeyEvent.VK_A)
+				if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_LEFT))
 					left = false;
-				else if (e.getKeyCode() == KeyEvent.VK_D)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_RIGHT))
 					right = false;
-				else if (e.getKeyCode() == KeyEvent.VK_W)
+				else if (e.getKeyCode() == KeySettings.getKey(KeyAction.GALAGA_SHOOT))
 					shoot = false;
 			}
 		};
@@ -92,6 +97,14 @@ public class GalagaLayer extends JPanel
 				{
 					timer.stop();
 					setVisible(false);
+					return;
+				}
+				// 설정 화면을 보는 동안에는 멈추고, 그 사이 뗀 키가 눌린 채로 남지 않게 지운다
+				if (board.paused)
+				{
+					left = false;
+					right = false;
+					shoot = false;
 					return;
 				}
 				update();
@@ -130,6 +143,7 @@ public class GalagaLayer extends JPanel
 					if (row - 1 >= 0)
 						board.placeGarbage(row - 1, col);
 					alive[i] = false;
+					SoundManager.play(Sound.EXPLODE);
 				}
 			}
 			else
@@ -197,6 +211,7 @@ public class GalagaLayer extends JPanel
 			bx.add(fighterX + 12 - 1);
 			by.add(fighterY - 8);
 			cool = 7;
+			SoundManager.play(Sound.SHOOT);
 		}
 
 		// 총알 이동, 맞았는지 확인
@@ -220,6 +235,7 @@ public class GalagaLayer extends JPanel
 							&& by.get(i) < alienY[j] + 16 && alienY[j] < by.get(i) + 8)
 					{
 						alive[j] = false;
+						SoundManager.play(Sound.EXPLODE);
 						remove = true;
 						break;
 					}
@@ -244,6 +260,7 @@ public class GalagaLayer extends JPanel
 		{
 			if (wave == 3)
 			{
+				SoundManager.play(Sound.WIN);
 				board.endGame("CLEAR");
 			}
 			else

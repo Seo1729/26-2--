@@ -10,8 +10,6 @@ public class ImageSource
 	static ImageIcon img_buttonP;    
 	static ImageIcon img_KNUT;
 	
-	static ImageIcon bg_ground;
-	static ImageIcon kakao_tube;
 	
 	static ImageIcon block_I;
 	static ImageIcon block_J;
@@ -67,8 +65,6 @@ public class ImageSource
 		img_buttonP = new ImageIcon(ImageSource.class.getClassLoader().getResource("button_push.png"));    // 
 		img_KNUT = new ImageIcon(ImageSource.class.getClassLoader().getResource("KNUT.png"));
 		
-		bg_ground = new ImageIcon(ImageSource.class.getClassLoader().getResource("bg_ground.png"));
-		kakao_tube = new ImageIcon(ImageSource.class.getClassLoader().getResource("kakao_tube.png"));
 		
 		block_I = new ImageIcon(ImageSource.class.getClassLoader().getResource("block/block_I.png"));
 		block_J = new ImageIcon(ImageSource.class.getClassLoader().getResource("block/block_J.png"));

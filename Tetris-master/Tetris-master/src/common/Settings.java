@@ -1,3 +1,5 @@
+package common;
+
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -16,7 +18,7 @@ public class Settings
 	public static final int DEFAULT_BGM_VOLUME = 40;
 
 	/** 저장소에서 이 프로젝트의 설정을 모아 두는 이름 */
-	private static final String NODE_NAME = "jbnu_tetris";
+	static final String NODE_NAME = "jbnu_tetris";
 
 	/** 저장소 항목 이름: 효과음 음량 */
 	private static final String KEY_SFX_VOLUME = "sfxVolume";

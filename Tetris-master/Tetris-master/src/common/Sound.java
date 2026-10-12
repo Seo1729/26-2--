@@ -1,3 +1,5 @@
+package common;
+
 /**
  * 효과음 종류. SoundManager.play()에 넘겨서 재생한다.
  * 소리는 파일이 아니라 SoundManager가 코드로 직접 만든다.
