@@ -8,6 +8,8 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 import common.Bgm;
+import common.KeyAction;
+import common.KeySettings;
 import common.SettingsPanel;
 import common.Sound;
 import common.SoundManager;
@@ -77,11 +79,11 @@ public class GamePanel extends JPanel implements ActionListener {
 				if (!held.add(code))
 					return;
 
-				if (code == KeyEvent.VK_P) {
+				if (code == KeySettings.getKey(KeyAction.DODGE_PAUSE)) {
 					togglePause();
 					return;
 				}
-				if (code == KeyEvent.VK_R) {
+				if (code == KeySettings.getKey(KeyAction.DODGE_RESTART)) {
 					restart();
 					return;
 				}
@@ -93,8 +95,11 @@ public class GamePanel extends JPanel implements ActionListener {
 					return;
 
 				act(code);
-				if (code == KeyEvent.VK_A || code == KeyEvent.VK_D || code == KeyEvent.VK_S
-						|| code == KeyEvent.VK_LEFT || code == KeyEvent.VK_RIGHT)
+				if (code == KeySettings.getKey(KeyAction.DODGE_BLOCK_LEFT)
+						|| code == KeySettings.getKey(KeyAction.DODGE_BLOCK_RIGHT)
+						|| code == KeySettings.getKey(KeyAction.DODGE_BLOCK_DOWN)
+						|| code == KeySettings.getKey(KeyAction.DODGE_CAT_LEFT)
+						|| code == KeySettings.getKey(KeyAction.DODGE_CAT_RIGHT))
 					nextRepeat.put(code, System.currentTimeMillis() + 170);
 				repaint();
 			}
@@ -142,7 +147,8 @@ public class GamePanel extends JPanel implements ActionListener {
 				if (now >= entry.getValue()) {
 					int code = entry.getKey();
 					act(code);
-					if (code == KeyEvent.VK_LEFT || code == KeyEvent.VK_RIGHT)
+					if (code == KeySettings.getKey(KeyAction.DODGE_CAT_LEFT)
+							|| code == KeySettings.getKey(KeyAction.DODGE_CAT_RIGHT))
 						entry.setValue(now + 90);
 					else
 						entry.setValue(now + 50);
@@ -177,32 +183,25 @@ public class GamePanel extends JPanel implements ActionListener {
 	}
 
 	void act(int code) {
-		switch (code) {
-		case KeyEvent.VK_A:
+		// 설정에서 지정한 키에 맞는 동작을 실행한다
+		if (code == KeySettings.getKey(KeyAction.DODGE_BLOCK_LEFT)) {
 			// 실제로 움직였을 때만 이동음을 낸다
 			if (tryMove(curPiece, curX - 1, curY))
 				SoundManager.play(Sound.MOVE);
-			break;
-		case KeyEvent.VK_D:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_BLOCK_RIGHT)) {
 			if (tryMove(curPiece, curX + 1, curY))
 				SoundManager.play(Sound.MOVE);
-			break;
-		case KeyEvent.VK_W:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_BLOCK_ROTATE)) {
 			if (tryMove(curPiece.rotateLeft(), curX, curY))
 				SoundManager.play(Sound.ROTATE);
-			break;
-		case KeyEvent.VK_S:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_BLOCK_DOWN)) {
 			oneLineDown();
-			break;
-		case KeyEvent.VK_LEFT:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_CAT_LEFT)) {
 			dodger.moveLeft();
-			break;
-		case KeyEvent.VK_RIGHT:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_CAT_RIGHT)) {
 			dodger.moveRight();
-			break;
-		case KeyEvent.VK_UP:
+		} else if (code == KeySettings.getKey(KeyAction.DODGE_CAT_JUMP)) {
 			dodger.jump();
-			break;
 		}
 	}
 
@@ -487,9 +486,9 @@ public class GamePanel extends JPanel implements ActionListener {
 				msg = "시간 종료까지 생존! 똥피하기 승리";
 			else if (result == 5)
 				msg = "블록이 꼭대기까지 쌓임! 똥피하기 승리";
-			drawOverlay(g, left, top, boardW, boardH, title, msg, "R: 다시 시작");
+			drawOverlay(g, left, top, boardW, boardH, title, msg, KeySettings.getKeyName(KeyAction.DODGE_RESTART) + ": 다시 시작");
 		} else if (isPaused) {
-			drawOverlay(g, left, top, boardW, boardH, "일시정지", null, "P: 계속하기");
+			drawOverlay(g, left, top, boardW, boardH, "일시정지", null, KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + ": 계속하기");
 		}
 	}
 

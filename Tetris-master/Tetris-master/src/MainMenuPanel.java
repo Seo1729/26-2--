@@ -130,13 +130,23 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_LEFT) + " / " + KeySettings.getKeyName(KeyAction.GALAGA_RIGHT) + " : 좌우 이동\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.GALAGA_SHOOT) + " (누르고 있기) : 연사\n\n";
 			msg = msg + "[똥피하기 모드]\n";
-			msg = msg + "P1 테트리스 : A / D 좌우 이동, W 회전, S 내리기\n";
-			msg = msg + "P2 피하는 사람 : ← / → 이동, ↑ 점프\n";
-			msg = msg + "P : 일시정지   R : 끝난 뒤 다시 시작\n\n";
+			msg = msg + "P1 테트리스 : " + KeySettings.getKeyName(KeyAction.DODGE_BLOCK_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_RIGHT) + " 좌우 이동, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_ROTATE) + " 회전, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_DOWN) + " 내리기\n";
+			msg = msg + "P2 피하는 사람 : " + KeySettings.getKeyName(KeyAction.DODGE_CAT_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_RIGHT) + " 이동, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 점프\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + " : 일시정지   "
+					+ KeySettings.getKeyName(KeyAction.DODGE_RESTART) + " : 끝난 뒤 다시 시작\n\n";
 			msg = msg + "[3D 테트리스]\n";
-			msg = msg + "W / A / S / D : 블록 이동\n";
-			msg = msg + "J / K / L : X / Y / Z축 회전\n";
-			msg = msg + "Space : 바로 떨어뜨리기   R : 다시 시작\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_UP) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_LEFT) + " / "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_DOWN) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_RIGHT)
+					+ " : 블록 이동\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_X) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Y) + " / "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_ROTATE_Z) + " : X / Y / Z축 회전\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_DROP) + " : 바로 떨어뜨리기   "
+					+ KeySettings.getKeyName(KeyAction.TETRIS3D_RESTART) + " : 다시 시작\n";
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
 		}

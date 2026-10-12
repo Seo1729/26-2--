@@ -39,7 +39,61 @@ public enum KeyAction
 	GALAGA_RIGHT("갤러그", "일반/갤러그", "오른쪽 이동", KeyEvent.VK_D),
 
 	/** 갤러그: 발사 */
-	GALAGA_SHOOT("갤러그", "일반/갤러그", "발사(누르고 있기)", KeyEvent.VK_W);
+	GALAGA_SHOOT("갤러그", "일반/갤러그", "발사(누르고 있기)", KeyEvent.VK_W),
+
+	/** 똥피하기: 떨어지는 블록 왼쪽 이동 */
+	DODGE_BLOCK_LEFT("똥피하기", "똥피하기", "블록 왼쪽 이동", KeyEvent.VK_A),
+
+	/** 똥피하기: 떨어지는 블록 오른쪽 이동 */
+	DODGE_BLOCK_RIGHT("똥피하기", "똥피하기", "블록 오른쪽 이동", KeyEvent.VK_D),
+
+	/** 똥피하기: 떨어지는 블록 회전 */
+	DODGE_BLOCK_ROTATE("똥피하기", "똥피하기", "블록 회전", KeyEvent.VK_W),
+
+	/** 똥피하기: 떨어지는 블록 한 칸 내리기 */
+	DODGE_BLOCK_DOWN("똥피하기", "똥피하기", "블록 내리기", KeyEvent.VK_S),
+
+	/** 똥피하기: 고양이 왼쪽 이동 */
+	DODGE_CAT_LEFT("똥피하기", "똥피하기", "고양이 왼쪽 이동", KeyEvent.VK_LEFT),
+
+	/** 똥피하기: 고양이 오른쪽 이동 */
+	DODGE_CAT_RIGHT("똥피하기", "똥피하기", "고양이 오른쪽 이동", KeyEvent.VK_RIGHT),
+
+	/** 똥피하기: 고양이 점프 */
+	DODGE_CAT_JUMP("똥피하기", "똥피하기", "고양이 점프", KeyEvent.VK_UP),
+
+	/** 똥피하기: 일시정지 */
+	DODGE_PAUSE("똥피하기", "똥피하기", "일시정지", KeyEvent.VK_P),
+
+	/** 똥피하기: 끝난 뒤 다시 시작 */
+	DODGE_RESTART("똥피하기", "똥피하기", "다시 시작", KeyEvent.VK_R),
+
+	/** 3D 테트리스: 위쪽으로 이동 */
+	TETRIS3D_UP("3D 테트리스", "3D 테트리스", "위로 이동", KeyEvent.VK_W),
+
+	/** 3D 테트리스: 아래쪽으로 이동 */
+	TETRIS3D_DOWN("3D 테트리스", "3D 테트리스", "아래로 이동", KeyEvent.VK_S),
+
+	/** 3D 테트리스: 왼쪽으로 이동 */
+	TETRIS3D_LEFT("3D 테트리스", "3D 테트리스", "왼쪽 이동", KeyEvent.VK_A),
+
+	/** 3D 테트리스: 오른쪽으로 이동 */
+	TETRIS3D_RIGHT("3D 테트리스", "3D 테트리스", "오른쪽 이동", KeyEvent.VK_D),
+
+	/** 3D 테트리스: X축 회전 */
+	TETRIS3D_ROTATE_X("3D 테트리스", "3D 테트리스", "X축 회전", KeyEvent.VK_J),
+
+	/** 3D 테트리스: Y축 회전 */
+	TETRIS3D_ROTATE_Y("3D 테트리스", "3D 테트리스", "Y축 회전", KeyEvent.VK_K),
+
+	/** 3D 테트리스: Z축 회전 */
+	TETRIS3D_ROTATE_Z("3D 테트리스", "3D 테트리스", "Z축 회전", KeyEvent.VK_L),
+
+	/** 3D 테트리스: 바로 떨어뜨리기 */
+	TETRIS3D_DROP("3D 테트리스", "3D 테트리스", "바로 떨어뜨리기", KeyEvent.VK_SPACE),
+
+	/** 3D 테트리스: 게임오버 후 다시 시작 */
+	TETRIS3D_RESTART("3D 테트리스", "3D 테트리스", "다시 시작", KeyEvent.VK_R);
 
 	/** 이 동작이 속한 모드 이름(키 설정 창의 탭 이름) */
 	private final String group;

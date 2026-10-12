@@ -69,7 +69,7 @@ public class KeySettingsDialog
 
 		dialog.add(makeTabs(), BorderLayout.CENTER);
 		dialog.add(makeBottom(), BorderLayout.SOUTH);
-		dialog.getContentPane().setPreferredSize(new Dimension(380, 400));
+		dialog.getContentPane().setPreferredSize(new Dimension(380, 520));
 		dialog.pack();
 		dialog.setLocationRelativeTo(owner);
 	}
