@@ -288,12 +288,14 @@ class GamePanel extends JPanel implements Runnable
 	boolean Gaming = false;
 
 	GamePanel ogp; // OtherGamePanel
+	HpSystem hp; // 일반 모드 생명(HP) - 규칙과 표시는 HpSystem.java
 
 	GamePanel()
 	{
 		setLayout(null);
 
 		makeComponent(0);
+		hp = new HpSystem(this);
 		makeTetrisArea(0);
 		makeBackground();
 
@@ -538,6 +540,17 @@ class GamePanel extends JPanel implements Runnable
 			for (int col = x; col < x + blockWSize; col++)
 				if (array[row][col] > 0 && field[row][col] > 0)
 					count++;
+		// HP가 남아 있으면 HP를 1 줄이고 맨 밑 줄들을 지운 뒤 계속한다 (HpSystem.java)
+		while (count > 0 && hp.hitTop())
+		{
+			for (int i = 0; i < HpSystem.CLEAR_LINES; i++)
+				lineDelete(field.length - 2);
+			count = 0;
+			for (int row = y; row < y + blockHSize; row++)
+				for (int col = x; col < x + blockWSize; col++)
+					if (array[row][col] > 0 && field[row][col] > 0)
+						count++;
+		}
 		if (count > 0)
 		{
 			// 새 블록이 나올 자리가 막혔으니 배경음악을 멈추고 게임오버 소리를 낸다
