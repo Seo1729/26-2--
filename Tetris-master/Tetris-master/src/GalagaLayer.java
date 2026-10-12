@@ -112,6 +112,10 @@ public class GalagaLayer extends JPanel
 			}
 		});
 		timer.start();
+		java.awt.Window window = SwingUtilities.getWindowAncestor(b);
+		if (window != null) window.addWindowFocusListener(new WindowAdapter() {
+			public void windowLostFocus(WindowEvent event) { left = right = shoot = false; }
+		});
 	}
 
 	public KeyListener getKeyListener()

@@ -14,7 +14,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
-	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7;
+	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9;
 	int selectMode = 0;
 	boolean isOpen = true;
 
@@ -37,7 +37,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn1.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn1.setBackground(Color.WHITE);
 		btn1.setFocusPainted(false);
-		btn1.setBounds(90, 250, 180, 40);
 		btn1.addActionListener(this);
 		add(btn1);
 
@@ -45,7 +44,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn2.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn2.setBackground(Color.WHITE);
 		btn2.setFocusPainted(false);
-		btn2.setBounds(90, 296, 180, 40);
 		btn2.addActionListener(this);
 		add(btn2);
 
@@ -53,7 +51,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn3.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn3.setBackground(Color.WHITE);
 		btn3.setFocusPainted(false);
-		btn3.setBounds(90, 342, 180, 40);
 		btn3.addActionListener(this);
 		add(btn3);
 
@@ -61,7 +58,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn4.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn4.setBackground(Color.WHITE);
 		btn4.setFocusPainted(false);
-		btn4.setBounds(90, 388, 180, 40);
 		btn4.addActionListener(this);
 		add(btn4);
 
@@ -69,7 +65,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn5.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn5.setBackground(Color.WHITE);
 		btn5.setFocusPainted(false);
-		btn5.setBounds(90, 434, 180, 40);
 		btn5.addActionListener(this);
 		add(btn5);
 
@@ -77,7 +72,6 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn6.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn6.setBackground(Color.WHITE);
 		btn6.setFocusPainted(false);
-		btn6.setBounds(90, 526, 180, 40);
 		btn6.addActionListener(this);
 		add(btn6);
 
@@ -85,9 +79,27 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn7.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn7.setBackground(Color.WHITE);
 		btn7.setFocusPainted(false);
-		btn7.setBounds(90, 480, 180, 40);
 		btn7.addActionListener(this);
 		add(btn7);
+
+		btn8 = new JButton("사람 vs AI");
+		btn8.setFont(new Font("Dialog", Font.BOLD, 16));
+		btn8.setBackground(Color.WHITE);
+		btn8.setFocusPainted(false);
+		btn8.addActionListener(this);
+		add(btn8);
+
+		btn9 = new JButton("캐릭터 관리");
+		btn9.setFont(new Font("Dialog", Font.BOLD, 16));
+		btn9.setBackground(Color.WHITE);
+		btn9.setFocusPainted(false);
+		btn9.addActionListener(this);
+		add(btn9);
+
+		// 버튼이 9개라서 간격을 좁혀 창 안에 모두 들어가게 맞춘다
+		JButton[] menuButtons = { btn1, btn2, btn3, btn4, btn8, btn9, btn5, btn7, btn6 };
+		for (int i = 0; i < menuButtons.length; i++)
+			menuButtons[i].setBounds(90, 246 + i * 37, 180, 33);
 	}
 
 	public void actionPerformed(ActionEvent e)
@@ -122,6 +134,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ROTATE) + " : 회전\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DOWN) + " : 한 칸 내리기\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_DROP) + " : 바로 떨어뜨리기\n";
+			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_HOLD) + " : 블록 홀드(보관)\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS_ITEM_SELF) + " : 아이템 내게 쓰기   "
 					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_ENEMY) + " : 아이템 적에게 쓰기   "
 					+ KeySettings.getKeyName(KeyAction.TETRIS_ITEM_DELETE) + " : 아이템 지우기\n";
@@ -149,6 +162,14 @@ public class MainMenuPanel extends JPanel implements ActionListener
 					+ KeySettings.getKeyName(KeyAction.TETRIS3D_RESTART) + " : 다시 시작\n";
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
+		}
+		else if (cmd.equals("사람 vs AI"))
+		{
+			frame.startVsAi();
+		}
+		else if (cmd.equals("캐릭터 관리"))
+		{
+			dodge.CharacterCustomizationPanel.show(this);
 		}
 		else if (cmd.equals("설정"))
 		{

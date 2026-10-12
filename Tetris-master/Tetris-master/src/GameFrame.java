@@ -24,6 +24,7 @@ public class GameFrame extends JFrame
 	MainMenuPanel mainMenu;
 	SettingsPanel settingsPanel; // 환경 설정 화면
 	dodge.DodgeMode dodgeMode; // 똥피하기
+	vsai.VsAiMode vsAiMode; // 사람 vs AI
 	int w, h;
 
 	GameFrame()
@@ -108,6 +109,33 @@ public class GameFrame extends JFrame
 		dodgeMode.start();
 	}
 
+	// 사람 vs AI 모드 시작
+	public void startVsAi()
+	{
+		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
+
+		setLayout(new BorderLayout());
+		setTitle("Tetris - 사람 vs AI");
+
+		// 창 크기 (화면보다 크면 줄임)
+		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		w = 1100;
+		h = 800;
+		if (screen.width < 1100)
+			w = screen.width;
+		if (screen.height < 800)
+			h = screen.height;
+		setSize(w, h);
+		setLocationRelativeTo(null);
+
+		vsAiMode = new vsai.VsAiMode();
+		add(vsAiMode, BorderLayout.CENTER);
+		revalidate();
+		repaint();
+		vsAiMode.start();
+	}
+
 	// 메인화면에서 환경 설정 화면으로 바꾼다
 	public void openSettings()
 	{
@@ -175,13 +203,23 @@ public class GameFrame extends JFrame
 						((GamePanel) gp).paused = true;
 						SettingsPanel.showDialog(GameFrame.this);
 						((GamePanel) gp).paused = false;
+						((GamePanel) gp).holdSlot.setText("HOLD (" + KeySettings.getKeyName(KeyAction.TETRIS_HOLD) + ")"); // 키를 바꿨을 수 있다
 						requestFocusInWindow(); // 설정 창이 닫힌 뒤 키 입력을 되찾는다
 					}
 					return;
 				}
 
+				// 홀드와 낙하 스레드가 동시에 블록을 건드리지 않게 게임 패널을 잠그고 처리한다
+				synchronized (gp)
+				{
 				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
 				{
+					// 홀드: 지금 블록을 보관하고 보관해 둔 블록을 꺼낸다
+					if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_HOLD))
+					{
+						((GamePanel) gp).holdBlock();
+						return;
+					}
 					if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_DOWN))
 					{
 						// 실제로 한 칸 내려갔을 때만 이동음을 낸다(바닥에 닿아 고정되면 고정음이 난다)
@@ -249,6 +287,7 @@ public class GameFrame extends JFrame
 						((GamePanel) gp).drawTetris();
 					}
 				}
+				}
 			}
 		});
 	}
@@ -268,6 +307,8 @@ class GamePanel extends JPanel implements Runnable
 {
 	JPanel tetrisArea = new JPanel();
 	JLabel nextBlock = new JLabel();
+	JLabel holdSlot = new JLabel("HOLD (" + KeySettings.getKeyName(KeyAction.TETRIS_HOLD) + ")", SwingConstants.CENTER);
+	HoldManager holdManager = new HoldManager();
 	JLabel score = new JLabel();
 	JLabel highestScore = new JLabel();
 	JPanel item = new JPanel();
@@ -378,6 +419,16 @@ class GamePanel extends JPanel implements Runnable
 		nextBlock.setBorder(WhiteLineBorder);
 		nextBlock.setBounds(255, 60, 90, 90);
 		add(nextBlock);
+
+		holdSlot.setFont(new Font("verdana", Font.PLAIN, 12));
+		holdSlot.setForeground(Color.WHITE);
+		holdSlot.setBackground(Color.BLACK);
+		holdSlot.setOpaque(true);
+		holdSlot.setBorder(WhiteLineBorder);
+		holdSlot.setVerticalTextPosition(SwingConstants.TOP);
+		holdSlot.setHorizontalTextPosition(SwingConstants.CENTER);
+		holdSlot.setBounds(255, 320, 90, 110);
+		add(holdSlot);
 
 		score = new JLabel("0", SwingConstants.RIGHT);
 		score.setText("0");
@@ -502,15 +553,38 @@ class GamePanel extends JPanel implements Runnable
 			array[array.length - 1][col] = 9;
 	}
 
-	public void addBlock()
+	public synchronized void addBlock()
+	{
+		Blocks b = new Blocks();
+		nextBlock(b);
+		spawnBlock(b, true);
+	}
+
+	public synchronized void holdBlock()
+	{
+		if (!gameRun || !Gaming || !holdManager.canHold()) return;
+		int replacement = holdManager.hold(blockNum);
+		ImageIcon[] icons = { null, ImageSource.block_I, ImageSource.block_J,
+			ImageSource.block_L, ImageSource.block_O, ImageSource.block_S,
+			ImageSource.block_T, ImageSource.block_Z };
+		holdSlot.setIcon(icons[holdManager.getHeldBlock()]);
+		// Only clear the falling piece; fixed cells and board boundaries stay intact.
+		for (int row = 0; row < array.length - 1; row++)
+			for (int col = 1; col < array[0].length - 1; col++)
+				array[row][col] = 0;
+		Blocks b = new Blocks();
+		if (replacement == 0) nextBlock(b);
+		else b.blockNum = replacement;
+		// Keep the existing fall thread and its timing on a hold.
+		spawnBlock(b, false);
+	}
+
+	private void spawnBlock(Blocks b, boolean startFallThread)
 	{
 		int[][] block;
 		int start_x;
 		int start_y;
 		int blockNum;
-
-		Blocks b = new Blocks();
-		nextBlock(b);
 
 		block = b.getBlock();
 		blockNum = b.getBlockNum();
@@ -565,7 +639,7 @@ class GamePanel extends JPanel implements Runnable
 			}
 
 			gameRun = false;
-			th.interrupt();
+			if (th != null) th.interrupt();
 			timeTh.interrupt();
 			// th = null;
 			// timeTh = null;
@@ -601,8 +675,11 @@ class GamePanel extends JPanel implements Runnable
 		{
 			drawTetris();
 			checkArray();
-			th = new Thread(this);
-			th.start();
+			if (startFallThread)
+			{
+				th = new Thread(this);
+				th.start();
+			}
 		}
 
 		b = null;
@@ -792,7 +869,7 @@ class GamePanel extends JPanel implements Runnable
 			move_left();
 	}
 
-	public void fixBlock()
+	public synchronized void fixBlock()
 	{
 		SoundManager.play(Sound.LOCK);
 
@@ -810,6 +887,7 @@ class GamePanel extends JPanel implements Runnable
 				array[row][col] = 0;
 			}
 		lineCheck();
+		holdManager.onBlockLocked();
 	}
 
 	public void lineCheck()
@@ -1275,9 +1353,7 @@ class GamePanel extends JPanel implements Runnable
 						// 설정 화면을 보는 동안에는 블록을 내리지 않는다
 						if (paused)
 							continue;
-						move_down();
-						// checkArray();
-						drawTetris();
+						fallStep();
 					}
 				}
 				catch (InterruptedException e)
@@ -1300,14 +1376,23 @@ class GamePanel extends JPanel implements Runnable
 				}
 				if (paused)
 					continue;
-				move_down();
-				// checkArray();
-				drawTetris();
+				fallStep();
 			}
 		}
 	}
 
 	/******************** 테트리스 아이템 메소드 ********************/
+
+	private synchronized void fallStep()
+	{
+		// An interrupted previous piece's thread must not move its replacement.
+		if (gameRun && Thread.currentThread() == th
+				&& !Thread.currentThread().isInterrupted())
+		{
+			move_down();
+			drawTetris();
+		}
+	}
 
 	class UseItem
 	{
