@@ -54,6 +54,12 @@ public class GameFrame extends JFrame
 	// 게임 시작 (1 = 일반, 3 = 갤러그)
 	public void startGame(int mode)
 	{
+		startGame(mode, 1);
+	}
+
+	// 시작 레벨(1~5)을 정해서 게임 시작 (일반 모드에서 레벨을 고를 때 쓴다)
+	public void startGame(int mode, int level)
+	{
 		gameMode = mode;
 
 		remove(mainMenu);
@@ -63,7 +69,7 @@ public class GameFrame extends JFrame
 		{
 			case 1:
 			case 3:
-				fgp = new GamePanel();
+				fgp = new GamePanel(level);
 				fgp.setBounds(0, 0, 360, 640);
 				add(fgp);
 				MyKey1(fgp);

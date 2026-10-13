@@ -14,6 +14,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
+	JLabel bestLabel; // 최고 점수 표시
 	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10;
 	int selectMode = 0;
 	boolean isOpen = true;
@@ -27,6 +28,13 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 		setLayout(null);
 		setBackground(new Color(30, 160, 255));
+
+		// 게임에 들어가기 전에 일반 모드 최고 점수를 보여 준다
+		bestLabel = new JLabel(bestScoreText(), SwingConstants.CENTER);
+		bestLabel.setFont(new Font("Dialog", Font.BOLD, 16));
+		bestLabel.setForeground(Color.WHITE);
+		bestLabel.setBounds(0, 18, 360, 30);
+		add(bestLabel);
 
 		// 로고
 		logo = new JLabel(ImageSource.img_logo);
@@ -116,8 +124,15 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 		if (cmd.equals("일반 모드"))
 		{
-			selectMode = 1;
-			frame.startGame(1);
+			// 시작할 레벨(스테이지)을 고르게 하고, 창을 닫으면 메인화면에 그대로 남는다
+			String[] levels = { "레벨 1", "레벨 2", "레벨 3", "레벨 4", "레벨 5" };
+			int choice = JOptionPane.showOptionDialog(this, "시작할 레벨을 고르세요.\n레벨이 높을수록 블록이 빨리 떨어지고 점수를 더 많이 받습니다.",
+					"레벨 선택", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null, levels, levels[0]);
+			if (choice >= 0)
+			{
+				selectMode = 1;
+				frame.startGame(1, choice + 1);
+			}
 		}
 		else if (cmd.equals("갤러그 협동"))
 		{
@@ -191,6 +206,15 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			isOpen = false;
 			System.exit(0);
 		}
+	}
+
+	// 메인화면에 보여 줄 최고 점수 글자 (랭킹 1위)
+	String bestScoreText()
+	{
+		java.util.ArrayList<RankingManager.Entry> list = RankingManager.getEntries();
+		if (list.isEmpty())
+			return "최고 점수: 아직 없음";
+		return "최고 점수: " + list.get(0).getScore() + "점 (" + list.get(0).getName() + ")";
 	}
 
 	// 버튼 누를때 소리 나게 하기 (나중에)
