@@ -314,6 +314,8 @@ class GamePanel extends JPanel implements Runnable
 	JPanel item = new JPanel();
 	JPanel item_using = new JPanel();
 	JLabel time = new JLabel();
+	JLabel levelLabel = new JLabel(); // 지금 레벨 표시
+	LevelManager levelManager; // 레벨(1~5)과 레벨별 속도
 	AbstractBorder WhiteLineBorder;
 
 	JLabel[][] fieldLabel = new JLabel[20][10];
@@ -333,7 +335,17 @@ class GamePanel extends JPanel implements Runnable
 
 	GamePanel()
 	{
+		this(1);
+	}
+
+	// 시작 레벨을 정해서 만든다 (1~5)
+	GamePanel(int startLevel)
+	{
 		setLayout(null);
+
+		// 시작 레벨의 속도로 떨어지게 한다
+		levelManager = new LevelManager(startLevel);
+		gameSpeed = levelManager.getSpeed();
 
 		makeComponent(0);
 		hp = new HpSystem(this);
@@ -459,6 +471,15 @@ class GamePanel extends JPanel implements Runnable
 		time.setBorder(WhiteLineBorder);
 		time.setBounds(255, 240, 90, 30);
 		add(time);
+
+		levelLabel = new JLabel("LV " + levelManager.getLevel(), SwingConstants.CENTER);
+		levelLabel.setFont(new Font("verdana", Font.BOLD, 16));
+		levelLabel.setForeground(Color.WHITE);
+		levelLabel.setBackground(Color.BLACK);
+		levelLabel.setOpaque(true);
+		levelLabel.setBorder(WhiteLineBorder);
+		levelLabel.setBounds(255, 440, 90, 30);
+		add(levelLabel);
 		timeTh = new TimeThread(this, n);
 		timeTh.start();
 
@@ -979,6 +1000,15 @@ class GamePanel extends JPanel implements Runnable
 			SoundManager.play(Sound.LINE_CLEAR);
 			addItem(deleteCount);
 			addScore(deleteCount);
+
+			// 지운 줄 수로 레벨을 올리고, 오르면 레벨 속도 차이만큼만 빠르게 한다(아이템 효과는 그대로 유지)
+			int beforeSpeed = levelManager.getSpeed();
+			if (levelManager.addLines(deleteCount))
+			{
+				gameSpeed = Math.max(100, gameSpeed - (beforeSpeed - levelManager.getSpeed()));
+				levelLabel.setText("LV " + levelManager.getLevel());
+				SoundManager.play(Sound.ITEM);
+			}
 		}
 
 	}
