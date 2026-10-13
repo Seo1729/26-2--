@@ -32,6 +32,9 @@ public enum KeyAction
 	/** 일반 모드: 회전 */
 	TETRIS_ROTATE("일반 모드", "일반/갤러그", "회전", KeyEvent.VK_UP),
 
+	/** 일반 모드: 블록 홀드(보관) */
+	TETRIS_HOLD("일반 모드", "일반/갤러그", "블록 홀드", KeyEvent.VK_C),
+
 	/** 갤러그: 전투기 왼쪽 이동 */
 	GALAGA_LEFT("갤러그", "일반/갤러그", "왼쪽 이동", KeyEvent.VK_A),
 

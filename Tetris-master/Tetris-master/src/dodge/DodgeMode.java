@@ -11,10 +11,14 @@ public class DodgeMode extends JPanel {
 	InfoPanel infoPanel;
 
 	public DodgeMode() {
+		this(CharacterManager.getInstance());
+	}
+
+	public DodgeMode(CharacterManager characters) {
 		super(new BorderLayout());
 		setBackground(new Color(32, 34, 44));
 
-		gamePanel = new GamePanel();
+		gamePanel = new GamePanel(characters);
 		infoPanel = new InfoPanel(gamePanel);
 		gamePanel.info = infoPanel;
 
@@ -29,6 +33,10 @@ public class DodgeMode extends JPanel {
 	}
 
 	public void start() {
+		try { gamePanel.getCharacterManager().load(); }
+		catch (java.io.IOException e) {
+			System.err.println("캐릭터 외형을 불러오지 못함: " + e.getMessage());
+		}
 		gamePanel.start();
 	}
 

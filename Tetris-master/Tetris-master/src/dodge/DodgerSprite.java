@@ -21,12 +21,28 @@ public class DodgerSprite {
 	static String[] NAMES = { "idle", "walk1", "walk2", "jump", "fall", "crushed" };
 
 	Map<String, BufferedImage> images = new HashMap<String, BufferedImage>();
+	private Map<String, BufferedImage> hats = java.util.Collections.emptyMap();
+	private Map<String, BufferedImage> outfits = java.util.Collections.emptyMap();
+	private final CharacterManager characters;
+	private long appearanceRevision = -1;
 
 	public DodgerSprite() {
-		for (String name : NAMES) {
-			BufferedImage img = load("images/dodger_" + name + ".png");
-			if (img != null)
-				images.put(name, img);
+		this(CharacterManager.getInstance());
+	}
+
+	public DodgerSprite(CharacterManager characters) {
+		this.characters = java.util.Objects.requireNonNull(characters);
+		refreshAppearance();
+	}
+
+	private void refreshAppearance() {
+		synchronized (characters) {
+			if (appearanceRevision == characters.getRevision()) return;
+			CharacterAppearance selection = characters.getAppearance();
+			images = characters.frames(CharacterItem.Category.SKIN, selection.getSkinId());
+			hats = characters.frames(CharacterItem.Category.HAT, selection.getHatId());
+			outfits = characters.frames(CharacterItem.Category.OUTFIT, selection.getOutfitId());
+			appearanceRevision = characters.getRevision();
 		}
 	}
 
@@ -43,28 +59,67 @@ public class DodgerSprite {
 	}
 
 	public void draw(Graphics g, Dodger dodger, int x, int y, int w, int h) {
+		refreshAppearance();
+		drawAppearance(g, dodger.getState(), dodger.walkFrame, dodger.facingRight, x, y, w, h);
+	}
+
+	/** Preview a draft without changing the manager or creating a game/player. */
+	public void drawPreview(Graphics g, CharacterAppearance selection, int x, int y, int w, int h) {
+		Map<String, BufferedImage> previewSkin, previewHats, previewOutfits;
+		synchronized (characters) {
+			previewSkin = characters.frames(CharacterItem.Category.SKIN, selection.getSkinId());
+			previewHats = characters.frames(CharacterItem.Category.HAT, selection.getHatId());
+			previewOutfits = characters.frames(CharacterItem.Category.OUTFIT, selection.getOutfitId());
+		}
+		drawAppearance(g, previewSkin, previewHats, previewOutfits, 0, 0, true, x, y, w, h);
+	}
+
+	private void drawAppearance(Graphics g, int state, int walkFrame, boolean facingRight,
+			int x, int y, int w, int h) {
+		drawAppearance(g, images, hats, outfits, state, walkFrame, facingRight, x, y, w, h);
+	}
+
+	private static void drawAppearance(Graphics g, Map<String, BufferedImage> skin,
+			Map<String, BufferedImage> hats, Map<String, BufferedImage> outfits,
+			int state, int walkFrame, boolean facingRight, int x, int y, int w, int h) {
+		if (w <= 0 || h <= 0) return;
 		Graphics2D g2 = (Graphics2D) g.create();
+		try {
+		// One local canvas for every layer, including the procedural fallback.
+		g2.translate(facingRight ? x : x + w, y);
+		if (!facingRight) g2.scale(-1, 1);
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int state = dodger.getState();
-		BufferedImage img = pickImage(state, dodger.walkFrame);
+		BufferedImage img = pickImage(skin, state, walkFrame);
 		if (img != null) {
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-			if (dodger.facingRight)
-				g2.drawImage(img, x, y, w, h, null);
-			else
-				g2.drawImage(img, x + w, y, -w, h, null); // 좌우 뒤집기
-			if (state == 4 && !images.containsKey("crushed")) {
+			g2.drawImage(img, 0, 0, w, h, null);
+			if (state == 4 && !skin.containsKey("crushed")) {
 				g2.setColor(new Color(128, 128, 128, 160));
-				g2.fillRect(x, y, w, h);
+				g2.fillRect(0, 0, w, h);
 			}
 		} else {
-			drawDefault(g2, state, dodger.facingRight, dodger.walkFrame, x, y, w, h);
+			drawDefault(g2, state, true, walkFrame, 0, 0, w, h);
 		}
-		g2.dispose();
+		g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		drawLayer(g2, outfits, state, walkFrame, w, h);
+		drawLayer(g2, hats, state, walkFrame, w, h);
+		} finally { g2.dispose(); }
+	}
+
+	private static void drawLayer(Graphics2D g, Map<String, BufferedImage> frames, int state,
+			int walkFrame, int w, int h) {
+		// A standing accessory should not float over a flattened character.
+		if (state == 4 && !frames.containsKey("crushed")) return;
+		BufferedImage image = pickImage(frames, state, walkFrame);
+		if (image != null) g.drawImage(image, 0, 0, w, h, null);
 	}
 
 	BufferedImage pickImage(int state, int walkFrame) {
+		return pickImage(images, state, walkFrame);
+	}
+
+	private static BufferedImage pickImage(Map<String, BufferedImage> images, int state, int walkFrame) {
 		BufferedImage idle = images.get("idle");
 		if (idle == null)
 			return null;

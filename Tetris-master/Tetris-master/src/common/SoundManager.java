@@ -1,6 +1,8 @@
 package common;
 
 import java.util.Random;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -80,6 +82,10 @@ public class SoundManager
 
 	/** 효과음 종류마다 한 번만 만들어 두고 다시 쓰는 재생 장치 */
 	private static final Clip[] sfxClips = new Clip[Sound.values().length];
+	private static final Map<Clip, byte[]> originalData = new IdentityHashMap<>();
+	private static final Map<Clip, Float> softwareVolumes = new IdentityHashMap<>();
+	interface ClipFactory { Clip create() throws Exception; }
+	static ClipFactory clipFactory = AudioSystem::getClip;
 
 	/** 지금 재생 중인 배경음악 장치. 재생 중이 아니면 null */
 	private static Clip bgmClip;
@@ -88,13 +94,13 @@ public class SoundManager
 	private static Bgm currentBgm;
 
 	/** 효과음 음량(0.0 ~ 1.0) */
-	private static float sfxVolume = 0.7f;
+	private static float sfxVolume = Settings.getSfxVolume() / 100f;
 
 	/** 배경음악 음량(0.0 ~ 1.0) */
-	private static float bgmVolume = 0.4f;
+	private static float bgmVolume = Settings.getBgmVolume() / 100f;
 
 	/** 음소거 여부. true이면 효과음과 배경음악이 모두 나지 않는다. */
-	private static boolean muted = false;
+	private static boolean muted = Settings.isMuted();
 
 	/** 소리 장치를 열지 못한 적이 있는지. true이면 이후에는 소리를 시도하지 않는다. */
 	private static boolean failed = false;
@@ -127,7 +133,9 @@ public class SoundManager
 		}
 
 		// 음량을 맞추고 처음부터 재생한다
-		applyVolume(clip, sfxVolume);
+		clip = applyVolume(clip, sfxVolume, false);
+		sfxClips[sound.ordinal()] = clip;
+		if (clip == null) return;
 		clip.stop();
 		clip.setFramePosition(0);
 		clip.start();
@@ -151,7 +159,7 @@ public class SoundManager
 		currentBgm = track;
 
 		// 음소거 중이면 소리는 내지 않고, 해제될 때 이어서 틀도록 기억만 해 둔다
-		if (failed || muted)
+		if (failed || muted || bgmVolume <= 0)
 		{
 			return;
 		}
@@ -177,6 +185,11 @@ public class SoundManager
 	public static synchronized void setSfxVolume(float volume)
 	{
 		sfxVolume = clampVolume(volume);
+		for (int i = 0; i < sfxClips.length; i++) {
+			if (sfxClips[i] == null) continue;
+			if (muted || sfxVolume == 0) sfxClips[i].stop();
+			else sfxClips[i] = applyVolume(sfxClips[i], sfxVolume, false);
+		}
 	}
 
 	/**
@@ -186,11 +199,17 @@ public class SoundManager
 	 */
 	public static synchronized void setBgmVolume(float volume)
 	{
+		float previous = bgmVolume;
 		bgmVolume = clampVolume(volume);
 		if (bgmClip != null)
 		{
-			applyVolume(bgmClip, bgmVolume);
+			if (muted || bgmVolume == 0) bgmClip.stop();
+			else {
+				bgmClip = applyVolume(bgmClip, bgmVolume, true);
+				if (previous == 0 && bgmClip != null) bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+			}
 		}
+		else if (!muted && !failed && bgmVolume > 0 && currentBgm != null) playCurrentBgm();
 	}
 
 	/**
@@ -204,10 +223,11 @@ public class SoundManager
 
 		if (muted)
 		{
+			for (Clip clip : sfxClips) if (clip != null) clip.stop();
 			// 배경음악 장치만 닫고, 무슨 음악이었는지는 기억해 둔다
 			closeBgmClip();
 		}
-		else if (currentBgm != null && bgmClip == null && !failed)
+		else if (currentBgm != null && bgmClip == null && !failed && bgmVolume > 0)
 		{
 			playCurrentBgm();
 		}
@@ -223,7 +243,7 @@ public class SoundManager
 	 */
 	private static float clampVolume(float volume)
 	{
-		return Math.max(0f, Math.min(1f, volume));
+		return Float.isNaN(volume) ? 0f : Math.max(0f, Math.min(1f, volume));
 	}
 
 	/**
@@ -255,8 +275,8 @@ public class SoundManager
 			return;
 		}
 
-		applyVolume(bgmClip, bgmVolume);
-		bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
+		bgmClip = applyVolume(bgmClip, bgmVolume, true);
+		if (bgmClip != null) bgmClip.loop(Clip.LOOP_CONTINUOUSLY);
 	}
 
 	/**
@@ -267,6 +287,8 @@ public class SoundManager
 		if (bgmClip != null)
 		{
 			bgmClip.stop();
+			originalData.remove(bgmClip);
+			softwareVolumes.remove(bgmClip);
 			bgmClip.close();
 			bgmClip = null;
 		}
@@ -280,14 +302,19 @@ public class SoundManager
 	 */
 	private static Clip openClip(byte[] data)
 	{
+		Clip clip = null;
 		try
 		{
-			Clip clip = AudioSystem.getClip();
+			clip = clipFactory.create();
 			clip.open(FORMAT, data, 0, data.length);
+			originalData.put(clip, data);
 			return clip;
 		}
 		catch (Exception e)
 		{
+			if (clip != null) {
+				try { clip.close(); } catch (RuntimeException ignored) { }
+			}
 			// 소리 장치가 없는 환경(서버, 소리 장치 사용 중 등)에서도 게임은 계속되어야 하므로
 			// 실패를 기억해 두고 이후에는 시도하지 않는다
 			failed = true;
@@ -296,22 +323,53 @@ public class SoundManager
 	}
 
 	/**
-	 * 재생 장치의 음량을 맞춘다. 음량 조절을 지원하지 않는 장치면 아무것도 하지 않는다.
+	 * 장치의 gain 또는 원본 PCM 크기를 조절한다. PCM 경로는 Clip을 교체한다.
 	 *
 	 * @param clip   음량을 맞출 재생 장치
 	 * @param volume 0.0 ~ 1.0 사이의 음량
 	 */
-	private static void applyVolume(Clip clip, float volume)
+	private static Clip applyVolume(Clip clip, float volume, boolean looping)
 	{
 		if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN))
 		{
-			return;
+			if (Float.valueOf(volume).equals(softwareVolumes.get(clip))) return clip;
+			// 장치 제어가 없으면 원본 PCM을 조절하여 현재 위치에서 재생한다.
+			byte[] source = originalData.remove(clip);
+			softwareVolumes.remove(clip);
+			if (source == null) { clip.stop(); return clip; }
+			int position = clip.getFramePosition();
+			boolean running = clip.isRunning();
+			clip.stop();
+			clip.close();
+			Clip replacement = openClip(scalePcm(source, volume));
+			if (replacement != null) {
+				originalData.put(replacement, source);
+				softwareVolumes.put(replacement, volume);
+				replacement.setFramePosition(Math.min(position, replacement.getFrameLength()));
+				if (running) {
+					if (looping) replacement.loop(Clip.LOOP_CONTINUOUSLY);
+					else replacement.start();
+				}
+			}
+			return replacement;
 		}
 
 		// 사람이 느끼는 크기에 맞게 음량을 데시벨로 바꾸고, 장치가 허용하는 범위로 자른다
 		FloatControl gain = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 		float decibel = (float) (20.0 * Math.log10(Math.max(volume, 0.0001f)));
 		gain.setValue(Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), decibel)));
+		return clip;
+	}
+
+	static byte[] scalePcm(byte[] source, float volume) {
+		byte[] result = new byte[source.length];
+		for (int i = 0; i < source.length; i += 2) {
+			int sample = (short) ((source[i] & 255) | (source[i + 1] << 8));
+			int scaled = Math.round(sample * clampVolume(volume));
+			result[i] = (byte) scaled;
+			result[i + 1] = (byte) (scaled >> 8);
+		}
+		return result;
 	}
 
 	// ======================== 소리 합성 ========================
