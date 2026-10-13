@@ -54,6 +54,12 @@ public class GameFrame extends JFrame
 	// 게임 시작 (1 = 일반, 3 = 갤러그)
 	public void startGame(int mode)
 	{
+		startGame(mode, 1);
+	}
+
+	// 시작 레벨(1~5)을 정해서 게임 시작 (일반 모드에서 레벨을 고를 때 쓴다)
+	public void startGame(int mode, int level)
+	{
 		gameMode = mode;
 
 		remove(mainMenu);
@@ -63,7 +69,7 @@ public class GameFrame extends JFrame
 		{
 			case 1:
 			case 3:
-				fgp = new GamePanel();
+				fgp = new GamePanel(level);
 				fgp.setBounds(0, 0, 360, 640);
 				add(fgp);
 				MyKey1(fgp);
@@ -314,6 +320,8 @@ class GamePanel extends JPanel implements Runnable
 	JPanel item = new JPanel();
 	JPanel item_using = new JPanel();
 	JLabel time = new JLabel();
+	JLabel levelLabel = new JLabel(); // 지금 레벨 표시
+	LevelManager levelManager; // 레벨(1~5)과 레벨별 속도
 	AbstractBorder WhiteLineBorder;
 
 	JLabel[][] fieldLabel = new JLabel[20][10];
@@ -333,7 +341,17 @@ class GamePanel extends JPanel implements Runnable
 
 	GamePanel()
 	{
+		this(1);
+	}
+
+	// 시작 레벨을 정해서 만든다 (1~5)
+	GamePanel(int startLevel)
+	{
 		setLayout(null);
+
+		// 시작 레벨의 속도로 떨어지게 한다
+		levelManager = new LevelManager(startLevel);
+		gameSpeed = levelManager.getSpeed();
 
 		makeComponent(0);
 		hp = new HpSystem(this);
@@ -441,7 +459,7 @@ class GamePanel extends JPanel implements Runnable
 		add(score);
 
 		highestScore = new JLabel("0", SwingConstants.RIGHT);
-		highestScore.setText("999999");
+		highestScore.setText(Integer.toString(RankingManager.getBestScore())); // 저장된 랭킹 1위 점수
 		highestScore.setFont(new Font("verdana", 0, 20));
 		highestScore.setForeground(Color.WHITE);
 		highestScore.setBackground(Color.BLACK);
@@ -459,6 +477,15 @@ class GamePanel extends JPanel implements Runnable
 		time.setBorder(WhiteLineBorder);
 		time.setBounds(255, 240, 90, 30);
 		add(time);
+
+		levelLabel = new JLabel("LV " + levelManager.getLevel(), SwingConstants.CENTER);
+		levelLabel.setFont(new Font("verdana", Font.BOLD, 16));
+		levelLabel.setForeground(Color.WHITE);
+		levelLabel.setBackground(Color.BLACK);
+		levelLabel.setOpaque(true);
+		levelLabel.setBorder(WhiteLineBorder);
+		levelLabel.setBounds(255, 440, 90, 30);
+		add(levelLabel);
 		timeTh = new TimeThread(this, n);
 		timeTh.start();
 
@@ -669,7 +696,15 @@ class GamePanel extends JPanel implements Runnable
 				e.printStackTrace();
 			}
 
-			System.exit(0);
+			// 랭킹 창은 화면 쓰레드에서 띄워야 하므로 넘겨 두고, 이름을 받은 뒤 끝낸다
+			SwingUtilities.invokeLater(new Runnable()
+			{
+				public void run()
+				{
+					recordRanking();
+					System.exit(0);
+				}
+			});
 		}
 		else
 		{
@@ -979,6 +1014,15 @@ class GamePanel extends JPanel implements Runnable
 			SoundManager.play(Sound.LINE_CLEAR);
 			addItem(deleteCount);
 			addScore(deleteCount);
+
+			// 지운 줄 수로 레벨을 올리고, 오르면 레벨 속도 차이만큼만 빠르게 한다(아이템 효과는 그대로 유지)
+			int beforeSpeed = levelManager.getSpeed();
+			if (levelManager.addLines(deleteCount))
+			{
+				gameSpeed = Math.max(100, gameSpeed - (beforeSpeed - levelManager.getSpeed()));
+				levelLabel.setText("LV " + levelManager.getLevel());
+				SoundManager.play(Sound.ITEM);
+			}
 		}
 
 	}
@@ -1045,6 +1089,27 @@ class GamePanel extends JPanel implements Runnable
 			addScore += (10 * 1000 / gameSpeed);
 
 		score.setText(Integer.toString(addScore));
+
+		// 지금 점수가 최고 기록을 넘으면 최고 점수 칸도 같이 올린다
+		if (addScore > Integer.parseInt(highestScore.getText()))
+			highestScore.setText(Integer.toString(addScore));
+	}
+
+	// 일반 모드가 끝났을 때 점수가 10위 안이면 이름을 받아 랭킹에 저장하고 순위표를 보여 준다
+	void recordRanking()
+	{
+		int finalScore = Integer.parseInt(score.getText());
+		int rank = RankingManager.rankOf(finalScore);
+		if (rank == 0)
+		{
+			JOptionPane.showMessageDialog(this, "점수: " + finalScore + "점\n아쉽게도 10위 안에 들지 못했습니다.",
+					"게임 오버", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		String name = JOptionPane.showInputDialog(this, "점수 " + finalScore + "점으로 " + rank + "위입니다!\n이름을 입력하세요.",
+				"랭킹 등록", JOptionPane.PLAIN_MESSAGE);
+		RankingManager.add(name, finalScore, levelManager.getLevel());
+		JOptionPane.showMessageDialog(this, RankingManager.toText(), "랭킹", JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	public void useItem()
