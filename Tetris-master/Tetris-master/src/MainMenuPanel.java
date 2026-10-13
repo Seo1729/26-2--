@@ -14,7 +14,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 {
 	GameFrame frame;
 	JLabel logo;
-	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9;
+	JButton btn1, btn2, btn3, btn4, btn5, btn6, btn7, btn8, btn9, btn10;
 	int selectMode = 0;
 	boolean isOpen = true;
 
@@ -96,10 +96,17 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn9.addActionListener(this);
 		add(btn9);
 
-		// 버튼이 9개라서 간격을 좁혀 창 안에 모두 들어가게 맞춘다
-		JButton[] menuButtons = { btn1, btn2, btn3, btn4, btn8, btn9, btn5, btn7, btn6 };
+		btn10 = new JButton("랭킹");
+		btn10.setFont(new Font("Dialog", Font.BOLD, 16));
+		btn10.setBackground(Color.WHITE);
+		btn10.setFocusPainted(false);
+		btn10.addActionListener(this);
+		add(btn10);
+
+		// 버튼이 10개라서 간격을 좁혀 창 안에 모두 들어가게 맞춘다
+		JButton[] menuButtons = { btn1, btn2, btn3, btn4, btn8, btn9, btn10, btn5, btn7, btn6 };
 		for (int i = 0; i < menuButtons.length; i++)
-			menuButtons[i].setBounds(90, 246 + i * 37, 180, 33);
+			menuButtons[i].setBounds(90, 246 + i * 33, 180, 29);
 	}
 
 	public void actionPerformed(ActionEvent e)
@@ -170,6 +177,10 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		else if (cmd.equals("캐릭터 관리"))
 		{
 			dodge.CharacterCustomizationPanel.show(this);
+		}
+		else if (cmd.equals("랭킹"))
+		{
+			JOptionPane.showMessageDialog(this, RankingManager.toText(), "랭킹 (일반 모드)", JOptionPane.INFORMATION_MESSAGE);
 		}
 		else if (cmd.equals("설정"))
 		{

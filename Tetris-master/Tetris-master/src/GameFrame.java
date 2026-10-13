@@ -453,7 +453,7 @@ class GamePanel extends JPanel implements Runnable
 		add(score);
 
 		highestScore = new JLabel("0", SwingConstants.RIGHT);
-		highestScore.setText("999999");
+		highestScore.setText(Integer.toString(RankingManager.getBestScore())); // 저장된 랭킹 1위 점수
 		highestScore.setFont(new Font("verdana", 0, 20));
 		highestScore.setForeground(Color.WHITE);
 		highestScore.setBackground(Color.BLACK);
@@ -690,7 +690,15 @@ class GamePanel extends JPanel implements Runnable
 				e.printStackTrace();
 			}
 
-			System.exit(0);
+			// 랭킹 창은 화면 쓰레드에서 띄워야 하므로 넘겨 두고, 이름을 받은 뒤 끝낸다
+			SwingUtilities.invokeLater(new Runnable()
+			{
+				public void run()
+				{
+					recordRanking();
+					System.exit(0);
+				}
+			});
 		}
 		else
 		{
@@ -1075,6 +1083,27 @@ class GamePanel extends JPanel implements Runnable
 			addScore += (10 * 1000 / gameSpeed);
 
 		score.setText(Integer.toString(addScore));
+
+		// 지금 점수가 최고 기록을 넘으면 최고 점수 칸도 같이 올린다
+		if (addScore > Integer.parseInt(highestScore.getText()))
+			highestScore.setText(Integer.toString(addScore));
+	}
+
+	// 일반 모드가 끝났을 때 점수가 10위 안이면 이름을 받아 랭킹에 저장하고 순위표를 보여 준다
+	void recordRanking()
+	{
+		int finalScore = Integer.parseInt(score.getText());
+		int rank = RankingManager.rankOf(finalScore);
+		if (rank == 0)
+		{
+			JOptionPane.showMessageDialog(this, "점수: " + finalScore + "점\n아쉽게도 10위 안에 들지 못했습니다.",
+					"게임 오버", JOptionPane.INFORMATION_MESSAGE);
+			return;
+		}
+		String name = JOptionPane.showInputDialog(this, "점수 " + finalScore + "점으로 " + rank + "위입니다!\n이름을 입력하세요.",
+				"랭킹 등록", JOptionPane.PLAIN_MESSAGE);
+		RankingManager.add(name, finalScore, levelManager.getLevel());
+		JOptionPane.showMessageDialog(this, RankingManager.toText(), "랭킹", JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	public void useItem()
