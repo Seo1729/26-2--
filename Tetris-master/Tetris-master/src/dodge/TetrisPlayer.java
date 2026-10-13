@@ -81,7 +81,7 @@ public class TetrisPlayer {
 		if (lines > 0) {
 			numLinesRemoved += lines;
 			isFallingFinished = true;
-			curPiece.setShape(Tetrominoes.NoShape);
+			curPiece.setShape(Tetrominoes.NoShape.ordinal());
 		} else {
 			newPiece();
 		}
@@ -94,7 +94,7 @@ public class TetrisPlayer {
 		curY = GameBoard.HEIGHT - 1 + curPiece.minY();
 
 		if (!board.canPlace(curPiece, curX, curY)) {
-			curPiece.setShape(Tetrominoes.NoShape);
+			curPiece.setShape(Tetrominoes.NoShape.ordinal());
 			isGameOver = true;
 		}
 	}
@@ -115,7 +115,7 @@ public class TetrisPlayer {
 		if (d == null)
 			return false;
 		for (int i = 0; i < 4; ++i) {
-			if (posX + piece.x(i) == d.getX() && posY - piece.y(i) == d.getY())
+			if (posX + piece.x(i) == d.x && posY - piece.y(i) == d.y)
 				return true;
 		}
 		return false;
@@ -133,7 +133,7 @@ public class TetrisPlayer {
 	}
 
 	public boolean hasPiece() {
-		return curPiece.getShape() != Tetrominoes.NoShape;
+		return curPiece.getShape() != Tetrominoes.NoShape.ordinal();
 	}
 
 	public Shape getPiece() {

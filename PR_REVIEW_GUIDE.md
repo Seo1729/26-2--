@@ -68,7 +68,7 @@ git clone https://github.com/Seo1729/26-2--.git
 1. GitHub에 올라온 최신 브랜치 목록을 받습니다: `git fetch`
 2. 그 브랜치로 옮깁니다: `git switch feature/galag`
 3. 프로젝트 폴더로 들어갑니다: `cd Tetris-master\Tetris-master`
-4. 컴파일합니다. 아무 메시지 없이 끝나면 성공입니다: `javac -encoding UTF-8 -d out src/*.java src/dodge/*.java`
+4. 컴파일합니다. 아무 메시지 없이 끝나면 성공입니다: `javac -encoding UTF-8 -d out src/*.java src/dodge/*.java src/common/*.java src/vsai/*.java`
 5. 실행합니다. 이미지가 들어 있는 `images` 폴더를 클래스패스에 꼭 넣어야 하고(`bin`이 아닙니다), 3D만 따로 보려면 마지막을 `Game3D`로 바꿉니다: `java -cp "out;images;src" GameFrame`
 6. 확인이 끝나면 내 작업 브랜치나 develop으로 돌아갑니다: `cd ..\..` 후 `git switch develop`
 

@@ -2,6 +2,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Vector;
 
+import common.Bgm;
+import common.KeyAction;
+import common.KeySettings;
+import common.Settings;
+import common.SettingsPanel;
+import common.Sound;
+import common.SoundManager;
+
 import javax.swing.*;
 import javax.swing.border.AbstractBorder;
 import javax.swing.border.LineBorder;
@@ -13,14 +21,11 @@ public class GameFrame extends JFrame
 	static int gameMode = 1;
 	static JFrame jf;
 
-	/** 똥피하기 모드의 창 가로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
-	private static final int DODGE_WIDTH = 1100;
-
-	/** 똥피하기 모드의 창 세로 크기(픽셀). dodge.DodgeModeMain과 같은 값이다. */
-	private static final int DODGE_HEIGHT = 1000;
-
-	/** 실행하면 처음 보이는 메인화면. 게임을 시작하면 창에서 떼어 낸다. */
-	private final MainMenuPanel mainMenu;
+	MainMenuPanel mainMenu;
+	SettingsPanel settingsPanel; // 환경 설정 화면
+	dodge.DodgeMode dodgeMode; // 똥피하기
+	vsai.VsAiMode vsAiMode; // 사람 vs AI
+	int w, h;
 
 	GameFrame()
 	{
@@ -36,7 +41,7 @@ public class GameFrame extends JFrame
 
 		c.setBackground(new Color(30, 160, 255));
 
-		// 게임은 메뉴에서 모드를 고른 뒤 만들고, 처음에는 메인화면만 보여 준다
+		// 메인화면
 		mainMenu = new MainMenuPanel(this);
 		mainMenu.setBounds(0, 0, 360, 640);
 		add(mainMenu);
@@ -46,18 +51,13 @@ public class GameFrame extends JFrame
 		setVisible(true);
 	}
 
-	/**
-	 * 메인화면에서 고른 모드로 게임을 시작한다. 메인화면을 떼어 내고 같은 창에 게임 화면을 붙인다.
-	 *
-	 * @param mode 시작할 게임 모드(1: 일반, 3: 갤러그 협동)
-	 */
+	// 게임 시작 (1 = 일반, 3 = 갤러그)
 	public void startGame(int mode)
 	{
-		// 게임 패널과 아이템 처리가 이 값으로 모드를 구분하므로 먼저 정해 둔다
 		gameMode = mode;
 
-		// 메인화면을 창에서 떼어 내고 그 자리에 게임 화면을 만든다
 		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
 
 		switch (gameMode)
 		{
@@ -70,8 +70,7 @@ public class GameFrame extends JFrame
 				break;
 		}
 
-		// 갤러그 협동 모드면 테트리스 영역(10, 60, 240x480) 위에 갤러그 레이어를 겹쳐 올리고
-		// 전투기 조작 키도 프레임에서 함께 받도록 등록한다
+		// 갤러그
 		if (gameMode == 3)
 		{
 			GalagaLayer galagaLayer = new GalagaLayer(10, 60, 240, 480, fgp);
@@ -79,50 +78,109 @@ public class GameFrame extends JFrame
 			addKeyListener(galagaLayer.getKeyListener());
 		}
 
-		// 바뀐 화면을 다시 그리고, 버튼에 가 있던 키 입력을 게임 창으로 돌려놓는다
 		revalidate();
 		repaint();
-		requestFocusInWindow();
+		requestFocusInWindow(); // 이거 안하면 키 안먹음
 	}
 
-	/**
-	 * 메인화면에서 똥피하기 모드를 시작한다. 메인화면을 떼어 내고, 창을 이 모드에 맞는 크기로 키운 뒤
-	 * 같은 창에 똥피하기 화면을 붙인다.
-	 */
 	public void startDodge()
 	{
-		// 메인화면을 창에서 떼어 낸다
 		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
 
-		// 똥피하기 화면은 창 전체를 채우도록 배치 방식을 바꾼다(기존 좌표 배치는 게임 모드에서만 쓴다)
 		setLayout(new BorderLayout());
 		setTitle("Tetris X 똥 피하기");
 
-		// 작업 표시줄을 뺀 화면 크기보다 크면 화면에 맞춰 창 크기를 정하고, 화면 가운데로 옮긴다
+		// 창 크기 (화면보다 크면 줄임)
 		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-		setSize(Math.min(DODGE_WIDTH, screen.width), Math.min(DODGE_HEIGHT, screen.height));
+		w = 1100;
+		h = 1000;
+		if (screen.width < 1100)
+			w = screen.width;
+		if (screen.height < 1000)
+			h = screen.height;
+		setSize(w, h);
 		setLocationRelativeTo(null);
 
-		// 똥피하기 화면을 붙이고, 화면에 붙은 뒤에 시작해야 키 입력 포커스를 받을 수 있다
-		dodge.DodgeMode dodgeMode = new dodge.DodgeMode();
+		dodgeMode = new dodge.DodgeMode();
 		add(dodgeMode, BorderLayout.CENTER);
 		revalidate();
 		repaint();
 		dodgeMode.start();
 	}
 
-	/**
-	 * 메인화면에서 3D 테트리스를 시작한다. 3D 테트리스는 자체 창을 쓰므로, 그 창을 먼저 띄운 뒤
-	 * 이 메인 창은 닫는다. 3D 창을 닫으면 프로그램이 끝난다.
-	 */
+	// 사람 vs AI 모드 시작
+	public void startVsAi()
+	{
+		remove(mainMenu);
+		SoundManager.startBgm(Bgm.GAME);
+
+		setLayout(new BorderLayout());
+		setTitle("Tetris - 사람 vs AI");
+
+		// 창 크기 (화면보다 크면 줄임)
+		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+		w = 1100;
+		h = 800;
+		if (screen.width < 1100)
+			w = screen.width;
+		if (screen.height < 800)
+			h = screen.height;
+		setSize(w, h);
+		setLocationRelativeTo(null);
+
+		vsAiMode = new vsai.VsAiMode();
+		add(vsAiMode, BorderLayout.CENTER);
+		revalidate();
+		repaint();
+		vsAiMode.start();
+	}
+
+	// 메인화면에서 환경 설정 화면으로 바꾼다
+	public void openSettings()
+	{
+		remove(mainMenu);
+
+		// 돌아가기 버튼을 누르면 메인화면으로 되돌아간다
+		settingsPanel = new SettingsPanel(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e)
+			{
+				closeSettings();
+			}
+		});
+		settingsPanel.setBounds(0, 0, 360, 640);
+		add(settingsPanel);
+
+		revalidate();
+		repaint();
+	}
+
+	// 환경 설정 화면에서 메인화면으로 되돌아간다
+	public void closeSettings()
+	{
+		remove(settingsPanel);
+		add(mainMenu);
+
+		revalidate();
+		repaint();
+	}
+
 	public void start3D()
 	{
-		// 3D 창을 먼저 띄워야 열린 창이 없어지는 순간이 생기지 않는다
-		new Game3DFrame().setVisible(true);
+		// 3D는 창이 따로 있음
+		Game3DFrame frame3d = new Game3DFrame();
+		frame3d.setVisible(true);
 
-		// 메인 창은 더 쓰지 않으므로 닫는다
 		dispose();
 	}
+
+//	public void backToMenu()
+//	{
+//		removeAll();
+//		mainMenu = new MainMenuPanel(this);
+//		add(mainMenu);
+//	}
 
 	public void remakePanel()
 	{
@@ -137,28 +195,61 @@ public class GameFrame extends JFrame
 		{
 			public void keyPressed(KeyEvent e)
 			{
+				// ESC를 누르면 게임을 멈추고 설정 화면을 띄운다(카운트다운과 게임이 끝난 뒤에는 무시)
+				if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+				{
+					if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
+					{
+						((GamePanel) gp).paused = true;
+						SettingsPanel.showDialog(GameFrame.this);
+						((GamePanel) gp).paused = false;
+						((GamePanel) gp).holdSlot.setText("HOLD (" + KeySettings.getKeyName(KeyAction.TETRIS_HOLD) + ")"); // 키를 바꿨을 수 있다
+						requestFocusInWindow(); // 설정 창이 닫힌 뒤 키 입력을 되찾는다
+					}
+					return;
+				}
+
+				// 홀드와 낙하 스레드가 동시에 블록을 건드리지 않게 게임 패널을 잠그고 처리한다
+				synchronized (gp)
+				{
 				if (((GamePanel) gp).gameRun && ((GamePanel) gp).Gaming)
 				{
-//					if (e.getKeyText(e.getKeyCode()).equals(FirstPlayerKeySetting.FKeyType[0]))
-					if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[0])
+					// 홀드: 지금 블록을 보관하고 보관해 둔 블록을 꺼낸다
+					if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_HOLD))
 					{
+						((GamePanel) gp).holdBlock();
+						return;
+					}
+					if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_DOWN))
+					{
+						// 실제로 한 칸 내려갔을 때만 이동음을 낸다(바닥에 닿아 고정되면 고정음이 난다)
+						int oldY = ((GamePanel) gp).y;
 						((GamePanel) gp).move_down();
+						if (((GamePanel) gp).y > oldY)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[1])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_LEFT))
 					{
+						// 벽이나 블록에 막혀 안 움직였으면 소리를 내지 않는다
+						int oldX = ((GamePanel) gp).x;
 						((GamePanel) gp).move_left();
+						if (((GamePanel) gp).x != oldX)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[2])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_RIGHT))
 					{
+						int oldX = ((GamePanel) gp).x;
 						((GamePanel) gp).move_right();
+						if (((GamePanel) gp).x != oldX)
+							SoundManager.play(Sound.MOVE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[3])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_SELF))
 					{
 						// 내게 쓰기
 						((GamePanel) gp).ogp = fgp;
@@ -168,29 +259,34 @@ public class GameFrame extends JFrame
 
 						((GamePanel) gp).useItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[4])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_ENEMY))
 					{
 						// 적에게 쓰기
 //						((GamePanel) gp).ogp = sgp;
 						((GamePanel) gp).attackItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[5])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ITEM_DELETE))
 					{
 						// 아이템 지우기
 						((GamePanel) gp).deleteItem();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[6])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_DROP))
 					{
 						((GamePanel) gp).move_drop();
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
-					else if (e.getKeyCode() == FirstPlayerKeySetting.FKeyType[7])
+					else if (e.getKeyCode() == KeySettings.getKey(KeyAction.TETRIS_ROTATE))
 					{
+						// 회전하면 블록 모양 배열이 새로 바뀌므로, 바뀌었을 때만 회전음을 낸다
+						int[][] oldBlock = ((GamePanel) gp).block;
 						((GamePanel) gp).move_turn();
+						if (((GamePanel) gp).block != oldBlock)
+							SoundManager.play(Sound.ROTATE);
 						((GamePanel) gp).checkArray();
 						((GamePanel) gp).drawTetris();
 					}
+				}
 				}
 			}
 		});
@@ -199,6 +295,8 @@ public class GameFrame extends JFrame
 	public static void main(String[] args)
 	{
 		SwingUtilities.invokeLater(() -> {
+			// 저장된 음량과 음소거 설정을 소리에 적용한 뒤 시작한다
+			Settings.load();
 			new ImageSource();
 			new GameFrame();
 		});
@@ -209,6 +307,8 @@ class GamePanel extends JPanel implements Runnable
 {
 	JPanel tetrisArea = new JPanel();
 	JLabel nextBlock = new JLabel();
+	JLabel holdSlot = new JLabel("HOLD (" + KeySettings.getKeyName(KeyAction.TETRIS_HOLD) + ")", SwingConstants.CENTER);
+	HoldManager holdManager = new HoldManager();
 	JLabel score = new JLabel();
 	JLabel highestScore = new JLabel();
 	JPanel item = new JPanel();
@@ -224,19 +324,19 @@ class GamePanel extends JPanel implements Runnable
 	int speedCount = 0;
 	int preSpeed;
 
-	JLabel tube;
-	JLabel ground;
 	JLabel textLabel = new JLabel();
 	JPanel blackPanel = new JPanel();
 	boolean Gaming = false;
 
 	GamePanel ogp; // OtherGamePanel
+	HpSystem hp; // 일반 모드 생명(HP) - 규칙과 표시는 HpSystem.java
 
 	GamePanel()
 	{
 		setLayout(null);
 
 		makeComponent(0);
+		hp = new HpSystem(this);
 		makeTetrisArea(0);
 		makeBackground();
 
@@ -293,20 +393,9 @@ class GamePanel extends JPanel implements Runnable
 
 	public void makeBackground()
 	{
+		// 배경은 단색(하늘색)만 쓴다. 투명으로 두면 창의 배경색이 그대로 보인다.
 		setOpaque(false);
 		setBackground(new Color(30, 160, 255));
-
-		tube = new JLabel(ImageSource.kakao_tube);
-		int tubeWidth = ImageSource.kakao_tube.getIconWidth();
-		int tubeHeight = ImageSource.kakao_tube.getIconHeight();
-		tube.setBounds(240, 360, tubeWidth, tubeHeight);
-		add(tube);
-
-		ground = new JLabel(ImageSource.bg_ground);
-		int groundWidth = ImageSource.bg_ground.getIconWidth();
-		int groundHeight = ImageSource.bg_ground.getIconHeight();
-		ground.setBounds(0, 640 - groundHeight, groundWidth, groundHeight);
-		add(ground);
 	}
 
 	public void makeComponent(int n)
@@ -330,6 +419,16 @@ class GamePanel extends JPanel implements Runnable
 		nextBlock.setBorder(WhiteLineBorder);
 		nextBlock.setBounds(255, 60, 90, 90);
 		add(nextBlock);
+
+		holdSlot.setFont(new Font("verdana", Font.PLAIN, 12));
+		holdSlot.setForeground(Color.WHITE);
+		holdSlot.setBackground(Color.BLACK);
+		holdSlot.setOpaque(true);
+		holdSlot.setBorder(WhiteLineBorder);
+		holdSlot.setVerticalTextPosition(SwingConstants.TOP);
+		holdSlot.setHorizontalTextPosition(SwingConstants.CENTER);
+		holdSlot.setBounds(255, 320, 90, 110);
+		add(holdSlot);
 
 		score = new JLabel("0", SwingConstants.RIGHT);
 		score.setText("0");
@@ -431,6 +530,7 @@ class GamePanel extends JPanel implements Runnable
 	int blockWSize; // 블럭의 너비, 용도 : 목표 범위 초과하여 데이터 손실 막기
 	int blockHSize; // 블럭의 높이, 용도 : 목표 범위 초과하여 데이터 손실 막기
 	boolean gameRun = true;
+	volatile boolean paused = false; // 설정 화면을 보는 동안 true (낙하, 시간, 갤러그가 멈춤)
 
 	public void setArray()
 	{
@@ -453,15 +553,38 @@ class GamePanel extends JPanel implements Runnable
 			array[array.length - 1][col] = 9;
 	}
 
-	public void addBlock()
+	public synchronized void addBlock()
+	{
+		Blocks b = new Blocks();
+		nextBlock(b);
+		spawnBlock(b, true);
+	}
+
+	public synchronized void holdBlock()
+	{
+		if (!gameRun || !Gaming || !holdManager.canHold()) return;
+		int replacement = holdManager.hold(blockNum);
+		ImageIcon[] icons = { null, ImageSource.block_I, ImageSource.block_J,
+			ImageSource.block_L, ImageSource.block_O, ImageSource.block_S,
+			ImageSource.block_T, ImageSource.block_Z };
+		holdSlot.setIcon(icons[holdManager.getHeldBlock()]);
+		// Only clear the falling piece; fixed cells and board boundaries stay intact.
+		for (int row = 0; row < array.length - 1; row++)
+			for (int col = 1; col < array[0].length - 1; col++)
+				array[row][col] = 0;
+		Blocks b = new Blocks();
+		if (replacement == 0) nextBlock(b);
+		else b.blockNum = replacement;
+		// Keep the existing fall thread and its timing on a hold.
+		spawnBlock(b, false);
+	}
+
+	private void spawnBlock(Blocks b, boolean startFallThread)
 	{
 		int[][] block;
 		int start_x;
 		int start_y;
 		int blockNum;
-
-		Blocks b = new Blocks();
-		nextBlock(b);
 
 		block = b.getBlock();
 		blockNum = b.getBlockNum();
@@ -491,9 +614,24 @@ class GamePanel extends JPanel implements Runnable
 			for (int col = x; col < x + blockWSize; col++)
 				if (array[row][col] > 0 && field[row][col] > 0)
 					count++;
+		// HP가 남아 있으면 HP를 1 줄이고 맨 밑 줄들을 지운 뒤 계속한다 (HpSystem.java)
+		while (count > 0 && hp.hitTop())
+		{
+			for (int i = 0; i < HpSystem.CLEAR_LINES; i++)
+				lineDelete(field.length - 2);
+			count = 0;
+			for (int row = y; row < y + blockHSize; row++)
+				for (int col = x; col < x + blockWSize; col++)
+					if (array[row][col] > 0 && field[row][col] > 0)
+						count++;
+		}
 		if (count > 0)
 		{
-			// 갤러그 협동 모드는 창을 바로 닫지 않고 두 사람의 패배 결과를 보여 준다
+			// 새 블록이 나올 자리가 막혔으니 배경음악을 멈추고 게임오버 소리를 낸다
+			SoundManager.stopBgm();
+			SoundManager.play(Sound.GAME_OVER);
+
+			// 갤러그 모드면 끄지 말고 GAME OVER
 			if (GameFrame.gameMode == 3)
 			{
 				endGame("GAME OVER");
@@ -501,7 +639,7 @@ class GamePanel extends JPanel implements Runnable
 			}
 
 			gameRun = false;
-			th.interrupt();
+			if (th != null) th.interrupt();
 			timeTh.interrupt();
 			// th = null;
 			// timeTh = null;
@@ -518,15 +656,30 @@ class GamePanel extends JPanel implements Runnable
 			textLabel.setVisible(true);
 			blackPanel.setVisible(true);
 			tetrisArea.setVisible(false);
-			
+
+			// 게임오버 소리가 끝까지 들리도록 1초 기다렸다가 끝낸다.
+			// 위에서 th.interrupt()가 이 스레드를 가리켰다면 중단 표시가 남아 sleep이 바로 끝나므로 먼저 지운다.
+			Thread.interrupted();
+			try
+			{
+				Thread.sleep(1000);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+
 			System.exit(0);
 		}
 		else
 		{
 			drawTetris();
 			checkArray();
-			th = new Thread(this);
-			th.start();
+			if (startFallThread)
+			{
+				th = new Thread(this);
+				th.start();
+			}
 		}
 
 		b = null;
@@ -716,8 +869,10 @@ class GamePanel extends JPanel implements Runnable
 			move_left();
 	}
 
-	public void fixBlock()
+	public synchronized void fixBlock()
 	{
+		SoundManager.play(Sound.LOCK);
+
 		/****************************************
 		 * 조건 : 1. move_drop, move_down의 인터럽트 발생시 바닥에 닿았다는 조건이므로 마지막 데이터 값을 변경해줘
 		 * 고정됨을 표시한다. 2. 데이터 값 >> I:91 J:92 L:93 O:94 S:95 T:96 Z:97 3.
@@ -732,6 +887,7 @@ class GamePanel extends JPanel implements Runnable
 				array[row][col] = 0;
 			}
 		lineCheck();
+		holdManager.onBlockLocked();
 	}
 
 	public void lineCheck()
@@ -801,6 +957,7 @@ class GamePanel extends JPanel implements Runnable
 						}
 
 						itemLabel.add(itemL);
+						SoundManager.play(Sound.ITEM);
 						item.removeAll();
 
 						for (int k = 0; k < itemLabel.size(); k++)
@@ -819,6 +976,7 @@ class GamePanel extends JPanel implements Runnable
 		}
 		if (deleteCount > 0)
 		{
+			SoundManager.play(Sound.LINE_CLEAR);
 			addItem(deleteCount);
 			addScore(deleteCount);
 		}
@@ -927,6 +1085,7 @@ class GamePanel extends JPanel implements Runnable
 			uItem.slow();
 			break;
 		}
+		SoundManager.play(Sound.ITEM);
 		deleteItem();
 	}
 
@@ -1191,9 +1350,10 @@ class GamePanel extends JPanel implements Runnable
 						{
 							return;
 						}
-						move_down();
-						// checkArray();
-						drawTetris();
+						// 설정 화면을 보는 동안에는 블록을 내리지 않는다
+						if (paused)
+							continue;
+						fallStep();
 					}
 				}
 				catch (InterruptedException e)
@@ -1214,14 +1374,25 @@ class GamePanel extends JPanel implements Runnable
 				{
 					return;
 				}
-				move_down();
-				// checkArray();
-				drawTetris();
+				if (paused)
+					continue;
+				fallStep();
 			}
 		}
 	}
 
 	/******************** 테트리스 아이템 메소드 ********************/
+
+	private synchronized void fallStep()
+	{
+		// An interrupted previous piece's thread must not move its replacement.
+		if (gameRun && Thread.currentThread() == th
+				&& !Thread.currentThread().isInterrupted())
+		{
+			move_down();
+			drawTetris();
+		}
+	}
 
 	class UseItem
 	{
@@ -1567,66 +1738,42 @@ class GamePanel extends JPanel implements Runnable
 		}
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 외계인이 착지할 수 있는지 판단할 때 쓴다.
-	 * 지정한 칸에 고정된 블록이 있거나 그 칸이 바닥 아래인지 알려 준다.
-	 *
-	 * @param row 화면 칸 기준 행(0이 맨 위)
-	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
-	 * @return 고정 블록이 있거나 바닥 아래면 true
-	 */
+	// 갤러그용 -----------------------------------------
+	// 외계인이 내려앉을수 있나 확인 (row, col은 화면 기준)
 	public boolean isBlocked(int row, int col)
 	{
-		// 맨 아래 줄보다 아래는 바닥이므로 막힌 것으로 본다
-		if (row >= fieldLabel.length)
+		if (row >= 20)
 			return true;
-		// field는 왼쪽 벽 때문에 화면 칸보다 열이 한 칸 밀려 있다
-		return field[row][col + 1] > 0;
+		if (field[row][col + 1] > 0)
+			return true;
+		else
+			return false;
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 착지한 외계인을 회색 방해 블록으로 바꿀 때 쓴다.
-	 * 지정한 칸이 비어 있을 때만 방해 블록을 놓고 화면을 다시 그린다.
-	 *
-	 * @param row 화면 칸 기준 행(0이 맨 위)
-	 * @param col 화면 칸 기준 열(0이 맨 왼쪽)
-	 */
+	// 외계인 착지한 자리에 회색블록
 	public void placeGarbage(int row, int col)
 	{
-		// 고정 블록이나 떨어지는 중인 블록과 겹치면 놓지 않는다(블록이 덮어써지는 것을 막기 위해)
 		if (field[row][col + 1] == 0 && array[row][col + 1] == 0)
 		{
-			// 100은 기존 줄 올리기 아이템과 같은 회색 방해 블록 값이다
-			field[row][col + 1] = 100;
+			field[row][col + 1] = 100; // 회색
 			drawTetris();
 		}
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 게임을 끝내고 결과 메시지를 보여 준다.
-	 * 블록 낙하와 시간 표시를 멈추고, 테트리스 영역을 가린 검은 패널에 메시지를 띄운다.
-	 *
-	 * @param message 화면에 띄울 결과 문구(예: "CLEAR", "GAME OVER")
-	 */
+	// 갤러그 끝났을때 (CLEAR, GAME OVER)
 	public void endGame(String message)
 	{
-		// 블록 낙하 스레드와 시간 스레드를 멈춘다
+		SoundManager.stopBgm();
 		gameRun = false;
 		th.interrupt();
 		timeTh.interrupt();
 
-		// 테트리스 영역을 가리고 시작 카운트다운에 쓰던 검은 패널에 결과를 띄운다
 		textLabel.setText(message);
 		textLabel.setVisible(true);
 		blackPanel.setVisible(true);
 		tetrisArea.setVisible(false);
 	}
 
-	/**
-	 * 갤러그 협동 모드에서 갤러그 쪽도 멈춰야 하는지 판단할 때 쓴다.
-	 *
-	 * @return 게임이 아직 진행 중이면 true, 끝났으면 false
-	 */
 	public boolean isRunning()
 	{
 		return gameRun;
@@ -1683,6 +1830,10 @@ class TimeThread extends Thread
 			{
 				return;
 			}
+
+			// 설정 화면을 보는 동안에는 시간이 흐르지 않는다
+			if (gp.paused)
+				continue;
 
 			time++;
 

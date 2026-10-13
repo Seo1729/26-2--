@@ -7,10 +7,10 @@ import java.awt.RenderingHints;
 import java.util.Collections;
 import javax.swing.JPanel;
 
-/** Fixed world-space XY projection, independent of the main camera. */
-public final class TopViewPanel extends JPanel
+// 위에서 본 모습 (TOP VIEW)
+public class TopViewPanel extends JPanel
 {
-    private Game3DScene scene = new Game3DScene(Collections.emptyList());
+    Game3DScene scene = new Game3DScene(Collections.<Game3DScene.Cell>emptyList());
 
     public TopViewPanel()
     {
@@ -24,7 +24,6 @@ public final class TopViewPanel extends JPanel
         repaint();
     }
 
-    @Override
     protected void paintComponent(Graphics graphics)
     {
         super.paintComponent(graphics);
@@ -62,13 +61,13 @@ public final class TopViewPanel extends JPanel
                     int px = left + x * cellSize, py = top + y * cellSize;
                     Game3DScene.Cell locked = fixed[x][y], falling = active[x][y];
                     g.setColor(locked == null ? new Color(30, 40, 57)
-                            : BlockColors.colorFor(locked.type).darker());
+                            : getColor(locked.type).darker());
                     g.fillRect(px, py, cellSize, cellSize);
                     if (falling != null)
                     {
                         int inset = Math.max(3, cellSize / 6);
                         int markerSize = cellSize - inset * 2;
-                        g.setColor(BlockColors.colorFor(falling.type));
+                        g.setColor(getColor(falling.type));
                         g.fillRect(px + inset, py + inset, markerSize, markerSize);
                         g.setColor(new Color(255, 255, 240));
                         g.setStroke(new BasicStroke(2f));
@@ -103,5 +102,18 @@ public final class TopViewPanel extends JPanel
             g.drawString("Ghost: cyan dashed / landing Z", 16, top + side + 66);
         }
         finally { g.dispose(); }
+    }
+
+    // 블록 색 (BlockColors꺼 복사)
+    static Color getColor(Block3D.Type type)
+    {
+        Color[] colors = {
+            new Color(57, 211, 230), new Color(255, 209, 70), new Color(187, 115, 245),
+            new Color(255, 156, 67), new Color(83, 135, 246), new Color(91, 213, 132),
+            new Color(245, 98, 121)
+        };
+        if (type == null)
+            return Color.GRAY;
+        return colors[type.ordinal()];
     }
 }

@@ -1,10 +1,7 @@
 import java.util.Objects;
 
-/**
- * 네 개의 큐브로 구성된 논리 블록. 보드나 그래픽에 의존하지 않는다.
- * 블록 위치는 정수 격자의 중심 기준점(회전 피벗)이며 기하학적 무게중심과는 다를 수 있다.
- * 큐브의 보드 좌표 = 블록 위치 + 상대좌표. 초기 형태는 모두 XY 평면(z=0)에 있다.
- */
+// 3D 블록 (큐브 4개)
+// 위치(x,y,z)가 회전 중심이고 큐브는 거기서 상대좌표
 public class Block3D
 {
 	public static final int CUBE_COUNT = 4;
@@ -16,7 +13,7 @@ public class Block3D
 
 	public enum Axis { X, Y, Z }
 
-	/** 상대좌표와 보드 좌표에 공통으로 사용하는 불변 좌표 값. */
+	// 큐브 하나 좌표
 	public static final class Cube
 	{
 		private final int x;
@@ -35,12 +32,11 @@ public class Block3D
 		public int getZ() { return z; }
 	}
 
-	private final Type type;
-	// 회전된 형태도 블록의 기준점에 대한 상대좌표로 유지한다.
-	private Cube[] relativeCubes;
-	private int x;
-	private int y;
-	private int z;
+	Type type;
+	Cube[] relativeCubes;
+	int x;
+	int y;
+	int z;
 
 	public Block3D(Type type, int x, int y, int z)
 	{
@@ -51,7 +47,7 @@ public class Block3D
 
 	public Type getType() { return type; }
 
-	/** 현재 회전 상태를 보존하는 독립적인 복사본. */
+	// 복사
 	public Block3D copy()
 	{
 		Block3D result = new Block3D(type, x, y, z);
@@ -59,7 +55,7 @@ public class Block3D
 		return result;
 	}
 
-	/** 90도 회전 후보를 반환한다. 원본의 좌표와 형태는 변경하지 않는다. */
+	// 90도 돌린 새 블록 리턴 (원래꺼는 그대로)
 	public Block3D rotated(Axis axis)
 	{
 		Objects.requireNonNull(axis, "axis");
@@ -72,7 +68,7 @@ public class Block3D
 		default: throw new IllegalArgumentException("Unknown axis: " + axis);
 		}
 		Block3D result = copy();
-		for (int i = 0; i < CUBE_COUNT; i++)
+		for (int i = 0; i < 4; i++)
 		{
 			Cube cube = relativeCubes[i];
 			result.relativeCubes[i] = new Cube(
@@ -86,7 +82,6 @@ public class Block3D
 	public int getY() { return y; }
 	public int getZ() { return z; }
 
-	/** 중심 기준점의 보드 위치를 설정한다. 배치 가능 여부는 보드 측에서 검사한다. */
 	public void setPosition(int x, int y, int z)
 	{
 		this.x = x;
@@ -94,17 +89,16 @@ public class Block3D
 		this.z = z;
 	}
 
-	/** 내부 배열을 보호하는 복사본. 각 Cube는 불변이다. */
 	public Cube[] getRelativeCubes()
 	{
 		return relativeCubes.clone();
 	}
 
-	/** 현재 블록 위치를 더한 네 큐브의 보드 좌표를 반환한다. */
+	// 보드 기준 좌표
 	public Cube[] getAbsoluteCubes()
 	{
-		Cube[] result = new Cube[CUBE_COUNT];
-		for (int i = 0; i < CUBE_COUNT; i++)
+		Cube[] result = new Cube[4];
+		for (int i = 0; i < 4; i++)
 		{
 			Cube cube = relativeCubes[i];
 			result[i] = new Cube(x + cube.x, y + cube.y, z + cube.z);
@@ -114,7 +108,7 @@ public class Block3D
 
 	private static Cube[] createInitialCubes(Type type)
 	{
-		// 기존 Blocks.getBlock()과 같은 모양과 방향을 사용한다.
+		// 2D 테트리스(Blocks)랑 같은 모양
 		switch (type)
 		{
 		case I:

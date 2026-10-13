@@ -11,18 +11,19 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import javax.swing.JPanel;
 
-/** Swing software 3D renderer: orthographic camera, shaded faces and depth sorting. */
-public final class Board3DRenderer extends JPanel
+// 3D 그리기 (카메라 각도 계산해서 큐브 면을 직접 그림)
+public class Board3DRenderer extends JPanel
 {
-    private Game3DScene scene = new Game3DScene(java.util.Collections.emptyList());
-    private double scale, originX, originY;
-    private double azimuth = Math.PI / 4, elevation = Math.toRadians(20), zoom = 1;
-    private int dragX, dragY;
-    private boolean dragging;
+    Game3DScene scene = new Game3DScene(java.util.Collections.<Game3DScene.Cell>emptyList());
+    double scale, originX, originY;
+    double azimuth = Math.PI / 4, elevation = Math.toRadians(20), zoom = 1; // 카메라
+    int dragX, dragY;
+    boolean dragging;
 
 
     public Board3DRenderer()
@@ -31,17 +32,17 @@ public final class Board3DRenderer extends JPanel
         setBackground(new Color(19, 25, 38));
         MouseAdapter cameraInput = new MouseAdapter()
         {
-            @Override public void mousePressed(MouseEvent event)
+            public void mousePressed(MouseEvent event)
             {
                 if (event.getButton() != MouseEvent.BUTTON1) return;
                 dragging = true;
                 dragX = event.getX(); dragY = event.getY();
             }
-            @Override public void mouseReleased(MouseEvent event)
+            public void mouseReleased(MouseEvent event)
             {
                 if (event.getButton() == MouseEvent.BUTTON1) dragging = false;
             }
-            @Override public void mouseDragged(MouseEvent event)
+            public void mouseDragged(MouseEvent event)
             {
                 if (!dragging || (event.getModifiersEx() & MouseEvent.BUTTON1_DOWN_MASK) == 0) return;
                 azimuth = Math.IEEEremainder(azimuth - (event.getX() - dragX) * .008, Math.PI * 2);
@@ -50,7 +51,7 @@ public final class Board3DRenderer extends JPanel
                 dragX = event.getX(); dragY = event.getY();
                 repaint();
             }
-            @Override public void mouseWheelMoved(MouseWheelEvent event)
+            public void mouseWheelMoved(MouseWheelEvent event)
             {
                 zoom = Math.max(.3, Math.min(4, zoom * Math.pow(1.12, -event.getPreciseWheelRotation())));
                 repaint();
@@ -67,22 +68,24 @@ public final class Board3DRenderer extends JPanel
         repaint();
     }
 
-    private Point2D project(double x, double y, double z)
+    // 3D 좌표 -> 화면 좌표
+    Point2D project(double x, double y, double z)
     {
-        x -= Board3D.SIZE_X / 2.0;
-        y -= Board3D.SIZE_Y / 2.0;
-        z -= Board3D.SIZE_Z / 2.0;
+        x -= 1.5;
+        y -= 1.5;
+        z -= 7.0;
         return new Point2D.Double(originX + scale * (Math.sin(azimuth) * x - Math.cos(azimuth) * y),
                 originY + scale * (Math.sin(elevation) * (Math.cos(azimuth) * x + Math.sin(azimuth) * y)
                         - Math.cos(elevation) * z));
     }
 
-    private void line(Graphics2D g, double x, double y, double z, double a, double b, double c)
+    void line(Graphics2D g, double x, double y, double z, double a, double b, double c)
     {
         g.draw(new Line2D.Double(project(x, y, z), project(a, b, c)));
     }
 
-    private static final class Face
+    // 큐브 면 하나
+    static class Face
     {
         final double[][] vertices;
         final Color color;
@@ -97,7 +100,6 @@ public final class Board3DRenderer extends JPanel
         }
     }
 
-    @Override
     protected void paintComponent(Graphics graphics)
     {
         super.paintComponent(graphics);
@@ -105,9 +107,7 @@ public final class Board3DRenderer extends JPanel
         try
         {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            // A constant bounding sphere keeps orbiting from changing the zoom.
-            double diameter = Math.sqrt(Board3D.SIZE_X * Board3D.SIZE_X
-                    + Board3D.SIZE_Y * Board3D.SIZE_Y + Board3D.SIZE_Z * Board3D.SIZE_Z);
+            double diameter = Math.sqrt(3 * 3 + 3 * 3 + 14 * 14);
             scale = Math.max(1, Math.min(getWidth() - 100.0, getHeight() - 110.0) / diameter) * zoom;
             originX = getWidth() / 2.0;
             originY = getHeight() / 2.0;
@@ -116,8 +116,8 @@ public final class Board3DRenderer extends JPanel
             double nz = Math.sin(elevation);
             g.setColor(new Color(65, 79, 101));
             g.setStroke(new BasicStroke(1));
-            // Rear walls and floor identify every cell without covering the cubes.
-            for (int z = 0; z <= Board3D.SIZE_Z; z++)
+            // 뒤쪽 벽, 바닥 선
+            for (int z = 0; z <= 14; z++)
             {
                 line(g, 0, 0, z, 3, 0, z);
                 line(g, 0, 0, z, 0, 3, z);
@@ -135,13 +135,20 @@ public final class Board3DRenderer extends JPanel
                 double x = cell.x + .035, y = cell.y + .035, z = cell.z + .035;
                 double a = cell.x + .965, b = cell.y + .965, c = cell.z + .965;
                 Color color = BlockColors.colorFor(cell.type);
-                // Choose the visible side on each axis for the current camera.
+                // 카메라에서 보이는 면만
                 double sideX = nx >= 0 ? a : x, sideY = ny >= 0 ? b : y, sideZ = nz >= 0 ? c : z;
                 faces.add(new Face(new double[][] {{sideX,y,z},{sideX,b,z},{sideX,b,c},{sideX,y,c}}, color.darker(), cell.active, nx, ny, nz));
                 faces.add(new Face(new double[][] {{x,sideY,z},{a,sideY,z},{a,sideY,c},{x,sideY,c}}, color, cell.active, nx, ny, nz));
                 faces.add(new Face(new double[][] {{x,y,sideZ},{a,y,sideZ},{a,b,sideZ},{x,b,sideZ}}, color.brighter(), cell.active, nx, ny, nz));
             }
-            faces.sort(Comparator.comparingDouble(face -> face.depth));
+            // 먼 면부터 그려야 해서 정렬
+            Collections.sort(faces, new Comparator<Face>()
+            {
+                public int compare(Face f1, Face f2)
+                {
+                    return Double.compare(f1.depth, f2.depth);
+                }
+            });
             for (Face face : faces)
             {
                 Path2D path = new Path2D.Double();
@@ -165,7 +172,7 @@ public final class Board3DRenderer extends JPanel
                 line(g, 0, 0, z, 3, 0, z); line(g, 3, 0, z, 3, 3, z);
                 line(g, 3, 3, z, 0, 3, z); line(g, 0, 3, z, 0, 0, z);
             }
-            // Draw all twelve ghost edges as an overlay, keeping the landing preview visible.
+            // 고스트 (점선)
             g.setColor(new Color(114, 233, 255, 190));
             g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
                     10f, new float[] {5f, 4f}, 0f));

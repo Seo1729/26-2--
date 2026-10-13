@@ -40,11 +40,11 @@ public class GameRules {
 
 	/** 현재 상태로 승패를 판정한다. 아직 안 끝났으면 NONE. */
 	public static Result judge(TetrisPlayer tetris, Dodger dodger, int elapsedMs) {
-		if (dodger.isCrushed())
+		if (dodger.crushed)
 			return Result.CRUSHED;
 		if (tetris.getLinesRemoved() >= TARGET_LINES)
 			return Result.LINES;
-		if (dodger.getY() >= GOAL_ROW)
+		if (dodger.y >= GOAL_ROW)
 			return Result.REACHED_TOP;
 		if (tetris.isGameOver())
 			return Result.STACK_FULL;
