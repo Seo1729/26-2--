@@ -24,3 +24,24 @@
 | **Fragility (취약성)** | 일시정지·승패 문구를 두 `BoardView`에 각각 `setOverlay()` 한다. 하나를 빠뜨리면 한쪽 판에만 표시된다. `AiController.step()`은 회전이 막히면 바로 하드드롭하므로 `PlayerBoard`의 벽 킥(`KICKS`)을 바꾸면 CPU 행동도 같이 바뀐다. |
 | **Immobility (부동성)** | `Tetromino`가 `java.awt.Color`를 가지고 있어 순수 로직이 화면 라이브러리에 묶여 있다. `drawCell`과 색 상수는 똥피하기 `Theme`과 거의 같은 복사본이다. |
 | **Viscosity (점착성)** | `src/vsai` 안에 `.idea`, `out`, `vsai.iml`이 들어 있다(팀 규칙 7번 대상). `ClaudeBrain`처럼 쓰지 않는 뼈대도 남아 있다. |
+
+## 2. SOLID 원칙에 따른 수정 대상
+
+| 원칙 | 수정 대상 | 바꾸는 방법 |
+|---|---|---|
+| **SRP** | `VsAiMode` (1순위) | 게임 루프, 키 입력, 승패 판정, 상태줄 문구, CPU 세기 상수를 `VsCpuInput`, `MatchRules`, `VsCpuMode`(루프·조립)로 나눈다. |
+| **OCP** | 키 `switch` | `Map<KeyAction, Runnable>`로 바꿔 키를 추가해도 기존 코드를 고치지 않게 한다. |
+| **LSP** | `AiBrain` 구현체 | 이미 잘 지켜지고 있다. `HeuristicBrain`, `ClaudeBrain`을 갈아 끼워도 `AiController`가 그대로 동작한다. |
+| **ISP** | `BoardView` | 읽기만 하면 되는데 조작까지 가능한 `PlayerBoard` 전체를 받는다. 읽기 전용 `BoardState` 인터페이스로 좁힌다. |
+| **DIP** | `AiController` | 예비용 `new HeuristicBrain()`을 안에서 직접 만든다. 생성자로 받게 바꾼다. |
+
+## 3. 리팩토링 순서
+
+원칙: **이름 변경을 먼저 따로 커밋**해서 이후 커밋이 모두 새 이름으로 쌓이게 하고, 그다음은 의존받는 쪽(잎)부터 진행한다. Origin은 `GameFrame` 2군데만 건드리므로 그 파일을 작업 중인 팀원에게 미리 알린다.
+
+이름 변경·불필요 파일 정리(vscpu 패키지) -> 블록 모양(Tetromino) -> 판 격자(Board) -> 한쪽 판 상태·점수(PlayerBoard) -> CPU 판단(CpuBrain, HeuristicBrain) -> CPU 조작(CpuController) -> 사람 키 입력(VsCpuInput) -> 승패 판정(MatchRules) -> 판 그리기(BoardView) -> 모드 진입(VsCpuMode, VsCpuMain)
+
+- `Tetromino`의 색은 `BoardView` 쪽 팔레트로 옮긴다.
+- 사람 키 입력 단계에서 `common.KeyAction`에 `VSCPU_*` 키를 추가한다. `common`은 공용 폴더라 Origin처럼 짧은 브랜치로 따로 처리한다.
+- 똥피하기 `Theme`과 겹치는 색·`drawCell`은 두 모드를 모두 끝낸 뒤 마지막에 공용 `Theme` 하나로 합친다.
+- 전체 모드 순서는 Poop 문서 4장의 "모드 리팩토링"을 따른다.
