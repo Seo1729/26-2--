@@ -1,8 +1,8 @@
-package vsai;
+package vsai.game;
 
 /**
  * 한쪽 판의 쌓인 블록 격자. 좌표: x는 왼쪽 0부터, y는 맨 위 0부터 아래로 증가.
- * AI가 생각할 때 쓸 수 있도록 복사(copy)가 가볍다.
+ * CPU가 생각할 때 쓸 수 있도록 복사(copy)가 가볍다.
  */
 public class Board {
 
@@ -20,8 +20,7 @@ public class Board {
 
 	public void clear() {
 		for (int y = 0; y < HEIGHT; ++y)
-			for (int x = 0; x < WIDTH; ++x)
-				grid[y][x] = null;
+			clearRow(y);
 	}
 
 	/** (x, y) 칸의 블록. 비어 있으면 null */
@@ -68,19 +67,27 @@ public class Board {
 	public int clearLines() {
 		int cleared = 0;
 		for (int y = HEIGHT - 1; y >= 0; --y) {
-			boolean full = true;
-			for (int x = 0; x < WIDTH && full; ++x)
-				full = grid[y][x] != null;
-			if (!full)
+			if (!isFull(y))
 				continue;
 			++cleared;
 			for (int yy = y; yy > 0; --yy)
 				System.arraycopy(grid[yy - 1], 0, grid[yy], 0, WIDTH);
-			for (int x = 0; x < WIDTH; ++x)
-				grid[0][x] = null;
+			clearRow(0);
 			++y; // 내려온 줄을 다시 검사
 		}
 		return cleared;
+	}
+
+	private boolean isFull(int y) {
+		for (int x = 0; x < WIDTH; ++x)
+			if (grid[y][x] == null)
+				return false;
+		return true;
+	}
+
+	private void clearRow(int y) {
+		for (int x = 0; x < WIDTH; ++x)
+			grid[y][x] = null;
 	}
 
 	/** x열의 높이 (비어 있으면 0, 맨 위까지 차면 HEIGHT) */
