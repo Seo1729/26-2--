@@ -31,7 +31,7 @@ public final class CharacterMissingResourceCheck {
             try {
                 game.setSize(320, 704); game.start(); game.timer.stop();
                 for (int state = 0; state < 5; state++) {
-                    Dodger d = game.dodger;
+                    Dodger d = game.getDodger();
                     d.reset(); d.crushed = state == 4;
                     d.jumpLeft = state == 2 ? 1 : 0;
                     d.y = state == 3 ? 1 : 0; d.drawY = d.y;
@@ -46,10 +46,10 @@ public final class CharacterMissingResourceCheck {
                     BufferedImage board = new BufferedImage(320, 704, BufferedImage.TYPE_INT_ARGB);
                     g = board.createGraphics(); game.paint(g); g.dispose();
                 }
-                game.dodger.reset(); game.dodger.moveRight();
-                check(game.dodger.x == 1, "Missing images broke movement");
-                game.result = 1; game.restart(); game.timer.stop();
-                check(game.isStarted && game.dodger.x == 0, "Missing images broke restart");
+                game.getDodger().reset(); game.getDodger().moveRight();
+                check(game.getDodger().x == 1, "Missing images broke movement");
+                game.getDodger().crush(); game.logic().checkResult(); game.restart(); game.timer.stop();
+                check(game.isStarted() && game.getDodger().x == 0, "Missing images broke restart");
             } finally { game.stop(); }
         });
         System.out.println("Missing default/optional resources: fallback, all states, gameplay and restart passed.");

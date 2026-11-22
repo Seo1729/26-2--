@@ -2,27 +2,31 @@ package dodge;
 
 /**
  * P1 테트리스 플레이어의 상태와 동작. 현재 조각, 이동, 회전, 낙하, 줄 수.
- * 그리기와 입력은 GamePanel / InputHandler가 맡는다.
+ * 그리기와 입력은 GamePanel / InputHandler가 맡고, 소리는 GameEvents로 알린다.
  */
 public class TetrisPlayer {
 
+	/** 새 조각이 나타나는 가로 위치 */
+	public static final int SPAWN_X = GameBoard.WIDTH / 2 + 1;
+
 	private final GameBoard board;
+	private final Dodger dodger;
+	private final GameEvents events;
+
 	private Shape curPiece = new Shape();
 	/** 다음에 나올 조각 (정보판 미리보기용) */
 	private final Shape nextPiece = new Shape();
 	private int curX = 0;
 	private int curY = 0;
+	/** 줄을 지운 직후 한 박자 쉬었다가 새 조각을 꺼내기 위한 표시 */
 	private boolean isFallingFinished = false;
 	private boolean isGameOver = false;
 	private int numLinesRemoved = 0;
-	private Dodger dodger;
 
-	public TetrisPlayer(GameBoard board) {
+	public TetrisPlayer(GameBoard board, Dodger dodger, GameEvents events) {
 		this.board = board;
-	}
-
-	public void setDodger(Dodger dodger) {
 		this.dodger = dodger;
+		this.events = events;
 	}
 
 	public void start() {
@@ -33,7 +37,7 @@ public class TetrisPlayer {
 		newPiece();
 	}
 
-	/** 타이머 한 번마다 호출된다 */
+	/** 낙하 박자마다 호출된다 */
 	public void tick() {
 		if (isGameOver)
 			return;
@@ -46,19 +50,18 @@ public class TetrisPlayer {
 	}
 
 	public void moveLeft() {
-		tryMove(curPiece, curX - 1, curY);
+		if (tryMove(curPiece, curX - 1, curY))
+			events.onPieceMoved();
 	}
 
 	public void moveRight() {
-		tryMove(curPiece, curX + 1, curY);
+		if (tryMove(curPiece, curX + 1, curY))
+			events.onPieceMoved();
 	}
 
-	public void rotateLeft() {
-		tryMove(curPiece.rotateLeft(), curX, curY);
-	}
-
-	public void rotateRight() {
-		tryMove(curPiece.rotateRight(), curX, curY);
+	public void rotate() {
+		if (tryMove(curPiece.rotateLeft(), curX, curY))
+			events.onPieceRotated();
 	}
 
 	/** 한 칸 내리기. 즉시 낙하(하드드롭)는 설계상 없음. */
@@ -66,7 +69,7 @@ public class TetrisPlayer {
 		if (isGameOver || !hasPiece())
 			return;
 		// 아래로 내려가는 자리에 P2가 있으면 압사
-		if (board.canPlace(curPiece, curX, curY - 1) && covers(curPiece, curX, curY - 1, dodger)) {
+		if (board.canPlace(curPiece, curX, curY - 1) && covers(curPiece, curX, curY - 1)) {
 			dodger.crush();
 			return;
 		}
@@ -76,25 +79,36 @@ public class TetrisPlayer {
 
 	private void pieceDropped() {
 		board.place(curPiece, curX, curY);
+		events.onPieceLocked();
 
 		int lines = board.removeFullLines();
 		if (lines > 0) {
+			events.onLinesCleared(lines);
 			numLinesRemoved += lines;
 			isFallingFinished = true;
-			curPiece.setShape(Tetrominoes.NoShape.ordinal());
+			curPiece.setShape(Shape.NONE);
 		} else {
 			newPiece();
 		}
 	}
 
 	private void newPiece() {
-		curPiece.setShape(nextPiece.getShape());
+		spawn(nextPiece.getShape(), SPAWN_X, GameBoard.HEIGHT - 1);
 		nextPiece.setRandomShape();
-		curX = GameBoard.WIDTH / 2 + 1;
-		curY = GameBoard.HEIGHT - 1 + curPiece.minY();
+	}
+
+	/**
+	 * shape 조각을 x 위치, 맨 윗칸이 topY인 자리에 꺼낸다. 놓을 자리가 없으면 블록이 꽉 찬 것.
+	 * 테스트에서 원하는 조각을 원하는 자리에 두는 데도 쓴다.
+	 */
+	void spawn(int shape, int x, int topY) {
+		curPiece = new Shape();
+		curPiece.setShape(shape);
+		curX = x;
+		curY = topY + curPiece.minY();
 
 		if (!board.canPlace(curPiece, curX, curY)) {
-			curPiece.setShape(Tetrominoes.NoShape.ordinal());
+			curPiece.setShape(Shape.NONE);
 			isGameOver = true;
 		}
 	}
@@ -103,7 +117,7 @@ public class TetrisPlayer {
 		if (isGameOver || !hasPiece())
 			return false;
 		// 좌우 이동·회전으로 P2를 덮는 건 막는다 (밀어서 압사 없음)
-		if (!board.canPlace(newPiece, newX, newY) || covers(newPiece, newX, newY, dodger))
+		if (!board.canPlace(newPiece, newX, newY) || covers(newPiece, newX, newY))
 			return false;
 		curPiece = newPiece;
 		curX = newX;
@@ -111,11 +125,9 @@ public class TetrisPlayer {
 		return true;
 	}
 
-	private static boolean covers(Shape piece, int posX, int posY, Dodger d) {
-		if (d == null)
-			return false;
-		for (int i = 0; i < 4; ++i) {
-			if (posX + piece.x(i) == d.x && posY - piece.y(i) == d.y)
+	private boolean covers(Shape piece, int posX, int posY) {
+		for (int i = 0; i < Shape.CELLS; ++i) {
+			if (dodger.isAt(posX + piece.x(i), posY - piece.y(i)))
 				return true;
 		}
 		return false;
@@ -125,7 +137,7 @@ public class TetrisPlayer {
 	public boolean occupies(int x, int y) {
 		if (!hasPiece())
 			return false;
-		for (int i = 0; i < 4; ++i) {
+		for (int i = 0; i < Shape.CELLS; ++i) {
 			if (curX + curPiece.x(i) == x && curY - curPiece.y(i) == y)
 				return true;
 		}
@@ -133,7 +145,7 @@ public class TetrisPlayer {
 	}
 
 	public boolean hasPiece() {
-		return curPiece.getShape() != Tetrominoes.NoShape.ordinal();
+		return !curPiece.isEmpty();
 	}
 
 	public Shape getPiece() {

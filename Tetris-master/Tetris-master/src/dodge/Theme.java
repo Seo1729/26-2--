@@ -11,7 +11,7 @@ public final class Theme {
 
 	/** 창 전체 배경 */
 	public static final Color BACKGROUND = new Color(32, 34, 44);
-	/** 보드 안쪽 배경 */
+	/** 보드 안쪽 배경, 진행 막대 바탕 */
 	public static final Color BOARD = new Color(18, 19, 26);
 	public static final Color BORDER = new Color(90, 94, 115);
 	/** 오른쪽 정보 카드 배경 */
@@ -23,9 +23,12 @@ public final class Theme {
 	public static final Color WARNING = new Color(255, 90, 90);
 	public static final Color GOAL_FILL = new Color(255, 220, 120, 60);
 	public static final Color GOAL_LINE = new Color(230, 170, 30);
+	/** 승패·일시정지 안내 상자 */
+	public static final Color OVERLAY = new Color(0, 0, 0, 180);
 
 	private static final String FONT_NAME = "Malgun Gothic";
 
+	// Shape 모양 번호가 인덱스 (0은 빈칸)
 	private static final Color[] BLOCK_COLORS = { new Color(0, 0, 0), new Color(204, 102, 102),
 			new Color(102, 204, 102), new Color(102, 102, 204), new Color(204, 204, 102), new Color(204, 102, 204),
 			new Color(102, 204, 204), new Color(218, 170, 0) };
@@ -39,8 +42,8 @@ public final class Theme {
 	}
 
 	/** 블록 한 칸을 (x, y)부터 w x h 크기로 그린다 */
-	public static void drawSquare(Graphics g, int x, int y, int w, int h, Tetrominoes shape) {
-		Color color = BLOCK_COLORS[shape.ordinal()];
+	public static void drawSquare(Graphics g, int x, int y, int w, int h, int shape) {
+		Color color = BLOCK_COLORS[shape];
 
 		g.setColor(color);
 		g.fillRect(x + 1, y + 1, w - 2, h - 2);

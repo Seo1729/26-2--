@@ -1,13 +1,17 @@
 package dodge;
 
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
+
+import common.KeyAction;
+import common.KeySettings;
 
 /**
  * 한 키보드로 두 명이 동시에 조작하기 위한 입력 처리.
@@ -15,50 +19,64 @@ import java.util.Set;
  * OS의 키 자동 반복은 다른 키를 누르는 순간 끊기기 때문에 쓰지 않는다.
  * 대신 "지금 눌려 있는 키 집합"을 직접 관리하고, 게임 루프가 매 프레임 update()를 불러
  * 꾹 누르고 있는 키의 반복 입력을 플레이어별로 따로 만들어 준다.
+ *
+ * 키 동작은 KeyAction → Runnable 표로 등록하므로, 동작을 추가해도 이 클래스는 고치지 않는다.
+ * 실제 키 번호는 누를 때마다 KeySettings에서 읽어서 설정 화면에서 바꾼 키가 바로 적용된다.
  */
 public class InputHandler extends KeyAdapter {
 
-	// P1 테트리스 (왼손)
-	public static final int P1_LEFT = KeyEvent.VK_A;
-	public static final int P1_RIGHT = KeyEvent.VK_D;
-	public static final int P1_ROTATE = KeyEvent.VK_W;
-	public static final int P1_DOWN = KeyEvent.VK_S;
-	// P2 똥피하기 (오른손)
-	public static final int P2_LEFT = KeyEvent.VK_LEFT;
-	public static final int P2_RIGHT = KeyEvent.VK_RIGHT;
-	public static final int P2_JUMP = KeyEvent.VK_UP;
-	// 공용
-	public static final int PAUSE = KeyEvent.VK_P;
-	public static final int RESTART = KeyEvent.VK_R;
-
 	/** 꾹 눌렀을 때 첫 반복까지 기다리는 시간(ms) */
-	private static final long REPEAT_DELAY = 170;
-	/** 이후 반복 간격(ms) */
-	private static final long P1_REPEAT_INTERVAL = 50;
-	private static final long P2_REPEAT_INTERVAL = 90;
+	public static final long REPEAT_DELAY_MS = 170;
 
-	private final GamePanel panel;
-	private final TetrisPlayer tetris;
-	private final Dodger dodger;
+	private final BooleanSupplier playing;
+	private final Runnable afterAction;
+
+	/** 언제든 받는 키 (일시정지, 다시 시작). 등록한 순서대로 먼저 맞는 것이 이긴다. */
+	private final Map<KeyAction, Runnable> controls = new LinkedHashMap<>();
+	/** 설정에서 바꿀 수 없는 고정 키 (ESC 설정창) */
+	private final Map<Integer, Runnable> fixedKeys = new HashMap<>();
+	/** 게임 중에만 받는 키 */
+	private final Map<KeyAction, Runnable> actions = new EnumMap<>(KeyAction.class);
+	/** 꾹 누르면 반복되는 키와 그 간격(ms) */
+	private final Map<KeyAction, Long> repeatIntervals = new EnumMap<>(KeyAction.class);
 
 	private final Set<Integer> held = new HashSet<>();
+	private final Map<Integer, KeyAction> repeating = new HashMap<>();
 	private final Map<Integer, Long> nextRepeat = new HashMap<>();
 
-	public InputHandler(GamePanel panel, TetrisPlayer tetris, Dodger dodger) {
-		this.panel = panel;
-		this.tetris = tetris;
-		this.dodger = dodger;
-		// 창이 포커스를 잃으면 키가 눌린 채로 남지 않게 비운다
-		panel.addFocusListener(new FocusAdapter() {
-			@Override
-			public void focusLost(FocusEvent e) {
-				clear();
-			}
-		});
+	/**
+	 * @param playing     지금 게임 키를 받아도 되는지 (시작했고 멈춰 있지 않음)
+	 * @param afterAction 게임 키를 처리한 뒤 할 일 (다시 그리기)
+	 */
+	public InputHandler(BooleanSupplier playing, Runnable afterAction) {
+		this.playing = playing;
+		this.afterAction = afterAction;
+	}
+
+	public InputHandler control(KeyAction action, Runnable run) {
+		controls.put(action, run);
+		return this;
+	}
+
+	public InputHandler fixedKey(int keyCode, Runnable run) {
+		fixedKeys.put(keyCode, run);
+		return this;
+	}
+
+	public InputHandler action(KeyAction action, Runnable run) {
+		actions.put(action, run);
+		return this;
+	}
+
+	public InputHandler repeatingAction(KeyAction action, long intervalMs, Runnable run) {
+		actions.put(action, run);
+		repeatIntervals.put(action, intervalMs);
+		return this;
 	}
 
 	public void clear() {
 		held.clear();
+		repeating.clear();
 		nextRepeat.clear();
 	}
 
@@ -69,75 +87,58 @@ public class InputHandler extends KeyAdapter {
 		if (!held.add(code))
 			return;
 
-		if (code == PAUSE) {
-			panel.togglePause();
+		KeyAction control = find(controls.keySet(), code);
+		if (control != null) {
+			controls.get(control).run();
 			return;
 		}
-		if (code == RESTART) {
-			panel.restart();
+		Runnable fixed = fixedKeys.get(code);
+		if (fixed != null) {
+			fixed.run();
 			return;
 		}
-		if (!(panel.isStarted && !panel.isPaused))
+		if (!playing.getAsBoolean())
 			return;
 
-		act(code);
-		if (isRepeatable(code))
-			nextRepeat.put(code, System.currentTimeMillis() + REPEAT_DELAY);
-		panel.repaint();
+		KeyAction action = find(actions.keySet(), code);
+		if (action != null) {
+			actions.get(action).run();
+			if (repeatIntervals.containsKey(action)) {
+				repeating.put(code, action);
+				nextRepeat.put(code, System.currentTimeMillis() + REPEAT_DELAY_MS);
+			}
+		}
+		afterAction.run();
 	}
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		held.remove(e.getKeyCode());
-		nextRepeat.remove(e.getKeyCode());
+		int code = e.getKeyCode();
+		held.remove(code);
+		repeating.remove(code);
+		nextRepeat.remove(code);
 	}
 
 	/** 게임 루프가 매 프레임 호출. 꾹 누른 키의 반복 입력을 처리한다. */
 	public void update() {
-		if (!(panel.isStarted && !panel.isPaused))
+		if (!playing.getAsBoolean())
 			return;
 
 		long now = System.currentTimeMillis();
 		for (Map.Entry<Integer, Long> entry : nextRepeat.entrySet()) {
 			if (now >= entry.getValue()) {
-				int code = entry.getKey();
-				act(code);
-				entry.setValue(now + repeatInterval(code));
+				KeyAction action = repeating.get(entry.getKey());
+				actions.get(action).run();
+				entry.setValue(now + repeatIntervals.get(action));
 			}
 		}
 	}
 
-	private void act(int code) {
-		switch (code) {
-		case P1_LEFT:
-			tetris.moveLeft();
-			break;
-		case P1_RIGHT:
-			tetris.moveRight();
-			break;
-		case P1_ROTATE:
-			tetris.rotateLeft();
-			break;
-		case P1_DOWN:
-			tetris.oneLineDown();
-			break;
-		case P2_LEFT:
-			dodger.moveLeft();
-			break;
-		case P2_RIGHT:
-			dodger.moveRight();
-			break;
-		case P2_JUMP:
-			dodger.jump();
-			break;
+	private static KeyAction find(Iterable<KeyAction> candidates, int code) {
+		for (KeyAction action : candidates) {
+			if (KeySettings.getKey(action) == code)
+				return action;
 		}
-	}
-
-	private boolean isRepeatable(int code) {
-		return code == P1_LEFT || code == P1_RIGHT || code == P1_DOWN || code == P2_LEFT || code == P2_RIGHT;
-	}
-
-	private long repeatInterval(int code) {
-		return (code == P2_LEFT || code == P2_RIGHT) ? P2_REPEAT_INTERVAL : P1_REPEAT_INTERVAL;
+		return null;
 	}
 }
