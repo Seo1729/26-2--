@@ -60,19 +60,35 @@ public final class DodgeOutcomeCheck {
         check(game.checkResult() == GameRules.Result.CRUSHED, "Crush has priority");
     }
 
-    // 화면: 시작하면 돌고, 승부가 나면 멈추고, 재시작은 승부가 난 뒤에만
+    // 화면: 시작하면 돌고, 승부가 나면 멈추고, R 재시작은 게임 중·일시정지·승부 뒤 언제나
+    // 실제 키 입력 경로(InputHandler)로 재시작 키를 눌렀다 뗀다
+    static void pressR(GamePanel panel) {
+        int code = common.KeySettings.getKey(common.KeyAction.DODGE_RESTART);
+        for (java.awt.event.KeyListener l : panel.getKeyListeners()) {
+            l.keyPressed(new java.awt.event.KeyEvent(panel, java.awt.event.KeyEvent.KEY_PRESSED, 0, 0, code, 'r'));
+            l.keyReleased(new java.awt.event.KeyEvent(panel, java.awt.event.KeyEvent.KEY_RELEASED, 0, 0, code, 'r'));
+        }
+    }
+
     static void checkPanel() throws Exception {
         CharacterManager manager = new CharacterManager(Files.createTempDirectory("dodge-outcome-").resolve("appearance.properties"));
         SwingUtilities.invokeAndWait(() -> {
             GamePanel panel = new GamePanel(manager);
             try {
+                panel.restart();
+                check(!panel.isStarted(), "Restart before start");
                 panel.start(); panel.timer.stop();
                 check(panel.isStarted(), "Panel not started");
-                panel.restart();
-                check(panel.isStarted() && !panel.logic().isOver(), "Restart before game over");
+                panel.logic().tick(5000); panel.getDodger().x = 5;
+                pressR(panel); panel.timer.stop();
+                check(panel.isStarted() && panel.logic().getElapsedMs() == 0 && panel.getDodger().x == 0
+                        && panel.getStatus().getTetrisWins() + panel.getStatus().getDodgerWins() == 0, "R mid-game");
+                panel.togglePause(); pressR(panel);
+                check(panel.isStarted() && !panel.isPaused() && panel.timer.isRunning(), "R while paused");
+                panel.timer.stop();
                 panel.getDodger().crush(); panel.refresh();
                 check(!panel.isStarted() && panel.getStatus().getTetrisWins() == 1, "Panel did not stop on game over");
-                panel.restart(); panel.timer.stop();
+                pressR(panel); panel.timer.stop();
                 check(panel.isStarted() && !panel.getDodger().isCrushed(), "Restart after game over");
                 panel.togglePause();
                 check(panel.isPaused() && !panel.timer.isRunning(), "Pause did not stop loop");

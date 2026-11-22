@@ -182,10 +182,15 @@ public class GamePanel extends JPanel implements ActionListener {
 		input.clear();
 	}
 
-	/** 승부가 난 뒤에만 새 판을 시작한다. 캐릭터 외형 선택은 그대로 둔다. */
+	/**
+	 * 새 판을 시작한다. 게임 중(일시정지 포함)이든 승부가 난 뒤든 언제나 된다.
+	 * 중간에 다시 시작한 판은 전적에 넣지 않는다. 캐릭터 외형 선택은 그대로 둔다.
+	 */
 	public void restart() {
-		if (game.isOver())
-			start();
+		if (!isStarted && !game.isOver())
+			return; // 아직 시작 전이거나 모드를 떠난 뒤
+		isPaused = false;
+		start();
 	}
 
 	// ---------------- 그리기 ----------------
@@ -274,7 +279,8 @@ public class GamePanel extends JPanel implements ActionListener {
 					KeySettings.getKeyName(KeyAction.DODGE_RESTART) + ": 다시 시작");
 		} else if (isPaused) {
 			drawOverlay(g, left, top, boardW, boardH, "일시정지", null,
-					KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + ": 계속하기");
+					KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + ": 계속하기   "
+							+ KeySettings.getKeyName(KeyAction.DODGE_RESTART) + ": 다시 시작");
 		}
 	}
 
