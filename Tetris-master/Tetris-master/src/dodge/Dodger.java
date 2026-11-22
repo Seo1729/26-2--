@@ -13,6 +13,14 @@ public class Dodger {
 
 	/** 한 번 점프로 올라가는 칸 수 */
 	public static final int JUMP_HEIGHT = 2;
+	/** 3칸 점프: 갇혔을 때 빠져나오라고 주는 높은 점프 */
+	public static final int SUPER_JUMP_HEIGHT = 3;
+	/** 3칸 점프를 모아 둘 수 있는 최대 횟수 (판 시작 때 가득 참) */
+	public static final int MAX_SUPER_JUMPS = 3;
+	/** 3칸 점프 한 번이 충전되는 시간(ms). 가득 차 있으면 충전 시간이 흐르지 않는다. */
+	public static final int SUPER_JUMP_RECHARGE_MS = 20_000;
+	/** 점프 키를 이 시간(ms) 안에 한 번 더 누르면 3칸 점프가 된다 */
+	public static final int DOUBLE_TAP_MS = 350;
 	/** 걷기 그림을 유지하는 시간(ms) */
 	private static final long WALK_POSE_MS = 200;
 	/** 그림 위치가 한 칸 따라가는 데 걸리는 시간(ms) */
@@ -35,6 +43,12 @@ public class Dodger {
 	// 그림 그리는 위치 (부드럽게 움직이게)
 	double drawX;
 	double drawY;
+	// 3칸 점프 남은 횟수와 다음 충전까지 쌓인 시간
+	int superJumps;
+	int rechargeElapsed;
+	// 마지막 땅 점프의 출발 높이와 그 뒤로 흐른 시간 (-1이면 두 번 누르기 대기 아님)
+	int takeoffY;
+	int sinceJumpMs = -1;
 
 	public Dodger(CollisionMap world, GameEvents events) {
 		this.world = world;
@@ -51,6 +65,10 @@ public class Dodger {
 		lastMoveTime = 0;
 		drawX = x;
 		drawY = y;
+		superJumps = MAX_SUPER_JUMPS;
+		rechargeElapsed = 0;
+		takeoffY = 0;
+		sinceJumpMs = -1;
 	}
 
 	// 매 프레임마다 그림 위치를 실제 칸 쪽으로 조금씩 옮김
@@ -93,11 +111,62 @@ public class Dodger {
 		}
 	}
 
+	/**
+	 * 점프 키. 땅에서 누르면 2칸 점프.
+	 * 점프한 뒤 DOUBLE_TAP_MS 안에 한 번 더 누르면 (남은 횟수가 있을 때) 뛰어오른 자리에서 3칸까지 올라간다.
+	 */
 	public void jump() {
-		if (!crushed && isOnGround()) {
+		if (crushed)
+			return;
+		if (isOnGround()) {
 			jumpLeft = JUMP_HEIGHT;
+			takeoffY = y;
+			sinceJumpMs = 0;
 			events.onJump();
+		} else if (canUpgradeJump()) {
+			jumpLeft = takeoffY + SUPER_JUMP_HEIGHT - y;
+			--superJumps;
+			sinceJumpMs = -1; // 한 번 점프에 한 번만
+			events.onSuperJump();
 		}
+	}
+
+	private boolean canUpgradeJump() {
+		return sinceJumpMs >= 0 && sinceJumpMs <= DOUBLE_TAP_MS && superJumps > 0
+				&& takeoffY + SUPER_JUMP_HEIGHT > y && !world.isBlocked(x, y + 1);
+	}
+
+	/**
+	 * 시간이 흐른 만큼 두 번 누르기 시간을 재고, 3칸 점프를 충전한다.
+	 * 가득 차 있으면 충전 시간을 쌓지 않는다.
+	 */
+	public void updateTimers(int elapsedMs) {
+		if (sinceJumpMs >= 0) {
+			sinceJumpMs += elapsedMs;
+			if (sinceJumpMs > DOUBLE_TAP_MS)
+				sinceJumpMs = -1;
+		}
+
+		if (superJumps >= MAX_SUPER_JUMPS) {
+			rechargeElapsed = 0;
+			return;
+		}
+		rechargeElapsed += elapsedMs;
+		if (rechargeElapsed >= SUPER_JUMP_RECHARGE_MS) {
+			rechargeElapsed -= SUPER_JUMP_RECHARGE_MS;
+			++superJumps;
+			if (superJumps >= MAX_SUPER_JUMPS)
+				rechargeElapsed = 0;
+		}
+	}
+
+	public int getSuperJumps() {
+		return superJumps;
+	}
+
+	/** 다음 3칸 점프가 충전될 때까지 남은 시간(ms). 가득 차 있으면 0. */
+	public int getSuperJumpRechargeMs() {
+		return superJumps >= MAX_SUPER_JUMPS ? 0 : SUPER_JUMP_RECHARGE_MS - rechargeElapsed;
 	}
 
 	// 점프중이면 올라가고 아니면 떨어짐

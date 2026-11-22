@@ -18,6 +18,12 @@ public interface GameStatus {
 	/** P2 고양이의 현재 높이 (바닥 0) */
 	int getDodgerHeight();
 
+	/** P2 고양이가 지금 쓸 수 있는 3칸 점프 횟수 */
+	int getSuperJumps();
+
+	/** 다음 3칸 점프 충전까지 남은 시간(ms). 가득 차 있으면 0. */
+	int getSuperJumpRechargeMs();
+
 	int getTetrisWins();
 
 	int getDodgerWins();

@@ -5,6 +5,9 @@ import java.util.function.IntSupplier;
 
 import javax.swing.*;
 
+import common.KeyAction;
+import common.KeySettings;
+
 /**
  * 오른쪽 정보판 (남은 시간, 다음 블록, 점수판).
  * 게임 내부는 모르고 읽기 전용 GameStatus만 받는다.
@@ -19,9 +22,10 @@ public class InfoPanel extends JPanel {
 	private static final int CARD_GAP = 18;
 	private static final int CARD_RADIUS = 16;
 	private static final int TIME_CARD_H = 140;
-	private static final int NEXT_CARD_H = 190;
+	private static final int JUMP_CARD_H = 84;
+	private static final int NEXT_CARD_H = 160;
 	private static final int SCORE_CARD_H = 300;
-	private static final int PREVIEW_CELL = 32;
+	private static final int PREVIEW_CELL = 24;
 	/** 남은 시간이 이 초 이하면 빨간색으로 재촉한다 */
 	private static final int HURRY_SECONDS = 10;
 
@@ -52,6 +56,8 @@ public class InfoPanel extends JPanel {
 
 		drawTimeCard(g2, x, y, w);
 		y += TIME_CARD_H + CARD_GAP;
+		drawSuperJumpCard(g2, x, y, w);
+		y += JUMP_CARD_H + CARD_GAP;
 		drawNextCard(g2, x, y, w);
 		y += NEXT_CARD_H + CARD_GAP;
 		drawScoreCard(g2, x, y, w);
@@ -81,6 +87,41 @@ public class InfoPanel extends JPanel {
 
 		drawBar(g, x + PADDING, y + 108, w - PADDING * 2, 12, remainingMs, GameRules.TIME_LIMIT_MS,
 				hurry ? Theme.WARNING : Theme.DODGER);
+	}
+
+	// 3칸 점프: 남은 횟수 칸 + 다음 충전까지 남은 시간
+	private void drawSuperJumpCard(Graphics2D g, int x, int y, int w) {
+		drawCard(g, x, y, w, JUMP_CARD_H,
+				"3칸 점프 (" + KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 두 번)");
+
+		int charges = status.getSuperJumps();
+		int pip = 18;
+		int pipGap = 8;
+		int pipY = y + 46;
+		for (int i = 0; i < Dodger.MAX_SUPER_JUMPS; i++) {
+			int pipX = x + PADDING + i * (pip + pipGap);
+			g.setColor(i < charges ? Theme.DODGER : Theme.BOARD);
+			g.fillRoundRect(pipX, pipY, pip, pip, 6, 6);
+		}
+
+		String text;
+		int rechargeMs = status.getSuperJumpRechargeMs();
+		if (rechargeMs <= 0)
+			text = "가득 참";
+		else
+			text = "충전까지 " + (rechargeMs + 999) / 1000 + "초";
+		g.setFont(Theme.font(Font.PLAIN, 13f));
+		g.setColor(Theme.SUBTEXT);
+		FontMetrics fm = g.getFontMetrics();
+		g.drawString(text, x + w - PADDING - fm.stringWidth(text), pipY + 14);
+
+		if (rechargeMs > 0) {
+			int barX = x + PADDING + Dodger.MAX_SUPER_JUMPS * (pip + pipGap) + 4;
+			int barW = x + w - PADDING - fm.stringWidth(text) - 10 - barX;
+			if (barW > 10)
+				drawBar(g, barX, pipY + 5, barW, 8, Dodger.SUPER_JUMP_RECHARGE_MS - rechargeMs,
+						Dodger.SUPER_JUMP_RECHARGE_MS, Theme.DODGER);
+		}
 	}
 
 	private void drawNextCard(Graphics2D g, int x, int y, int w) {

@@ -58,6 +58,69 @@ public final class DodgeOutcomeCheck {
         // 조건이 겹치면 압사가 먼저
         game.start(); dodger.y = GameRules.GOAL_ROW; dodger.crushed = true;
         check(game.checkResult() == GameRules.Result.CRUSHED, "Crush has priority");
+
+        checkSuperJump();
+    }
+
+    // 고양이를 땅에 내려놓는다 (점프가 끝날 때까지 물리를 돌림)
+    static void land(Dodger d) {
+        while (d.jumpLeft > 0 || !d.isOnGround()) d.physicsStep();
+    }
+
+    // 점프 키를 누르고, ms 뒤(그 사이 물리 한 번) 한 번 더 누른다
+    static void doubleTap(Dodger d, int ms) {
+        d.jump(); d.physicsStep(); d.updateTimers(ms); d.jump();
+    }
+
+    // 3칸 점프: 점프 키 두 번, 최대 3회, 20초마다 1회 충전, 가득 차면 충전 시간 안 쌓임
+    static void checkSuperJump() {
+        Dodger d = new Dodger(new GameBoard(), GameEvents.NONE);
+        d.reset();
+        check(d.getSuperJumps() == Dodger.MAX_SUPER_JUMPS && d.getSuperJumpRechargeMs() == 0, "Starts full");
+        d.updateTimers(60_000);
+        check(d.getSuperJumps() == 3 && d.getSuperJumpRechargeMs() == 0, "Full charge kept time");
+
+        // 한 번만 누르면 보통 2칸 점프, 횟수는 그대로
+        d.jump(); land(d);
+        check(d.getSuperJumps() == 3, "Single tap used a charge");
+        d.jump(); int top = 0;
+        while (d.jumpLeft > 0 || !d.isOnGround()) { d.physicsStep(); top = Math.max(top, d.y); }
+        check(top == Dodger.JUMP_HEIGHT, "Normal jump height");
+
+        // 빨리 두 번 누르면 출발점에서 3칸
+        doubleTap(d, 100); top = 0;
+        while (d.jumpLeft > 0 || !d.isOnGround()) { d.physicsStep(); top = Math.max(top, d.y); }
+        check(top == Dodger.SUPER_JUMP_HEIGHT && d.getSuperJumps() == 2, "Double tap super jump height");
+
+        // 공중에서 세 번째로 눌러도 더 안 올라가고 횟수도 안 씀
+        doubleTap(d, 100); d.jump();
+        check(d.getSuperJumps() == 1, "Third tap used another charge");
+        land(d);
+
+        // 늦게 누르면 3칸 점프 안 됨
+        doubleTap(d, Dodger.DOUBLE_TAP_MS + 1);
+        check(d.getSuperJumps() == 1, "Slow second tap counted");
+        land(d);
+
+        doubleTap(d, 100); land(d);
+        check(d.getSuperJumps() == 0, "Used all charges");
+        doubleTap(d, 100); top = 0;
+        while (d.jumpLeft > 0 || !d.isOnGround()) { d.physicsStep(); top = Math.max(top, d.y); }
+        check(top == Dodger.JUMP_HEIGHT, "Super jump with no charges");
+
+        // 위에서 두 번 누르기 시간을 재느라 충전 시간도 조금 흘렀으니 남은 시간 기준으로 본다
+        d.updateTimers(d.getSuperJumpRechargeMs() - 20);
+        check(d.getSuperJumps() == 0 && d.getSuperJumpRechargeMs() == 20, "Recharged early");
+        d.updateTimers(20);
+        check(d.getSuperJumps() == 1, "Recharge after 20s");
+        d.updateTimers(Dodger.SUPER_JUMP_RECHARGE_MS * 2);
+        check(d.getSuperJumps() == 2, "Recharge one step at a time");
+        d.updateTimers(Dodger.SUPER_JUMP_RECHARGE_MS);
+        d.updateTimers(Dodger.SUPER_JUMP_RECHARGE_MS);
+        check(d.getSuperJumps() == Dodger.MAX_SUPER_JUMPS, "Charges above max");
+
+        d.jump(); d.crushed = true; d.jump();
+        check(d.getSuperJumps() == Dodger.MAX_SUPER_JUMPS, "Crushed cat super jumped");
     }
 
     // 화면: 시작하면 돌고, 승부가 나면 멈추고, R 재시작은 게임 중·일시정지·승부 뒤 언제나

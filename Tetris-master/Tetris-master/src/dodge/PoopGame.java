@@ -62,6 +62,7 @@ public class PoopGame implements GameStatus {
 			dodgerElapsed = 0;
 			dodger.physicsStep();
 		}
+		dodger.updateTimers(elapsedMs);
 		dodger.updateDraw(elapsedMs);
 	}
 
@@ -120,6 +121,16 @@ public class PoopGame implements GameStatus {
 	@Override
 	public int getDodgerHeight() {
 		return dodger.getY();
+	}
+
+	@Override
+	public int getSuperJumps() {
+		return dodger.getSuperJumps();
+	}
+
+	@Override
+	public int getSuperJumpRechargeMs() {
+		return dodger.getSuperJumpRechargeMs();
 	}
 
 	@Override

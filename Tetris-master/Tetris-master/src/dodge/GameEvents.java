@@ -31,6 +31,11 @@ public interface GameEvents {
 	default void onJump() {
 	}
 
+	/** P2 고양이가 3칸 점프를 씀 (따로 정하지 않으면 보통 점프와 같게 처리) */
+	default void onSuperJump() {
+		onJump();
+	}
+
 	/** P2 고양이가 블록에 깔림 */
 	default void onCrushed() {
 	}

@@ -61,7 +61,7 @@ public class GamePanel extends JPanel implements ActionListener {
 				.repeatingAction(KeyAction.DODGE_BLOCK_DOWN, BLOCK_REPEAT_MS, tetris::oneLineDown)
 				.repeatingAction(KeyAction.DODGE_CAT_LEFT, CAT_REPEAT_MS, dodger::moveLeft)
 				.repeatingAction(KeyAction.DODGE_CAT_RIGHT, CAT_REPEAT_MS, dodger::moveRight)
-				.action(KeyAction.DODGE_CAT_JUMP, dodger::jump);
+				.action(KeyAction.DODGE_CAT_JUMP, dodger::jump); // 빠르게 두 번 누르면 3칸 점프
 		addKeyListener(input);
 
 		// 포커스 잃으면 키 다 뗀걸로
