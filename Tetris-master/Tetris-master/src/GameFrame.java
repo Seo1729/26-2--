@@ -122,7 +122,7 @@ public class GameFrame extends JFrame
 		SoundManager.startBgm(Bgm.GAME);
 
 		setLayout(new BorderLayout());
-		setTitle("Tetris - 사람 vs AI");
+		setTitle("Tetris - 컴퓨터와 대전");
 
 		// 창 크기 (화면보다 크면 줄임)
 		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();

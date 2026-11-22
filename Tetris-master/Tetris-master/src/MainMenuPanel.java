@@ -90,7 +90,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn7.addActionListener(this);
 		add(btn7);
 
-		btn8 = new JButton("사람 vs AI");
+		btn8 = new JButton("컴퓨터와 대전");
 		btn8.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn8.setBackground(Color.WHITE);
 		btn8.setFocusPainted(false);
@@ -186,7 +186,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
 		}
-		else if (cmd.equals("사람 vs AI"))
+		else if (cmd.equals("컴퓨터와 대전"))
 		{
 			frame.startVsAi();
 		}
