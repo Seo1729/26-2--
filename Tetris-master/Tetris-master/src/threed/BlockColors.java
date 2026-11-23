@@ -1,3 +1,5 @@
+package threed;
+
 import java.awt.Color;
 
 /** Shared display palette for the main view and both previews. */

@@ -1,3 +1,5 @@
+package threed;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -7,7 +9,9 @@ public final class Game3DScene
 {
     public static final class Cell
     {
-        public final int x, y, z;
+        public final int x;
+        public final int y;
+        public final int z;
         public final Block3D.Type type;
         public final boolean active;
 

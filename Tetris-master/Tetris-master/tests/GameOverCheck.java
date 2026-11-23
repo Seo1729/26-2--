@@ -3,6 +3,7 @@ import java.lang.reflect.Method;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import threed.*;
 
 public class GameOverCheck
 {
@@ -43,7 +44,9 @@ public class GameOverCheck
                     check(board.getType(1, 1, 13) == Block3D.Type.O && game.getLockedBlockCount() == 0,
                             "Game over changed fixed data");
                     Game3DPanel panel = new Game3DPanel(game);
-                    for (String key : new String[] { "W", "A", "S", "D", "J", "K", "L", "Space" })
+                    // 키 동작 이름은 키 설정 기능 이후 KeyAction 이름을 쓴다 (W A S D J K L Space 순서)
+                    for (String key : new String[] { "TETRIS3D_UP", "TETRIS3D_LEFT", "TETRIS3D_DOWN", "TETRIS3D_RIGHT",
+                            "TETRIS3D_ROTATE_X", "TETRIS3D_ROTATE_Y", "TETRIS3D_ROTATE_Z", "TETRIS3D_DROP" })
                         panel.getActionMap().get("press" + key).actionPerformed(new ActionEvent(panel, 0, key));
                     check(game.getState() == Game3D.State.GAME_OVER && game.getLockedBlockCount() == 0,
                             "Key actions changed game-over state");
@@ -54,16 +57,16 @@ public class GameOverCheck
                     game.start();
                     check(game.getState() == Game3D.State.GAME_OVER, "Must explicitly restart");
                     board.lockBlock(new Block3D(Block3D.Type.O, 1, 1, 4));
-                    check("pressR".equals(panel.getInputMap(javax.swing.JPanel.WHEN_IN_FOCUSED_WINDOW)
+                    check("pressTETRIS3D_RESTART".equals(panel.getInputMap(javax.swing.JPanel.WHEN_IN_FOCUSED_WINDOW)
                             .get(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, 0, false))),
                             "R key missing");
-                    panel.getActionMap().get("pressR").actionPerformed(new ActionEvent(panel, 0, "R"));
+                    panel.getActionMap().get("pressTETRIS3D_RESTART").actionPerformed(new ActionEvent(panel, 0, "R"));
                     empty(board);
                     check(game.getState() == Game3D.State.RUNNING && timer.isRunning()
                             && game.getLockedBlockCount() == 0 && board.canPlace(game.getActiveBlock()), "Restart failed");
                     int z = game.getActiveBlock().getZ();
                     tick.invoke(game);
-                    panel.getActionMap().get("pressR").actionPerformed(new ActionEvent(panel, 0, "R"));
+                    panel.getActionMap().get("pressTETRIS3D_RESTART").actionPerformed(new ActionEvent(panel, 0, "R"));
                     check(game.getActiveBlock().getZ() == z - 1, "R restarted a running game");
                     z--;
                     game.stop();

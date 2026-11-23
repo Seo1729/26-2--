@@ -1,5 +1,6 @@
 import java.lang.reflect.Method;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 /** 실행: java -Djava.awt.headless=true -cp <컴파일 경로> BlockLockCheck */
 public class BlockLockCheck

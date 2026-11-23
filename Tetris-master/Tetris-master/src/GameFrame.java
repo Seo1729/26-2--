@@ -15,6 +15,8 @@ import javax.swing.border.AbstractBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.event.*;
 
+import threed.Game3DFrame;
+
 public class GameFrame extends JFrame
 {
 	GamePanel fgp;
