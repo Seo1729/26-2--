@@ -56,7 +56,7 @@ public final class CharacterGameplayCheck {
                 } else manager.applyAndSave(selected);
                 GamePanel game = new GamePanel(manager);
                 game.setSize(320, 704);
-                Dodger d = game.dodger;
+                Dodger d = game.getDodger();
                 d.reset(); d.x = 3; d.drawX = 2.5;
                 // Half-cell position verifies accessories follow smooth movement.
                 for (int state = 0; state < 5; state++) {
@@ -84,7 +84,7 @@ public final class CharacterGameplayCheck {
                 g.dispose();
                 check(game.dodgerSprite.pickImage(0, 0).getRGB(0, 0) == Color.RED.getRGB(),
                     "Preview changed live skin cache");
-                game.result = 1; game.restart(); game.timer.stop();
+                game.getDodger().crush(); game.logic().checkResult(); game.restart(); game.timer.stop();
                 check(manager.getAppearance() == selected && !d.crushed && d.x == 0 && d.y == 0,
                     "Restart lost appearance or failed gameplay reset");
                 pixel(render(game), 6, 682, Color.BLACK, "Restart did not render selected hat");

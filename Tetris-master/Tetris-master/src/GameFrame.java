@@ -122,7 +122,7 @@ public class GameFrame extends JFrame
 		SoundManager.startBgm(Bgm.GAME);
 
 		setLayout(new BorderLayout());
-		setTitle("Tetris - 사람 vs AI");
+		setTitle("Tetris - 컴퓨터와 대전");
 
 		// 창 크기 (화면보다 크면 줄임)
 		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
@@ -354,7 +354,11 @@ class GamePanel extends JPanel implements Runnable
 		gameSpeed = levelManager.getSpeed();
 
 		makeComponent(0);
-		hp = new HpSystem(this);
+		hp = HpSystem.forMode(GameFrame.gameMode);
+		HpView hpView = new HpView(hp);
+		hpView.setBorder(WhiteLineBorder);
+		hpView.setBounds(255, 280, 90, 30); // 시간 칸 아래
+		add(hpView);
 		makeTetrisArea(0);
 		makeBackground();
 
@@ -606,6 +610,17 @@ class GamePanel extends JPanel implements Runnable
 		spawnBlock(b, false);
 	}
 
+	// 방금 나온 블록이 쌓인 블록과 겹친 칸 수 (0보다 크면 나올 자리가 막힌 것)
+	private int countSpawnOverlap()
+	{
+		int count = 0;
+		for (int row = y; row < y + blockHSize; row++)
+			for (int col = x; col < x + blockWSize; col++)
+				if (array[row][col] > 0 && field[row][col] > 0)
+					count++;
+		return count;
+	}
+
 	private void spawnBlock(Blocks b, boolean startFallThread)
 	{
 		int[][] block;
@@ -636,22 +651,10 @@ class GamePanel extends JPanel implements Runnable
 				if (block[h][w] > 0)
 					array[row][col] = block[h][w];
 
-		int count = 0;
-		for (int row = y; row < y + blockHSize; row++)
-			for (int col = x; col < x + blockWSize; col++)
-				if (array[row][col] > 0 && field[row][col] > 0)
-					count++;
-		// HP가 남아 있으면 HP를 1 줄이고 맨 밑 줄들을 지운 뒤 계속한다 (HpSystem.java)
-		while (count > 0 && hp.hitTop())
-		{
-			for (int i = 0; i < HpSystem.CLEAR_LINES; i++)
-				lineDelete(field.length - 2);
-			count = 0;
-			for (int row = y; row < y + blockHSize; row++)
-				for (int col = x; col < x + blockWSize; col++)
-					if (array[row][col] > 0 && field[row][col] > 0)
-						count++;
-		}
+		int count = countSpawnOverlap();
+		// HP가 남아 있으면 HP를 1 줄이고 맨 밑 줄들을 지운 뒤 다시 확인한다 (HpSystem.java)
+		while (count > 0 && hp.tryRevive(() -> lineDelete(field.length - 2)))
+			count = countSpawnOverlap();
 		if (count > 0)
 		{
 			// 새 블록이 나올 자리가 막혔으니 배경음악을 멈추고 게임오버 소리를 낸다

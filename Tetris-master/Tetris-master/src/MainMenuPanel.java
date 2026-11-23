@@ -90,7 +90,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 		btn7.addActionListener(this);
 		add(btn7);
 
-		btn8 = new JButton("사람 vs AI");
+		btn8 = new JButton("컴퓨터와 대전");
 		btn8.setFont(new Font("Dialog", Font.BOLD, 16));
 		btn8.setBackground(Color.WHITE);
 		btn8.setFocusPainted(false);
@@ -171,9 +171,10 @@ public class MainMenuPanel extends JPanel implements ActionListener
 					+ KeySettings.getKeyName(KeyAction.DODGE_BLOCK_DOWN) + " 내리기\n";
 			msg = msg + "P2 피하는 사람 : " + KeySettings.getKeyName(KeyAction.DODGE_CAT_LEFT) + " / "
 					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_RIGHT) + " 이동, "
-					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 점프\n";
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 점프, "
+					+ KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 두 번 3칸 점프(최대 3회, 20초마다 1회 충전)\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.DODGE_PAUSE) + " : 일시정지   "
-					+ KeySettings.getKeyName(KeyAction.DODGE_RESTART) + " : 끝난 뒤 다시 시작\n\n";
+					+ KeySettings.getKeyName(KeyAction.DODGE_RESTART) + " : 다시 시작\n\n";
 			msg = msg + "[3D 테트리스]\n";
 			msg = msg + KeySettings.getKeyName(KeyAction.TETRIS3D_UP) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_LEFT) + " / "
 					+ KeySettings.getKeyName(KeyAction.TETRIS3D_DOWN) + " / " + KeySettings.getKeyName(KeyAction.TETRIS3D_RIGHT)
@@ -185,7 +186,7 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			msg = msg + "마우스 : 시점 조작";
 			JOptionPane.showMessageDialog(this, msg, "조작법", JOptionPane.INFORMATION_MESSAGE);
 		}
-		else if (cmd.equals("사람 vs AI"))
+		else if (cmd.equals("컴퓨터와 대전"))
 		{
 			frame.startVsAi();
 		}

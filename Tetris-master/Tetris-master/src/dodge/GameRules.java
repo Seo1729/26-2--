@@ -1,7 +1,7 @@
 package dodge;
 
 /**
- * 승패 판정. 값은 임시(밸런스 조정 단계에서 바꿀 예정).
+ * 승패 판정과 전적. 제한시간, 목표 줄 수, 골 높이는 여기 한곳에만 둔다.
  */
 public class GameRules {
 
@@ -33,18 +33,29 @@ public class GameRules {
 			return message;
 		}
 
+		public String getTitle() {
+			return isTetrisWin() ? "테트리스 승리!" : "똥피하기 승리!";
+		}
+
 		public boolean isTetrisWin() {
 			return this == CRUSHED || this == LINES;
 		}
+
+		public boolean isDecided() {
+			return this != NONE;
+		}
 	}
 
-	/** 현재 상태로 승패를 판정한다. 아직 안 끝났으면 NONE. */
+	private int tetrisWins = 0;
+	private int dodgerWins = 0;
+
+	/** 현재 상태로 승패를 판정한다. 아직 안 끝났으면 NONE. 위에 있는 조건이 먼저다. */
 	public static Result judge(TetrisPlayer tetris, Dodger dodger, int elapsedMs) {
-		if (dodger.crushed)
+		if (dodger.isCrushed())
 			return Result.CRUSHED;
 		if (tetris.getLinesRemoved() >= TARGET_LINES)
 			return Result.LINES;
-		if (dodger.y >= GOAL_ROW)
+		if (dodger.getY() >= GOAL_ROW)
 			return Result.REACHED_TOP;
 		if (tetris.isGameOver())
 			return Result.STACK_FULL;
@@ -53,7 +64,29 @@ public class GameRules {
 		return Result.NONE;
 	}
 
+	/** 끝난 판 결과를 전적에 더한다 */
+	public void record(Result result) {
+		if (!result.isDecided())
+			return;
+		if (result.isTetrisWin())
+			++tetrisWins;
+		else
+			++dodgerWins;
+	}
+
+	public int getTetrisWins() {
+		return tetrisWins;
+	}
+
+	public int getDodgerWins() {
+		return dodgerWins;
+	}
+
+	public static int remainingMs(int elapsedMs) {
+		return Math.max(0, TIME_LIMIT_MS - elapsedMs);
+	}
+
 	public static int remainingSeconds(int elapsedMs) {
-		return Math.max(0, (TIME_LIMIT_MS - elapsedMs + 999) / 1000);
+		return (remainingMs(elapsedMs) + 999) / 1000;
 	}
 }

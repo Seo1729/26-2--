@@ -79,7 +79,7 @@ public final class CharacterManagerCheck {
         SwingUtilities.invokeAndWait(() -> {
             CharacterManager model = new CharacterManager(directory.resolve("render.properties"), fixtures);
             GamePanel game = new GamePanel(model);
-            Dodger d = game.dodger;
+            Dodger d = game.getDodger();
             d.reset();
             DodgerSprite sprite = game.dodgerSprite;
             BufferedImage original = draw(sprite, d);
@@ -111,7 +111,7 @@ public final class CharacterManagerCheck {
             check(d.x == 0, "Left boundary changed");
             d.moveRight();
             check(d.x == 1, "Movement distance changed");
-            game.cells[2] = 1;
+            game.logic().getBoard().set(2, 0, 1);
             d.moveRight();
             check(d.x == 1, "Fixed block collision changed");
             d.jump();
@@ -121,14 +121,10 @@ public final class CharacterManagerCheck {
             d.physicsStep();
             check(d.y == 1, "Gravity changed");
             d.reset();
-            game.curPiece.setShape(5);
-            game.curX = 0;
-            game.curY = 2;
-            game.oneLineDown();
+            game.logic().getTetris().spawn(Shape.SQUARE, 0, 2);
+            game.logic().getTetris().oneLineDown();
             check(d.crushed, "Falling block crush changed");
-            game.isStarted = true;
-            game.refresh();
-            check(game.result == 1 && game.tetrisWins == 1, "Crush winner changed");
+            check(game.logic().checkResult() == GameRules.Result.CRUSHED && game.getStatus().getTetrisWins() == 1, "Crush winner changed");
             game.stop();
         });
         System.out.println("Character catalog, persistence, rendering and physics checks passed.");

@@ -1,204 +1,231 @@
 package dodge;
 
 import java.awt.*;
+import java.util.function.IntSupplier;
 
 import javax.swing.*;
 
-// 오른쪽 정보판 (남은시간, 다음블록, 점수판)
+import common.KeyAction;
+import common.KeySettings;
+
+/**
+ * 오른쪽 정보판 (남은 시간, 다음 블록, 점수판).
+ * 게임 내부는 모르고 읽기 전용 GameStatus만 받는다.
+ */
 public class InfoPanel extends JPanel {
 
-	GamePanel game;
+	/** 정보판 폭. DodgeMode가 왼쪽 빈칸도 같은 폭으로 둬서 보드를 가운데 맞춘다. */
+	public static final int WIDTH = 280;
 
-	static Color[] colors = { new Color(0, 0, 0), new Color(204, 102, 102), new Color(102, 204, 102),
-			new Color(102, 102, 204), new Color(204, 204, 102), new Color(204, 102, 204), new Color(102, 204, 204),
-			new Color(218, 170, 0) };
+	private static final int MARGIN = 12;
+	private static final int PADDING = 18;
+	private static final int CARD_GAP = 18;
+	private static final int CARD_RADIUS = 16;
+	private static final int TIME_CARD_H = 140;
+	private static final int JUMP_CARD_H = 84;
+	private static final int NEXT_CARD_H = 160;
+	private static final int SCORE_CARD_H = 300;
+	private static final int PREVIEW_CELL = 24;
+	/** 남은 시간이 이 초 이하면 빨간색으로 재촉한다 */
+	private static final int HURRY_SECONDS = 10;
 
-	public InfoPanel(GamePanel game) {
-		this.game = game;
-		setPreferredSize(new Dimension(280, 0));
-		setBackground(new Color(32, 34, 44));
+	private final GameStatus status;
+	private final IntSupplier boardTop;
+
+	/**
+	 * @param status   보여 줄 게임 상태
+	 * @param boardTop 게임 보드 위쪽 y (카드 높이를 보드에 맞추려고)
+	 */
+	public InfoPanel(GameStatus status, IntSupplier boardTop) {
+		this.status = status;
+		this.boardTop = boardTop;
+		setPreferredSize(new Dimension(WIDTH, 0));
+		setBackground(Theme.BACKGROUND);
 	}
 
+	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-		int x = 24 / 2;
-		int w = getWidth() - 24;
-		int y = game.getBoardTop(); // 보드 위쪽이랑 맞춤
+		int x = MARGIN;
+		int w = getWidth() - MARGIN * 2;
+		int y = boardTop.getAsInt();
 
-		// ---- 남은 시간 ----
-		g2.setColor(new Color(48, 51, 66));
-		g2.fillRoundRect(x, y, w, 140, 16, 16);
-		g2.setColor(new Color(160, 164, 185));
-		g2.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(15f));
-		g2.drawString("남은 시간", x + 18, y + 30);
+		drawTimeCard(g2, x, y, w);
+		y += TIME_CARD_H + CARD_GAP;
+		drawSuperJumpCard(g2, x, y, w);
+		y += JUMP_CARD_H + CARD_GAP;
+		drawNextCard(g2, x, y, w);
+		y += NEXT_CARD_H + CARD_GAP;
+		drawScoreCard(g2, x, y, w);
+	}
 
-		int remainingMs = Math.max(0, 120000 - game.playElapsed);
-		int seconds = Math.max(0, (120000 - game.playElapsed + 999) / 1000);
-		boolean hurry = false;
-		if (seconds <= 10)
-			hurry = true;
-		Color color;
-		if (hurry)
-			color = new Color(255, 90, 90);
-		else
-			color = new Color(235, 236, 242);
+	// 카드 배경과 제목
+	private void drawCard(Graphics2D g, int x, int y, int w, int h, String title) {
+		g.setColor(Theme.CARD);
+		g.fillRoundRect(x, y, w, h, CARD_RADIUS, CARD_RADIUS);
+		g.setColor(Theme.SUBTEXT);
+		g.setFont(Theme.font(Font.BOLD, 15f));
+		g.drawString(title, x + PADDING, y + 30);
+	}
+
+	private void drawTimeCard(Graphics2D g, int x, int y, int w) {
+		drawCard(g, x, y, w, TIME_CARD_H, "남은 시간");
+
+		int elapsed = status.getElapsedMs();
+		int remainingMs = GameRules.remainingMs(elapsed);
+		int seconds = GameRules.remainingSeconds(elapsed);
+		boolean hurry = seconds <= HURRY_SECONDS;
 
 		String text = String.format("%d:%02d", seconds / 60, seconds % 60);
-		g2.setColor(color);
-		g2.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(46f));
-		g2.drawString(text, x + 18, y + 88);
+		g.setColor(hurry ? Theme.WARNING : Theme.TEXT);
+		g.setFont(Theme.font(Font.BOLD, 46f));
+		g.drawString(text, x + PADDING, y + 88);
 
-		int barX = x + 18;
-		int barY = y + 108;
-		int barW = w - 36;
-		int barH = 12;
-		g2.setColor(new Color(18, 19, 26));
-		g2.fillRoundRect(barX, barY, barW, barH, barH, barH);
-		int fill = (int) ((long) barW * remainingMs / 120000);
-		if (hurry)
-			g2.setColor(new Color(255, 90, 90));
-		else
-			g2.setColor(new Color(255, 170, 60));
-		if (fill > 0)
-			g2.fillRoundRect(barX, barY, fill, barH, barH, barH);
+		drawBar(g, x + PADDING, y + 108, w - PADDING * 2, 12, remainingMs, GameRules.TIME_LIMIT_MS,
+				hurry ? Theme.WARNING : Theme.DODGER);
+	}
 
-		y = y + 140 + 18;
+	// 3칸 점프: 남은 횟수 칸 + 다음 충전까지 남은 시간
+	private void drawSuperJumpCard(Graphics2D g, int x, int y, int w) {
+		drawCard(g, x, y, w, JUMP_CARD_H,
+				"3칸 점프 (" + KeySettings.getKeyName(KeyAction.DODGE_CAT_JUMP) + " 두 번)");
 
-		// ---- 다음 블록 ----
-		g2.setColor(new Color(48, 51, 66));
-		g2.fillRoundRect(x, y, w, 190, 16, 16);
-		g2.setColor(new Color(160, 164, 185));
-		g2.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(15f));
-		g2.drawString("다음 블록", x + 18, y + 30);
-
-		Shape next = game.nextPiece;
-		if (next.getShape() != 0) {
-			int minX = next.x(0), maxX = next.x(0), minY = next.y(0), maxY = next.y(0);
-			for (int i = 1; i < 4; ++i) {
-				minX = Math.min(minX, next.x(i));
-				maxX = Math.max(maxX, next.x(i));
-				minY = Math.min(minY, next.y(i));
-				maxY = Math.max(maxY, next.y(i));
-			}
-			int pieceW = (maxX - minX + 1) * 32;
-			int pieceH = (maxY - minY + 1) * 32;
-			int areaTop = y + 44;
-			int areaH = 190 - 44 - 14;
-			int left = x + (w - pieceW) / 2;
-			int top = areaTop + (areaH - pieceH) / 2;
-			for (int i = 0; i < 4; ++i) {
-				drawSquare(g2, left + (next.x(i) - minX) * 32, top + (next.y(i) - minY) * 32, 32, 32,
-						next.getShape());
-			}
+		int charges = status.getSuperJumps();
+		int pip = 18;
+		int pipGap = 8;
+		int pipY = y + 46;
+		for (int i = 0; i < Dodger.MAX_SUPER_JUMPS; i++) {
+			int pipX = x + PADDING + i * (pip + pipGap);
+			g.setColor(i < charges ? Theme.DODGER : Theme.BOARD);
+			g.fillRoundRect(pipX, pipY, pip, pip, 6, 6);
 		}
 
-		y = y + 190 + 18;
+		String text;
+		int rechargeMs = status.getSuperJumpRechargeMs();
+		if (rechargeMs <= 0)
+			text = "가득 참";
+		else
+			text = "충전까지 " + (rechargeMs + 999) / 1000 + "초";
+		g.setFont(Theme.font(Font.PLAIN, 13f));
+		g.setColor(Theme.SUBTEXT);
+		FontMetrics fm = g.getFontMetrics();
+		g.drawString(text, x + w - PADDING - fm.stringWidth(text), pipY + 14);
 
-		// ---- 점수판 ----
-		g2.setColor(new Color(48, 51, 66));
-		g2.fillRoundRect(x, y, w, 300, 16, 16);
-		g2.setColor(new Color(160, 164, 185));
-		g2.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(15f));
-		g2.drawString("점수판", x + 18, y + 30);
+		if (rechargeMs > 0) {
+			int barX = x + PADDING + Dodger.MAX_SUPER_JUMPS * (pip + pipGap) + 4;
+			int barW = x + w - PADDING - fm.stringWidth(text) - 10 - barX;
+			if (barW > 10)
+				drawBar(g, barX, pipY + 5, barW, 8, Dodger.SUPER_JUMP_RECHARGE_MS - rechargeMs,
+						Dodger.SUPER_JUMP_RECHARGE_MS, Theme.DODGER);
+		}
+	}
 
-		int left = x + 18;
-		int right = x + w - 18;
+	private void drawNextCard(Graphics2D g, int x, int y, int w) {
+		drawCard(g, x, y, w, NEXT_CARD_H, "다음 블록");
 
-		g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(13f));
-		g2.setColor(new Color(160, 164, 185));
-		g2.drawString("이번 판", left, y + 62);
+		Shape next = status.getNextPiece();
+		if (next.isEmpty())
+			return;
+		int pieceW = (next.maxX() - next.minX() + 1) * PREVIEW_CELL;
+		int pieceH = (next.maxY() - next.minY() + 1) * PREVIEW_CELL;
+		int areaTop = y + 44;
+		int areaH = NEXT_CARD_H - 44 - 14;
+		int left = x + (w - pieceW) / 2;
+		int top = areaTop + (areaH - pieceH) / 2;
+		for (int i = 0; i < Shape.CELLS; ++i) {
+			Theme.drawSquare(g, left + (next.x(i) - next.minX()) * PREVIEW_CELL,
+					top + (next.y(i) - next.minY()) * PREVIEW_CELL, PREVIEW_CELL, PREVIEW_CELL, next.getShape());
+		}
+	}
 
-		int lines = game.numLinesRemoved;
-		drawScoreRow(g2, left, right, y + 94, "P1 테트리스", "지운 줄", lines, 10, new Color(110, 170, 255));
-		int height = game.dodger.y;
-		drawScoreRow(g2, left, right, y + 150, "P2 고양이", "높이", height, 18, new Color(255, 170, 60));
+	private void drawScoreCard(Graphics2D g, int x, int y, int w) {
+		drawCard(g, x, y, w, SCORE_CARD_H, "점수판");
 
-		g2.setColor(new Color(90, 94, 115));
-		g2.drawLine(left, y + 186, right, y + 186);
+		int left = x + PADDING;
+		int right = x + w - PADDING;
 
-		g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(13f));
-		g2.setColor(new Color(160, 164, 185));
-		g2.drawString("전적", left, y + 212);
+		drawLabel(g, "이번 판", left, y + 62);
+		drawScoreRow(g, left, right, y + 94, "P1 테트리스", "지운 줄", status.getLinesRemoved(),
+				GameRules.TARGET_LINES, Theme.TETRIS);
+		drawScoreRow(g, left, right, y + 150, "P2 고양이", "높이", status.getDodgerHeight(), GameRules.GOAL_ROW,
+				Theme.DODGER);
+
+		g.setColor(Theme.BORDER);
+		g.drawLine(left, y + 186, right, y + 186);
+
+		drawLabel(g, "전적", left, y + 212);
 
 		// 전적 "테트리스 n승 : 고양이 m승"
 		int baseline = y + 262;
 		int mid = (left + right) / 2;
-		g2.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(26f));
-		g2.setColor(new Color(235, 236, 242));
-		FontMetrics fm = g2.getFontMetrics();
-		g2.drawString(":", mid - fm.stringWidth(":") / 2, baseline);
-		drawWins(g2, left, mid - 10, baseline, "테트리스", game.tetrisWins, new Color(110, 170, 255));
-		drawWins(g2, mid + 10, right, baseline, "고양이", game.dodgerWins, new Color(255, 170, 60));
+		g.setFont(Theme.font(Font.BOLD, 26f));
+		g.setColor(Theme.TEXT);
+		FontMetrics fm = g.getFontMetrics();
+		g.drawString(":", mid - fm.stringWidth(":") / 2, baseline);
+		drawWins(g, left, mid - 10, baseline, "테트리스", status.getTetrisWins(), Theme.TETRIS);
+		drawWins(g, mid + 10, right, baseline, "고양이", status.getDodgerWins(), Theme.DODGER);
 	}
 
-	void drawScoreRow(Graphics2D g, int left, int right, int baseline, String who, String what, int value,
+	private static void drawLabel(Graphics2D g, String text, int x, int baseline) {
+		g.setFont(Theme.font(Font.PLAIN, 13f));
+		g.setColor(Theme.SUBTEXT);
+		g.drawString(text, x, baseline);
+	}
+
+	// 둥근 진행 막대 (value / max 만큼 채움)
+	private static void drawBar(Graphics2D g, int x, int y, int w, int h, int value, int max, Color color) {
+		g.setColor(Theme.BOARD);
+		g.fillRoundRect(x, y, w, h, h, h);
+		int fill = (int) ((long) w * Math.max(0, Math.min(value, max)) / max);
+		g.setColor(color);
+		if (fill > 0)
+			g.fillRoundRect(x, y, fill, h, h, h);
+	}
+
+	private void drawScoreRow(Graphics2D g, int left, int right, int baseline, String who, String what, int value,
 			int max, Color color) {
-		g.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(15f));
+		g.setFont(Theme.font(Font.BOLD, 15f));
 		g.setColor(color);
 		g.drawString(who, left, baseline);
 		FontMetrics fm = g.getFontMetrics();
-		g.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(12f));
-		g.setColor(new Color(160, 164, 185));
+		g.setFont(Theme.font(Font.PLAIN, 12f));
+		g.setColor(Theme.SUBTEXT);
 		g.drawString(what, left + fm.stringWidth(who) + 8, baseline);
 
 		String text = value + " / " + max;
-		g.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(17f));
-		g.setColor(new Color(235, 236, 242));
+		g.setFont(Theme.font(Font.BOLD, 17f));
+		g.setColor(Theme.TEXT);
 		fm = g.getFontMetrics();
 		g.drawString(text, right - fm.stringWidth(text), baseline);
 
-		int barY = baseline + 10;
-		int barW = right - left;
-		int barH = 8;
-		g.setColor(new Color(18, 19, 26));
-		g.fillRoundRect(left, barY, barW, barH, barH, barH);
-		int fill = (int) ((long) barW * Math.min(value, max) / max);
-		g.setColor(color);
-		if (fill > 0)
-			g.fillRoundRect(left, barY, fill, barH, barH, barH);
+		drawBar(g, left, baseline + 10, right - left, 8, value, max, color);
 	}
 
-	void drawWins(Graphics2D g, int from, int to, int baseline, String who, int wins, Color color) {
-		g.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(13f));
-		FontMetrics small = g.getFontMetrics();
-		g.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(30f));
-		FontMetrics big = g.getFontMetrics();
+	private void drawWins(Graphics2D g, int from, int to, int baseline, String who, int wins, Color color) {
+		Font smallFont = Theme.font(Font.PLAIN, 13f);
+		Font bigFont = Theme.font(Font.BOLD, 30f);
+		FontMetrics small = g.getFontMetrics(smallFont);
+		FontMetrics big = g.getFontMetrics(bigFont);
 		String num = String.valueOf(wins);
 		String label = who + " ";
 		String unit = "승";
 		int total = small.stringWidth(label) + big.stringWidth(num) + small.stringWidth(unit);
 		int x = from + (to - from - total) / 2;
 
-		g.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(13f));
-		g.setColor(new Color(160, 164, 185));
+		g.setFont(smallFont);
+		g.setColor(Theme.SUBTEXT);
 		g.drawString(label, x, baseline);
 		x += small.stringWidth(label);
-		g.setFont(new Font("Malgun Gothic", Font.BOLD, 12).deriveFont(30f));
+		g.setFont(bigFont);
 		g.setColor(color);
 		g.drawString(num, x, baseline);
 		x += big.stringWidth(num);
-		g.setFont(new Font("Malgun Gothic", Font.PLAIN, 12).deriveFont(13f));
-		g.setColor(new Color(160, 164, 185));
+		g.setFont(smallFont);
+		g.setColor(Theme.SUBTEXT);
 		g.drawString(unit, x, baseline);
-	}
-
-	// GamePanel꺼 복사
-	static void drawSquare(Graphics g, int x, int y, int w, int h, int shape) {
-		Color color = colors[shape];
-
-		g.setColor(color);
-		g.fillRect(x + 1, y + 1, w - 2, h - 2);
-
-		g.setColor(color.brighter());
-		g.drawLine(x, y + h - 1, x, y);
-		g.drawLine(x, y, x + w - 1, y);
-
-		g.setColor(color.darker());
-		g.drawLine(x + 1, y + h - 1, x + w - 1, y + h - 1);
-		g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + 1);
 	}
 }

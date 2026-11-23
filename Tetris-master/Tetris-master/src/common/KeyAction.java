@@ -64,11 +64,10 @@ public enum KeyAction
 
 	/** 똥피하기: 고양이 점프 */
 	DODGE_CAT_JUMP("똥피하기", "똥피하기", "고양이 점프", KeyEvent.VK_UP),
-
 	/** 똥피하기: 일시정지 */
 	DODGE_PAUSE("똥피하기", "똥피하기", "일시정지", KeyEvent.VK_P),
 
-	/** 똥피하기: 끝난 뒤 다시 시작 */
+	/** 똥피하기: 다시 시작 (게임 중이나 끝난 뒤) */
 	DODGE_RESTART("똥피하기", "똥피하기", "다시 시작", KeyEvent.VK_R),
 
 	/** 3D 테트리스: 위쪽으로 이동 */

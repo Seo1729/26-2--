@@ -3,43 +3,68 @@ package vsai;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Map;
 import java.util.Random;
 
 import javax.swing.BorderFactory;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
+import vsai.cpu.CpuController;
+import vsai.cpu.HeuristicBrain;
+import vsai.game.PlayerBoard;
+import vsai.game.PlayerBoard.PieceSequence;
+import vsai.view.BoardView;
+
 /**
- * 사람 vs AI 테트리스 화면 하나. 왼쪽은 플레이어, 오른쪽은 AI.
+ * 컴퓨터와 대전하는 테트리스 화면 하나. 왼쪽은 플레이어, 오른쪽은 CPU.
  * 두 판에 같은 순서의 블록이 나오고, 먼저 꼭대기까지 쌓인 쪽이 진다.
- * JPanel이라 단독 창(VsAiMain)에도, 나중에 메인 메뉴에도 그대로 붙일 수 있다.
+ * JPanel이라 메인 메뉴(GameFrame)에 붙고, main()으로 단독 실행도 된다.
  *
  * 조작: ←/→ 이동, ↑ 회전, ↓ 한 칸 내리기, Space 바로 떨어뜨리기, P 일시정지, R 다시 시작(끝난 뒤)
+ * 모든 동작은 Swing 이벤트 스레드(키 입력, Swing Timer)에서만 일어난다.
  */
 public class VsAiMode extends JPanel implements ActionListener {
 
 	private static final int FRAME_MS = 20;
-	// AI 실력 (보통 수준): 0.23초마다 한 동작, 블록마다 0.25초 생각,
-	// 25% 확률로 가장 좋은 자리 대신 2~6등 자리 중 하나에 둔다
-	private static final int AI_STEP_MS = 230;
-	private static final int AI_THINK_MS = 250;
-	private static final double AI_MISTAKE_RATE = 0.25;
-	private static final int AI_MISTAKE_CHOICES = 6;
+	/**
+	 * CPU 실력 (보통 수준): 0.23초마다 한 동작, 블록마다 0.25초 생각,
+	 * 25% 확률로 가장 좋은 자리 대신 2~6등 자리 중 하나에 둔다
+	 */
+	private static final CpuController.Settings CPU_SETTINGS = new CpuController.Settings(230, 250, 0.25, 6);
 	private static final Color PLAYER_COLOR = new Color(110, 170, 255);
-	private static final Color AI_COLOR = new Color(255, 120, 120);
+	private static final Color CPU_COLOR = new Color(255, 120, 120);
+	private static final int WINDOW_WIDTH = 1100;
+	private static final int WINDOW_HEIGHT = 800;
+	private static final int BOARD_GAP = 20;
+	private static final int STATUS_TOP_PADDING = 10;
+	private static final String RESTART_HINT = "R: 다시 시작";
 
 	private final PlayerBoard player = new PlayerBoard("플레이어");
-	private final PlayerBoard ai = new PlayerBoard("AI");
+	private final PlayerBoard cpu = new PlayerBoard("컴퓨터");
 	private final BoardView playerView = new BoardView(player, PLAYER_COLOR);
-	private final BoardView aiView = new BoardView(ai, AI_COLOR);
-	private final AiController aiController;
+	private final BoardView cpuView = new BoardView(cpu, CPU_COLOR);
+	private final CpuController cpuController = new CpuController(cpu,
+			new HeuristicBrain(CPU_SETTINGS.mistakeRate(), CPU_SETTINGS.mistakeChoices(), new Random()),
+			new HeuristicBrain(), CPU_SETTINGS);
+	/** 게임 중 플레이어 키 → 동작 */
+	private final Map<Integer, Runnable> playerKeys = Map.of(
+			KeyEvent.VK_LEFT, player::moveLeft,
+			KeyEvent.VK_RIGHT, player::moveRight,
+			KeyEvent.VK_UP, player::rotate,
+			KeyEvent.VK_DOWN, player::softDrop,
+			KeyEvent.VK_SPACE, player::hardDrop);
 	private final JLabel status = new JLabel("", SwingConstants.CENTER);
 	private final Timer timer = new Timer(FRAME_MS, this);
 	private boolean running;
@@ -47,28 +72,36 @@ public class VsAiMode extends JPanel implements ActionListener {
 	private boolean finished;
 	private int elapsedMs;
 
-	public VsAiMode() {
-		this(new HeuristicBrain(AI_MISTAKE_RATE, AI_MISTAKE_CHOICES, new Random()));
+	/** 컴퓨터와 대전 모드만 단독으로 실행해 보는 진입점 */
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(() -> {
+			JFrame frame = new JFrame("Tetris - 컴퓨터와 대전");
+			VsAiMode mode = new VsAiMode();
+			frame.add(mode);
+			// 작업 표시줄을 뺀 화면 크기보다 크면 화면에 맞춘다
+			Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+			frame.setSize(Math.min(WINDOW_WIDTH, screen.width), Math.min(WINDOW_HEIGHT, screen.height));
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setLocationRelativeTo(null);
+			frame.setVisible(true);
+			mode.start();
+		});
 	}
 
-	/** brain을 바꿔 끼우면 다른 AI와 대결한다 (예: 나중에 ClaudeBrain) */
-	public VsAiMode(AiBrain brain) {
+	public VsAiMode() {
 		super(new BorderLayout());
 		setBackground(BoardView.BACKGROUND);
 		setFocusable(true);
-		aiController = new AiController(ai, brain);
-		aiController.setStepMs(AI_STEP_MS);
-		aiController.setThinkMs(AI_THINK_MS);
 
-		status.setForeground(new Color(235, 236, 242));
+		status.setForeground(BoardView.TEXT);
 		status.setFont(BoardView.font(Font.BOLD, 16f));
-		status.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+		status.setBorder(BorderFactory.createEmptyBorder(STATUS_TOP_PADDING, 0, 0, 0));
 		add(status, BorderLayout.NORTH);
 
-		JPanel boards = new JPanel(new GridLayout(1, 2, 20, 0));
+		JPanel boards = new JPanel(new GridLayout(1, 2, BOARD_GAP, 0));
 		boards.setOpaque(false);
 		boards.add(playerView);
-		boards.add(aiView);
+		boards.add(cpuView);
 		add(boards, BorderLayout.CENTER);
 
 		addKeyListener(new KeyAdapter() {
@@ -83,10 +116,9 @@ public class VsAiMode extends JPanel implements ActionListener {
 	public void start() {
 		PieceSequence sequence = new PieceSequence(System.nanoTime());
 		player.reset(sequence);
-		ai.reset(sequence);
-		aiController.reset();
-		playerView.setOverlay(null, null);
-		aiView.setOverlay(null, null);
+		cpu.reset(sequence);
+		cpuController.reset();
+		setOverlays(null, null, null);
 		elapsedMs = 0;
 		running = true;
 		paused = false;
@@ -100,12 +132,7 @@ public class VsAiMode extends JPanel implements ActionListener {
 	public void stop() {
 		timer.stop();
 		running = false;
-		aiController.reset();
-	}
-
-	/** AI 동작 간격(ms). 작을수록 어렵다. */
-	public void setAiStepMs(int stepMs) {
-		aiController.setStepMs(stepMs);
+		cpuController.shutdown();
 	}
 
 	@Override
@@ -114,8 +141,8 @@ public class VsAiMode extends JPanel implements ActionListener {
 			return;
 		elapsedMs += FRAME_MS;
 		player.tick(FRAME_MS);
-		ai.tick(FRAME_MS);
-		aiController.update(FRAME_MS);
+		cpu.tick(FRAME_MS);
+		cpuController.update(FRAME_MS);
 		checkResult();
 		refresh();
 	}
@@ -126,47 +153,47 @@ public class VsAiMode extends JPanel implements ActionListener {
 			return;
 		}
 		if (code == KeyEvent.VK_P && running && !finished) {
-			paused = !paused;
-			String sub = paused ? "P: 계속하기" : null;
-			playerView.setOverlay(paused ? "일시정지" : null, sub);
-			aiView.setOverlay(paused ? "일시정지" : null, sub);
-			refresh();
+			togglePause();
 			return;
 		}
-		if (!running || paused || finished)
+		Runnable action = playerKeys.get(code);
+		if (!running || paused || finished || action == null)
 			return;
-		switch (code) {
-		case KeyEvent.VK_LEFT -> player.moveLeft();
-		case KeyEvent.VK_RIGHT -> player.moveRight();
-		case KeyEvent.VK_UP -> player.rotate();
-		case KeyEvent.VK_DOWN -> player.softDrop();
-		case KeyEvent.VK_SPACE -> player.hardDrop();
-		default -> {
-			return;
-		}
-		}
+		action.run();
 		checkResult();
 		refresh();
 	}
 
+	private void togglePause() {
+		paused = !paused;
+		String title = paused ? "일시정지" : null;
+		setOverlays(title, title, paused ? "P: 계속하기" : null);
+		refresh();
+	}
+
+	/** 두 판에 같은 문구 줄(sub)과 각자의 제목을 함께 띄운다 */
+	private void setOverlays(String playerTitle, String cpuTitle, String sub) {
+		playerView.setOverlay(playerTitle, sub);
+		cpuView.setOverlay(cpuTitle, sub);
+	}
+
 	/** 한쪽이라도 꼭대기까지 쌓이면 승패를 정한다 */
 	private void checkResult() {
-		if (finished || !(player.isGameOver() || ai.isGameOver()))
+		if (finished || !(player.isGameOver() || cpu.isGameOver()))
 			return;
 		finished = true;
 		timer.stop();
 		boolean playerLost = player.isGameOver();
-		playerView.setOverlay(playerLost ? "패배" : "승리!", "R: 다시 시작");
-		aiView.setOverlay(playerLost ? "승리!" : "패배", "R: 다시 시작");
+		setOverlays(playerLost ? "패배" : "승리!", playerLost ? "승리!" : "패배", RESTART_HINT);
 	}
 
 	private void refresh() {
 		int sec = elapsedMs / 1000;
 		String time = String.format("%d:%02d", sec / 60, sec % 60);
 		if (finished)
-			status.setText((player.isGameOver() ? "AI 승리" : "플레이어 승리") + "  ·  " + time);
+			status.setText((player.isGameOver() ? "컴퓨터 승리" : "플레이어 승리") + "  ·  " + time);
 		else
-			status.setText("사람 vs AI  ·  " + time + (paused ? "  ·  일시정지" : ""));
+			status.setText("컴퓨터와 대전  ·  " + time + (paused ? "  ·  일시정지" : ""));
 		repaint();
 	}
 }

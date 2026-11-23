@@ -1,4 +1,4 @@
-package vsai;
+package vsai.cpu;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -7,26 +7,33 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import vsai.game.Board;
+import vsai.game.Tetromino;
+
 /**
- * 인터넷 없이 코드로 계산하는 AI.
+ * 인터넷 없이 코드로 계산하는 CPU 머리.
  * 가능한 모든 회전과 열에 블록을 놓아 보고, 판의 모양을 점수로 매겨 가장 좋은 자리를 고른다.
- * 다음 블록까지 한 수 앞을 내다본다. API가 느리거나 실패할 때 대신 쓰는 예비 AI이기도 하다.
+ * 다음 블록까지 한 수 앞을 내다본다.
  *
  * 실수 확률을 주면 그 확률로 가장 좋은 자리 대신 상위 몇 개 중 하나를 무작위로 고른다 (난이도 조절용).
  */
-public class HeuristicBrain implements AiBrain {
+public class HeuristicBrain implements CpuBrain {
 
 	// 널리 쓰이는 테트리스 AI 가중치 (높이 합, 지운 줄, 구멍, 울퉁불퉁함)
 	private static final double HEIGHT = -0.510066;
 	private static final double LINES = 0.760666;
 	private static final double HOLES = -0.35663;
 	private static final double BUMPINESS = -0.184483;
+	/** 블록 상자 왼쪽이 판 밖으로 나갈 수 있는 최대 칸 수 (상자 크기 4 - 1) */
+	private static final int MIN_BOX_X = -3;
+	/** 둘 수 있는 자리가 하나도 없을 때의 점수 */
+	private static final double NO_PLACEMENT = -1e9;
 
 	private final double mistakeRate;
 	private final int mistakeChoices;
 	private final Random random;
 
-	/** 실수 없이 항상 가장 좋은 자리를 고르는 AI */
+	/** 실수 없이 항상 가장 좋은 자리를 고르는 머리 (예비용) */
 	public HeuristicBrain() {
 		this(0, 1, new Random());
 	}
@@ -53,20 +60,20 @@ public class HeuristicBrain implements AiBrain {
 	}
 
 	/** 놓을 수 있는 자리를 좋은 순서로. 결과 모양이 같은 자리(회전만 다른 경우)는 하나만 남긴다. */
-	public List<Move> rank(Board board, Tetromino current, Tetromino next) {
+	private List<Move> rank(Board board, Tetromino current, Tetromino next) {
 		record Scored(Move move, double score) {
 		}
 		List<Scored> scored = new ArrayList<>();
 		Set<String> seen = new HashSet<>();
-		for (int rot = 0; rot < 4; ++rot) {
-			for (int px = -3; px < Board.WIDTH; ++px) {
+		for (int rot = 0; rot < Tetromino.ROTATIONS; ++rot) {
+			for (int px = MIN_BOX_X; px < Board.WIDTH; ++px) {
 				if (!board.canPlace(current, rot, px, 0))
 					continue;
 				int y = board.dropY(current, rot, px, 0);
 				if (!seen.add(placementKey(current, rot, px, y)))
 					continue;
-				Board after = board.copy();
-				if (!after.place(current, rot, px, y))
+				Board after = drop(board, current, rot, px);
+				if (after == null)
 					continue;
 				int cleared = after.clearLines();
 				double score = next == null ? evaluate(after, cleared)
@@ -83,9 +90,9 @@ public class HeuristicBrain implements AiBrain {
 
 	/** 다음 블록을 둘 수 있는 가장 좋은 자리의 점수 */
 	private double bestPlacement(Board board, Tetromino t) {
-		double best = -1e9;
-		for (int rot = 0; rot < 4; ++rot) {
-			for (int px = -3; px < Board.WIDTH; ++px) {
+		double best = NO_PLACEMENT;
+		for (int rot = 0; rot < Tetromino.ROTATIONS; ++rot) {
+			for (int px = MIN_BOX_X; px < Board.WIDTH; ++px) {
 				Board after = drop(board, t, rot, px);
 				if (after == null)
 					continue;
