@@ -1,4 +1,4 @@
-package dodge;
+package poop;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -14,7 +14,7 @@ public final class CharacterManagerCheck {
     private static CharacterItem fixture(CharacterItem.Category category, String id, String frame) {
         // Existing character PNGs used strictly as test layers, not shipped clothing.
         return new CharacterItem(category, id, "테스트 전용", Collections.singletonMap(
-            "idle", "/dodge/images/dodger_" + frame + ".png"));
+            "idle", "/poop/images/dodger_" + frame + ".png"));
     }
     private static BufferedImage draw(DodgerSprite sprite, Dodger dodger) {
         BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);

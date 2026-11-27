@@ -1,4 +1,4 @@
-package dodge;
+package poop;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -12,7 +12,7 @@ public final class CharacterMissingResourceCheck {
         if (!value) throw new AssertionError(message);
     }
     public static void main(String[] args) throws Exception {
-        check(CharacterManager.class.getResource("/dodge/images/dodger_idle.png") == null,
+        check(CharacterManager.class.getResource("/poop/images/dodger_idle.png") == null,
             "This check requires a classpath without character resources");
         Path file = Files.createTempDirectory("missing-cosmetics-").resolve("appearance.properties");
         Files.writeString(file, "skin=broken-skin\nhat=broken-hat\noutfit=broken-outfit\n");

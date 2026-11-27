@@ -1,4 +1,4 @@
-package dodge;
+package poop;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -51,9 +51,9 @@ public final class CharacterCustomizationCheck {
         Path directory = Files.createTempDirectory("character-ui-");
         java.util.List<CharacterItem> items = Arrays.asList(
             new CharacterItem(CharacterItem.Category.SKIN, "test-skin", "테스트 스킨",
-                Collections.singletonMap("idle", "/dodge/images/dodger_walk2.png")),
+                Collections.singletonMap("idle", "/poop/images/dodger_walk2.png")),
             new CharacterItem(CharacterItem.Category.HAT, "test-hat", "테스트 레이어",
-                Collections.singletonMap("idle", "/dodge/images/dodger_jump.png")));
+                Collections.singletonMap("idle", "/poop/images/dodger_jump.png")));
         SwingUtilities.invokeAndWait(() -> {
             try {
                 CharacterManager manager = new CharacterManager(directory.resolve("appearance.properties"), items);
@@ -78,7 +78,7 @@ public final class CharacterCustomizationCheck {
                 restored.load();
                 check(restored.getAppearance().getSkinId().equals("default"), "Reset not saved");
                 restored.selectSkin("test-skin"); restored.save();
-                DodgeMode mode = new DodgeMode(manager);
+                PoopMode mode = new PoopMode(manager);
                 mode.start();
                 check(manager.getAppearance().getSkinId().equals("test-skin"), "Game start did not reload saved skin");
                 mode.stop();

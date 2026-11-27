@@ -34,8 +34,8 @@ public class GameFrame extends JFrame
 
 	MainMenuPanel mainMenu;
 	SettingsPanel settingsPanel; // 환경 설정 화면
-	dodge.DodgeMode dodgeMode; // 똥피하기
-	vsai.VsAiMode vsAiMode; // 사람 vs AI
+	poop.PoopMode poopMode; // 똥피하기
+	vscpu.VsCpuMode vsCpuMode; // 컴퓨터와 대전
 
 	GameFrame()
 	{
@@ -91,7 +91,7 @@ public class GameFrame extends JFrame
 		requestFocusInWindow(); // 이거 안하면 키 안먹음
 	}
 
-	public void startDodge()
+	public void startPoop()
 	{
 		remove(mainMenu);
 		SoundManager.startBgm(Bgm.GAME);
@@ -100,15 +100,15 @@ public class GameFrame extends JFrame
 		setTitle("Tetris X 똥 피하기");
 		fitToScreen(1100, 1000);
 
-		dodgeMode = new dodge.DodgeMode();
-		add(dodgeMode, BorderLayout.CENTER);
+		poopMode = new poop.PoopMode();
+		add(poopMode, BorderLayout.CENTER);
 		revalidate();
 		repaint();
-		dodgeMode.start();
+		poopMode.start();
 	}
 
-	// 사람 vs AI 모드 시작
-	public void startVsAi()
+	// 컴퓨터와 대전 모드 시작
+	public void startVsCpu()
 	{
 		remove(mainMenu);
 		SoundManager.startBgm(Bgm.GAME);
@@ -117,11 +117,11 @@ public class GameFrame extends JFrame
 		setTitle("Tetris - 컴퓨터와 대전");
 		fitToScreen(1100, 800);
 
-		vsAiMode = new vsai.VsAiMode();
-		add(vsAiMode, BorderLayout.CENTER);
+		vsCpuMode = new vscpu.VsCpuMode();
+		add(vsCpuMode, BorderLayout.CENTER);
 		revalidate();
 		repaint();
-		vsAiMode.start();
+		vsCpuMode.start();
 	}
 
 	// 창 크기를 정하되 화면보다 크면 화면 크기로 줄이고 가운데에 놓는다

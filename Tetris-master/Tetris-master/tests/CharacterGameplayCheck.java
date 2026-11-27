@@ -1,4 +1,4 @@
-package dodge;
+package poop;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;

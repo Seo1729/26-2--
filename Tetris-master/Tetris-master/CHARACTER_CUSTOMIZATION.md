@@ -7,7 +7,7 @@
 
 ## 초기 제공 항목
 
-- 스킨 `default`: 기존 `/dodge/images/dodger_*.png` 6개.
+- 스킨 `default`: 기존 `/poop/images/dodger_*.png` 6개.
 - 모자/의상 `none`: 미착용. 이미지 아이템이 아니다.
 - 별도 스킨, 모자, 의상 이미지는 현재 없으므로 선택 목록에 등록하지 않았다.
 

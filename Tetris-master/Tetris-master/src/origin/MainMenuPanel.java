@@ -20,8 +20,8 @@ public class MainMenuPanel extends JPanel implements ActionListener
 	JLabel logo;
 	JLabel bestLabel; // 최고 점수 표시
 	// 버튼은 글자가 아니라 객체로 구분한다 (전에는 버튼 한글 문구를 비교해서 문구를 바꾸면 동작이 끊겼다)
-	JButton normalButton, galagaButton, dodgeButton, threeDButton, controlsButton, exitButton, settingsButton,
-			vsAiButton, characterButton, rankingButton;
+	JButton normalButton, galagaButton, poopButton, threeDButton, controlsButton, exitButton, settingsButton,
+			vsCpuButton, characterButton, rankingButton;
 
 	public MainMenuPanel(GameFrame f)
 	{
@@ -47,17 +47,17 @@ public class MainMenuPanel extends JPanel implements ActionListener
 
 		normalButton = makeButton("일반 모드");
 		galagaButton = makeButton("갤러그 협동");
-		dodgeButton = makeButton("똥피하기");
+		poopButton = makeButton("똥피하기");
 		threeDButton = makeButton("3D 테트리스");
 		controlsButton = makeButton("조작법");
 		exitButton = makeButton("종료");
 		settingsButton = makeButton("설정");
-		vsAiButton = makeButton("컴퓨터와 대전");
+		vsCpuButton = makeButton("컴퓨터와 대전");
 		characterButton = makeButton("캐릭터 관리");
 		rankingButton = makeButton("랭킹");
 
 		// 버튼이 10개라서 간격을 좁혀 창 안에 모두 들어가게 맞춘다
-		JButton[] menuButtons = { normalButton, galagaButton, dodgeButton, threeDButton, vsAiButton, characterButton,
+		JButton[] menuButtons = { normalButton, galagaButton, poopButton, threeDButton, vsCpuButton, characterButton,
 				rankingButton, controlsButton, settingsButton, exitButton };
 		for (int i = 0; i < menuButtons.length; i++)
 			menuButtons[i].setBounds(90, 246 + i * 33, 180, 29);
@@ -84,16 +84,16 @@ public class MainMenuPanel extends JPanel implements ActionListener
 			chooseLevelAndStart();
 		else if (source == galagaButton)
 			frame.startGame(GameMode.GALAGA);
-		else if (source == dodgeButton)
-			frame.startDodge();
+		else if (source == poopButton)
+			frame.startPoop();
 		else if (source == threeDButton)
 			frame.start3D();
 		else if (source == controlsButton)
 			showControls();
-		else if (source == vsAiButton)
-			frame.startVsAi();
+		else if (source == vsCpuButton)
+			frame.startVsCpu();
 		else if (source == characterButton)
-			dodge.CharacterCustomizationPanel.show(this);
+			poop.CharacterCustomizationPanel.show(this);
 		else if (source == rankingButton)
 			JOptionPane.showMessageDialog(this, RankingManager.toText(), "랭킹 (일반 모드)", JOptionPane.INFORMATION_MESSAGE);
 		else if (source == settingsButton)
