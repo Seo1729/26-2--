@@ -5,6 +5,7 @@ import java.awt.event.KeyEvent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class HardDropCheck
 {

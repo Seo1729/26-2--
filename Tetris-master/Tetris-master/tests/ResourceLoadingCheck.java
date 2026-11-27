@@ -1,9 +1,10 @@
+import origin.ImageSource;
 import java.lang.reflect.Field;
 import javax.swing.ImageIcon;
 
 public final class ResourceLoadingCheck {
     public static void main(String[] args) throws Exception {
-        new ImageSource();
+        ImageSource.preload();
         int icons = 0;
         for (Field field : ImageSource.class.getDeclaredFields()) {
             if (field.getType() != ImageIcon.class) continue;

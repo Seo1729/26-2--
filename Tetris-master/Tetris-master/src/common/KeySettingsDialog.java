@@ -1,6 +1,7 @@
 package common;
 
 import java.awt.BorderLayout;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -22,6 +23,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 
 /**
  * 키 설정 창. 모드별 탭에 동작과 현재 키가 나열되고,
@@ -54,8 +56,8 @@ public class KeySettingsDialog
 	 */
 	private KeySettingsDialog(Window owner)
 	{
-		dialog = new JDialog(owner, "키 설정", JDialog.ModalityType.APPLICATION_MODAL);
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		dialog = new JDialog(owner, "키 설정", Dialog.ModalityType.APPLICATION_MODAL);
+		dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		dialog.setResizable(false);
 
 		// 창이 닫히면 키 기다리기도 끝낸다(안 그러면 키 입력을 계속 가로챈다)

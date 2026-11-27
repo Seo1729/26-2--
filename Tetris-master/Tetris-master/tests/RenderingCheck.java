@@ -4,6 +4,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import javax.imageio.ImageIO;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class RenderingCheck
 {

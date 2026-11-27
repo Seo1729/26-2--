@@ -1,5 +1,6 @@
 import java.lang.reflect.Method;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class LayerClearCheck
 {

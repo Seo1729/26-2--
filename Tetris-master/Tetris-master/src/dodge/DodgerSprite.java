@@ -18,7 +18,12 @@ import javax.imageio.ImageIO;
 // 상태 0 서있음 1 걷기 2 점프 3 떨어짐 4 깔림
 public class DodgerSprite {
 
-	static String[] NAMES = { "idle", "walk1", "walk2", "jump", "fall", "crushed" };
+	/** 걷기 첫 장면 그림 이름 (그림이 없을 때 다른 장면의 대신으로도 쓴다) */
+	private static final String WALK1 = "walk1";
+	/** 깔림 장면 그림 이름 */
+	private static final String CRUSHED = "crushed";
+
+	static String[] NAMES = { "idle", WALK1, "walk2", "jump", "fall", CRUSHED };
 
 	Map<String, BufferedImage> images = new HashMap<String, BufferedImage>();
 	private Map<String, BufferedImage> hats = java.util.Collections.emptyMap();
@@ -94,7 +99,7 @@ public class DodgerSprite {
 		if (img != null) {
 			g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
 			g2.drawImage(img, 0, 0, w, h, null);
-			if (state == 4 && !skin.containsKey("crushed")) {
+			if (state == 4 && !skin.containsKey(CRUSHED)) {
 				g2.setColor(new Color(128, 128, 128, 160));
 				g2.fillRect(0, 0, w, h);
 			}
@@ -110,7 +115,7 @@ public class DodgerSprite {
 	private static void drawLayer(Graphics2D g, Map<String, BufferedImage> frames, int state,
 			int walkFrame, int w, int h) {
 		// A standing accessory should not float over a flattened character.
-		if (state == 4 && !frames.containsKey("crushed")) return;
+		if (state == 4 && !frames.containsKey(CRUSHED)) return;
 		BufferedImage image = pickImage(frames, state, walkFrame);
 		if (image != null) g.drawImage(image, 0, 0, w, h, null);
 	}
@@ -126,14 +131,14 @@ public class DodgerSprite {
 		switch (state) {
 		case 1:
 			if (walkFrame == 0)
-				return images.getOrDefault("walk1", idle);
-			return images.getOrDefault("walk2", images.getOrDefault("walk1", idle));
+				return images.getOrDefault(WALK1, idle);
+			return images.getOrDefault("walk2", images.getOrDefault(WALK1, idle));
 		case 2:
 			return images.getOrDefault("jump", idle);
 		case 3:
 			return images.getOrDefault("fall", images.getOrDefault("jump", idle));
 		case 4:
-			return images.getOrDefault("crushed", idle);
+			return images.getOrDefault(CRUSHED, idle);
 		default:
 			return idle;
 		}

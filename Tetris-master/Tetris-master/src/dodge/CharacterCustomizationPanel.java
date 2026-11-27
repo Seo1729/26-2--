@@ -7,14 +7,18 @@ import javax.swing.*;
 
 /** A draft editor: preview/reset/back never modify the saved or live appearance. */
 public final class CharacterCustomizationPanel extends JPanel {
-    private final CharacterManager manager;
-    private final DodgerSprite sprite;
+    /** 이 화면의 글자에 쓰는 글꼴 이름 */
+    private static final String FONT_NAME = "Dialog";
+
+    // 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 아래 객체들은 저장할 필요가 없어 transient로 둔다
+    private final transient CharacterManager manager;
+    private final transient DodgerSprite sprite;
     private final JComboBox<Option> skins = new JComboBox<>();
     private final JComboBox<Option> hats = new JComboBox<>();
     private final JComboBox<Option> outfits = new JComboBox<>();
     private final JLabel status = new JLabel("선택한 외형은 적용 버튼을 누르면 저장됩니다.");
     private final JPanel preview;
-    private CharacterAppearance draft;
+    private transient CharacterAppearance draft;
     private boolean refreshing;
     private static final class Option {
         final String id, label;
@@ -31,7 +35,7 @@ public final class CharacterCustomizationPanel extends JPanel {
         setPreferredSize(new Dimension(460, 530));
         JLabel title = new JLabel("캐릭터 관리");
         title.setForeground(Color.WHITE);
-        title.setFont(new Font("Dialog", Font.BOLD, 22));
+        title.setFont(new Font(FONT_NAME, Font.BOLD, 22));
         add(title, BorderLayout.NORTH);
         JPanel content = new JPanel(new BorderLayout(8, 12));
         content.setOpaque(false);
@@ -44,7 +48,7 @@ public final class CharacterCustomizationPanel extends JPanel {
         };
         preview.setBackground(new Color(32, 34, 44));
         preview.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.WHITE),
-            "미리보기", 0, 0, new Font("Dialog", Font.BOLD, 14), Color.WHITE));
+            "미리보기", 0, 0, new Font(FONT_NAME, Font.BOLD, 14), Color.WHITE));
         preview.setPreferredSize(new Dimension(240, 220));
         preview.setName("character-preview");
         content.add(preview, BorderLayout.CENTER);
@@ -66,7 +70,7 @@ public final class CharacterCustomizationPanel extends JPanel {
         JPanel footer = new JPanel(new BorderLayout(0, 8));
         footer.setOpaque(false);
         status.setForeground(Color.WHITE);
-        status.setFont(new Font("Dialog", Font.PLAIN, 12));
+        status.setFont(new Font(FONT_NAME, Font.PLAIN, 12));
         footer.add(status, BorderLayout.NORTH);
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
         buttons.setOpaque(false);
@@ -86,7 +90,7 @@ public final class CharacterCustomizationPanel extends JPanel {
     }
     private static JButton button(String label) {
         JButton button = new JButton(label);
-        button.setFont(new Font("Dialog", Font.BOLD, 14));
+        button.setFont(new Font(FONT_NAME, Font.BOLD, 14));
         button.setBackground(Color.WHITE); button.setFocusPainted(false);
         return button;
     }
@@ -127,7 +131,7 @@ public final class CharacterCustomizationPanel extends JPanel {
     public static void show(Component owner) {
         Window window = SwingUtilities.getWindowAncestor(owner);
         JDialog dialog = new JDialog(window, "캐릭터 관리", Dialog.ModalityType.APPLICATION_MODAL);
-        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         CharacterCustomizationPanel panel = new CharacterCustomizationPanel(CharacterManager.getInstance(), dialog::dispose);
         JScrollPane scroll = new JScrollPane(panel);
         scroll.setBorder(null);

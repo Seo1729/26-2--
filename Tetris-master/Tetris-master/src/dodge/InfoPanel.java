@@ -29,8 +29,9 @@ public class InfoPanel extends JPanel {
 	/** 남은 시간이 이 초 이하면 빨간색으로 재촉한다 */
 	private static final int HURRY_SECONDS = 10;
 
-	private final GameStatus status;
-	private final IntSupplier boardTop;
+	// 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 아래 객체들은 저장할 필요가 없어 transient로 둔다
+	private final transient GameStatus status;
+	private final transient IntSupplier boardTop;
 
 	/**
 	 * @param status   보여 줄 게임 상태

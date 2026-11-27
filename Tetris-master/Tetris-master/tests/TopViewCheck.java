@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Collections;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class TopViewCheck
 {

@@ -3,6 +3,7 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class GhostPieceCheck
 {

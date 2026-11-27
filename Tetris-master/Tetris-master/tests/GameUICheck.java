@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
+import threed.*;
 
 public class GameUICheck
 {
@@ -14,10 +15,18 @@ public class GameUICheck
         if (!value) throw new AssertionError(message);
     }
 
+    // 정보창 부품은 리팩토링 후 Game3DPanel의 sidebar(Game3DSidebar) 안에 있다
+    private static Object sidebarField(Game3DPanel panel, String name) throws Exception
+    {
+        Field sidebar = Game3DPanel.class.getDeclaredField("sidebar"); sidebar.setAccessible(true);
+        Object owner = sidebar.get(panel);
+        Field field = Game3DSidebar.class.getDeclaredField(name); field.setAccessible(true);
+        return field.get(owner);
+    }
+
     private static JLabel label(Game3DPanel panel, String name) throws Exception
     {
-        Field field = Game3DPanel.class.getDeclaredField(name); field.setAccessible(true);
-        return (JLabel) field.get(panel);
+        return (JLabel) sidebarField(panel, name);
     }
 
     private static void layout(Container parent)
@@ -56,14 +65,14 @@ public class GameUICheck
                 panel.refreshStatus();
                 check(label(panel, "score").getText().equals("0"), "External restart retained score");
                 // Exercise key release while modifiers differ from the press.
-                panel.getActionMap().get("pressSpace").actionPerformed(new ActionEvent(panel, 0, "Space"));
+                panel.getActionMap().get("pressTETRIS3D_DROP").actionPerformed(new ActionEvent(panel, 0, "Space"));
                 Object release = panel.getInputMap(javax.swing.JPanel.WHEN_IN_FOCUSED_WINDOW).get(
                         javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_SPACE,
                                 java.awt.event.InputEvent.CTRL_DOWN_MASK | java.awt.event.InputEvent.ALT_DOWN_MASK, true));
-                check("releaseSpace".equals(release), "Modified release not bound");
+                check("releaseTETRIS3D_DROP".equals(release), "Modified release not bound");
                 panel.getActionMap().get(release).actionPerformed(new ActionEvent(panel, 0, "Space"));
                 int previousLocks = game.getLockedBlockCount();
-                panel.getActionMap().get("pressSpace").actionPerformed(new ActionEvent(panel, 0, "Space"));
+                panel.getActionMap().get("pressTETRIS3D_DROP").actionPerformed(new ActionEvent(panel, 0, "Space"));
                 check(game.getLockedBlockCount() == previousLocks + 1, "Modifier change left key stuck");
                 panel.refreshStatus();
                 check(label(panel, "score").getText().equals("0"), "Refresh counted twice");
@@ -71,7 +80,7 @@ public class GameUICheck
                 board.setFilled(1, 1, 13, true);
                 game.hardDrop(); panel.refreshStatus();
                 check(label(panel, "gameState").getText().equals("GAME OVER"), "Game over hidden");
-                panel.getActionMap().get("pressR").actionPerformed(new ActionEvent(panel, 0, "R"));
+                panel.getActionMap().get("pressTETRIS3D_RESTART").actionPerformed(new ActionEvent(panel, 0, "R"));
                 check(label(panel, "clearedLayers").getText().equals("0")
                         && label(panel, "score").getText().equals("0"), "Restart retained UI stats");
                 check(label(panel, "gameState").getText().equals("RUNNING"), "Stale game over");
@@ -83,8 +92,7 @@ public class GameUICheck
                     Graphics2D g = image.createGraphics(); panel.paint(g); g.dispose();
                     if (args.length > 0 && size[0] == 1024)
                         javax.imageio.ImageIO.write(image, "png", new java.io.File(args[0]));
-                    Field topField = Game3DPanel.class.getDeclaredField("topView"); topField.setAccessible(true);
-                    Component top = (Component) topField.get(panel);
+                    Component top = (Component) sidebarField(panel, "topView");
                     check(top.getWidth() >= 280 && top.getHeight() >= 280, "Top view clipped");
                 }
                 check(game.getActiveBlock().getZ() == z && game.getLockedBlockCount() == locked, "UI changed game");
