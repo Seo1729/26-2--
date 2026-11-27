@@ -5,26 +5,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import common.TetrisRules;
+
 /**
  * 한쪽(플레이어 또는 CPU)의 게임 상태: 판, 떨어지는 블록, 다음 블록, 점수, 줄 수, 레벨.
  * 조작 방법은 사람과 CPU가 같다 (좌우 이동, 회전, 소프트 드롭, 하드 드롭).
  */
 public class PlayerBoard implements BoardState {
 
-	/** 한 번에 지운 줄 수(0~4)에 따른 기본 점수. 레벨을 곱한다. */
-	private static final int[] LINE_SCORES = { 0, 100, 300, 500, 800 };
 	/** 회전이 벽이나 블록에 막히면 이만큼 옆으로 밀어서 다시 시도한다 */
 	private static final int[] KICKS = { 0, -1, 1, -2, 2 };
 	private static final int SPAWN_X = 3;
 	private static final int SPAWN_Y = 0;
-	private static final int SOFT_DROP_SCORE = 1;
-	/** 하드 드롭으로 내려간 한 칸마다 받는 점수 */
-	private static final int HARD_DROP_SCORE = 2;
-	private static final int LINES_PER_LEVEL = 10;
-	/** 낙하 간격: 레벨 1에서 800ms, 레벨마다 70ms씩 빨라지고, 100ms보다 빨라지지 않는다 */
-	private static final int START_FALL_MS = 800;
-	private static final int FALL_MS_PER_LEVEL = 70;
-	private static final int MIN_FALL_MS = 100;
 
 	/**
 	 * 두 판이 함께 쓰는 블록 순서. 같은 순서로 블록이 나와서 공정하다.
@@ -51,6 +43,8 @@ public class PlayerBoard implements BoardState {
 	}
 
 	private final String name;
+	/** 점수·레벨·낙하 속도 규칙 (베이스 규칙 TetrisRules를 상속한 대전 규칙) */
+	private final TetrisRules rules;
 	private final Board board = new Board();
 	private PieceSequence sequence;
 	private int pieceIndex;
@@ -66,8 +60,15 @@ public class PlayerBoard implements BoardState {
 	private boolean gameOver;
 	private int fallElapsed;
 
+	/** 컴퓨터 대전 규칙(VsCpuRules)으로 판을 만든다 */
 	public PlayerBoard(String name) {
+		this(name, new VsCpuRules());
+	}
+
+	/** 규칙을 바꿔 끼워 판을 만든다 */
+	public PlayerBoard(String name, TetrisRules rules) {
 		this.name = name;
+		this.rules = rules;
 	}
 
 	public void reset(PieceSequence sequence) {
@@ -137,7 +138,7 @@ public class PlayerBoard implements BoardState {
 			return;
 		fallElapsed = 0;
 		if (tryMove(rotation, x, y + 1))
-			score += SOFT_DROP_SCORE;
+			score += rules.softDropScore();
 		else
 			lock();
 	}
@@ -147,7 +148,7 @@ public class PlayerBoard implements BoardState {
 		if (gameOver)
 			return;
 		int ny = ghostY();
-		score += HARD_DROP_SCORE * (ny - y);
+		score += rules.hardDropScore(ny - y);
 		y = ny;
 		lock();
 	}
@@ -168,19 +169,19 @@ public class PlayerBoard implements BoardState {
 		}
 		int cleared = board.clearLines();
 		lines += cleared;
-		score += LINE_SCORES[cleared] * level();
+		score += rules.lineScore(cleared, level());
 		fallElapsed = 0;
 		spawn();
 	}
 
 	@Override
 	public int level() {
-		return lines / LINES_PER_LEVEL + 1;
+		return rules.levelFor(lines);
 	}
 
 	/** 레벨이 오를수록 빨리 떨어진다 (ms) */
 	private int fallInterval() {
-		return Math.max(MIN_FALL_MS, START_FALL_MS - (level() - 1) * FALL_MS_PER_LEVEL);
+		return rules.fallInterval(level());
 	}
 
 	@Override
