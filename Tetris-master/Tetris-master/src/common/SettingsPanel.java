@@ -1,6 +1,7 @@
 package common;
 
 import java.awt.Color;
+import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Window;
@@ -18,6 +19,7 @@ import javax.swing.JSlider;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -27,8 +29,14 @@ import javax.swing.event.ChangeListener;
  */
 public class SettingsPanel extends JPanel
 {
-	/** 돌아가기 버튼을 눌렀을 때 실행할 동작. 이 화면을 닫는 일은 화면을 띄운 쪽이 맡는다. */
-	private ActionListener backAction;
+	/** 이 화면의 모든 글자에 쓰는 글꼴 이름 */
+	private static final String FONT_NAME = "Dialog";
+
+	/**
+	 * 돌아가기 버튼을 눌렀을 때 실행할 동작. 이 화면을 닫는 일은 화면을 띄운 쪽이 맡는다.
+	 * 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 이 동작은 저장할 필요가 없어 transient로 둔다.
+	 */
+	private transient ActionListener backAction;
 
 	/** 배경음악 음량 슬라이더 */
 	private JSlider bgmSlider;
@@ -62,7 +70,7 @@ public class SettingsPanel extends JPanel
 
 		// 화면 제목
 		JLabel title = new JLabel("설정", SwingConstants.CENTER);
-		title.setFont(new Font("Dialog", Font.BOLD, 28));
+		title.setFont(new Font(FONT_NAME, Font.BOLD, 28));
 		title.setForeground(Color.WHITE);
 		title.setBounds(0, 40, 360, 50);
 		add(title);
@@ -102,7 +110,7 @@ public class SettingsPanel extends JPanel
 
 		// 음소거
 		muteBox = new JCheckBox("음소거");
-		muteBox.setFont(new Font("Dialog", Font.BOLD, 16));
+		muteBox.setFont(new Font(FONT_NAME, Font.BOLD, 16));
 		muteBox.setForeground(Color.WHITE);
 		muteBox.setOpaque(false);
 		muteBox.setFocusPainted(false);
@@ -166,8 +174,8 @@ public class SettingsPanel extends JPanel
 	 */
 	public static void showDialog(Window owner)
 	{
-		final JDialog dialog = new JDialog(owner, "설정", JDialog.ModalityType.APPLICATION_MODAL);
-		dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		final JDialog dialog = new JDialog(owner, "설정", Dialog.ModalityType.APPLICATION_MODAL);
+		dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		dialog.setResizable(false);
 
 		// 돌아가기 버튼을 누르면 팝업 창을 닫는다
@@ -222,13 +230,13 @@ public class SettingsPanel extends JPanel
 	private JLabel makeLabel(String name, int y)
 	{
 		JLabel nameLabel = new JLabel(name);
-		nameLabel.setFont(new Font("Dialog", Font.BOLD, 16));
+		nameLabel.setFont(new Font(FONT_NAME, Font.BOLD, 16));
 		nameLabel.setForeground(Color.WHITE);
 		nameLabel.setBounds(40, y, 200, 24);
 		add(nameLabel);
 
 		JLabel valueLabel = new JLabel("", SwingConstants.RIGHT);
-		valueLabel.setFont(new Font("Dialog", Font.BOLD, 16));
+		valueLabel.setFont(new Font(FONT_NAME, Font.BOLD, 16));
 		valueLabel.setForeground(Color.WHITE);
 		valueLabel.setBounds(240, y, 80, 24);
 		add(valueLabel);
@@ -259,7 +267,7 @@ public class SettingsPanel extends JPanel
 	private JButton makeButton(String text, int y)
 	{
 		JButton button = new JButton(text);
-		button.setFont(new Font("Dialog", Font.BOLD, 16));
+		button.setFont(new Font(FONT_NAME, Font.BOLD, 16));
 		button.setBackground(Color.WHITE);
 		button.setFocusPainted(false);
 		button.setBounds(70, y, 220, 44);

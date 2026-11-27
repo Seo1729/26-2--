@@ -68,7 +68,8 @@ public class BoardView extends JPanel {
 	private static final int OVERLAY_TITLE_Y = 46;
 	private static final int OVERLAY_SUB_Y = 80;
 
-	private final BoardState side;
+	/** 그릴 판. 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 판은 저장할 필요가 없어 transient로 둔다 */
+	private final transient BoardState side;
 	private final Color accent;
 	private String overlayTitle;
 	private String overlaySub;

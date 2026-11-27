@@ -20,6 +20,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.WindowConstants;
 
 import vsai.cpu.CpuController;
 import vsai.cpu.HeuristicBrain;
@@ -51,15 +52,16 @@ public class VsAiMode extends JPanel implements ActionListener {
 	private static final int STATUS_TOP_PADDING = 10;
 	private static final String RESTART_HINT = "R: 다시 시작";
 
-	private final PlayerBoard player = new PlayerBoard("플레이어");
-	private final PlayerBoard cpu = new PlayerBoard("컴퓨터");
+	// 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 게임 상태 객체는 저장할 필요가 없어 transient로 둔다
+	private final transient PlayerBoard player = new PlayerBoard("플레이어");
+	private final transient PlayerBoard cpu = new PlayerBoard("컴퓨터");
 	private final BoardView playerView = new BoardView(player, PLAYER_COLOR);
 	private final BoardView cpuView = new BoardView(cpu, CPU_COLOR);
-	private final CpuController cpuController = new CpuController(cpu,
+	private final transient CpuController cpuController = new CpuController(cpu,
 			new HeuristicBrain(CPU_SETTINGS.mistakeRate(), CPU_SETTINGS.mistakeChoices(), new Random()),
 			new HeuristicBrain(), CPU_SETTINGS);
 	/** 게임 중 플레이어 키 → 동작 */
-	private final Map<Integer, Runnable> playerKeys = Map.of(
+	private final transient Map<Integer, Runnable> playerKeys = Map.of(
 			KeyEvent.VK_LEFT, player::moveLeft,
 			KeyEvent.VK_RIGHT, player::moveRight,
 			KeyEvent.VK_UP, player::rotate,
@@ -81,7 +83,7 @@ public class VsAiMode extends JPanel implements ActionListener {
 			// 작업 표시줄을 뺀 화면 크기보다 크면 화면에 맞춘다
 			Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 			frame.setSize(Math.min(WINDOW_WIDTH, screen.width), Math.min(WINDOW_HEIGHT, screen.height));
-			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			frame.setLocationRelativeTo(null);
 			frame.setVisible(true);
 			mode.start();

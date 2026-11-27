@@ -27,10 +27,11 @@ public class GamePanel extends JPanel implements ActionListener {
 	private static final long BLOCK_REPEAT_MS = 50;
 	private static final long CAT_REPEAT_MS = 90;
 
-	private final PoopGame game = new PoopGame(new PoopSounds());
-	private final CharacterManager characterManager;
-	final DodgerSprite dodgerSprite;
-	private final InputHandler input;
+	// 화면 부품(JPanel)은 직렬화할 수 있는 타입이지만 아래 객체들은 저장할 필요가 없어 transient로 둔다
+	private final transient PoopGame game = new PoopGame(new PoopSounds());
+	private final transient CharacterManager characterManager;
+	final transient DodgerSprite dodgerSprite;
+	private final transient InputHandler input;
 	/** 상태가 바뀌어 다시 그려야 할 때 알릴 곳 (정보판) */
 	private final List<Runnable> changeListeners = new ArrayList<>();
 

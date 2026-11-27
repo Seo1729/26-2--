@@ -16,20 +16,20 @@ public enum Tetromino {
 
 	/** 회전 상태 수 */
 	public static final int ROTATIONS = 4;
-	/** 블록 하나를 이루는 칸 수 */
-	public static final int CELLS = 4;
+	/** 블록 하나를 이루는 칸 수 (필드·메서드 cells와 이름이 대소문자만 달라 헷갈리지 않게 CELL_COUNT로 둔다) */
+	public static final int CELL_COUNT = 4;
 
 	/** [회전][칸 번호][0=x, 1=y] */
-	private final int[][][] cells = new int[ROTATIONS][CELLS][2];
+	private final int[][][] cells = new int[ROTATIONS][CELL_COUNT][2];
 
 	Tetromino(int boxSize, boolean rotates, int... xy) {
-		for (int i = 0; i < CELLS; ++i) {
+		for (int i = 0; i < CELL_COUNT; ++i) {
 			cells[0][i][0] = xy[i * 2];
 			cells[0][i][1] = xy[i * 2 + 1];
 		}
 		// 시계 방향 회전: 상자 안에서 (x, y) -> (상자크기-1-y, x)
 		for (int r = 1; r < ROTATIONS; ++r) {
-			for (int i = 0; i < CELLS; ++i) {
+			for (int i = 0; i < CELL_COUNT; ++i) {
 				int x = cells[r - 1][i][0];
 				int y = cells[r - 1][i][1];
 				cells[r][i][0] = rotates ? boxSize - 1 - y : x;

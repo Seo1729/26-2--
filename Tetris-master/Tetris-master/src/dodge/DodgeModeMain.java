@@ -13,7 +13,7 @@ public class DodgeModeMain {
 		frame.add(mode);
 		Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
 		frame.setSize(Math.min(1100, screen.width), Math.min(1000, screen.height));
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.setLocationRelativeTo(null);
 		frame.setVisible(true);
 		mode.start();

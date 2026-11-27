@@ -67,18 +67,9 @@ public class HeuristicBrain implements CpuBrain {
 		Set<String> seen = new HashSet<>();
 		for (int rot = 0; rot < Tetromino.ROTATIONS; ++rot) {
 			for (int px = MIN_BOX_X; px < Board.WIDTH; ++px) {
-				if (!board.canPlace(current, rot, px, 0))
-					continue;
-				int y = board.dropY(current, rot, px, 0);
-				if (!seen.add(placementKey(current, rot, px, y)))
-					continue;
-				Board after = drop(board, current, rot, px);
-				if (after == null)
-					continue;
-				int cleared = after.clearLines();
-				double score = next == null ? evaluate(after, cleared)
-						: LINES * cleared + bestPlacement(after, next);
-				scored.add(new Scored(new Move(rot, px + current.minX(rot)), score));
+				Double score = placementScore(board, current, next, rot, px, seen);
+				if (score != null)
+					scored.add(new Scored(new Move(rot, px + current.minX(rot)), score));
 			}
 		}
 		scored.sort(Comparator.comparingDouble(Scored::score).reversed());
@@ -86,6 +77,28 @@ public class HeuristicBrain implements CpuBrain {
 		for (Scored s : scored)
 			moves.add(s.move());
 		return moves;
+	}
+
+	/**
+	 * 지금 블록을 (rot, px)에 놓았을 때의 점수. 놓을 수 없거나,
+	 * 이미 본 자리와 결과 모양이 같으면 null을 돌려준다.
+	 * 다음 블록을 알면 줄 삭제 점수에 다음 블록의 가장 좋은 자리 점수를 더한다.
+	 *
+	 * @param seen 이미 본 자리 이름 목록 (놓을 수 있는 자리면 여기에 추가된다)
+	 */
+	private Double placementScore(Board board, Tetromino current, Tetromino next, int rot, int px, Set<String> seen) {
+		if (!board.canPlace(current, rot, px, 0))
+			return null;
+		int y = board.dropY(current, rot, px, 0);
+		if (!seen.add(placementKey(current, rot, px, y)))
+			return null;
+		Board after = drop(board, current, rot, px);
+		if (after == null)
+			return null;
+		int cleared = after.clearLines();
+		if (next == null)
+			return evaluate(after, cleared);
+		return LINES * cleared + bestPlacement(after, next);
 	}
 
 	/** 다음 블록을 둘 수 있는 가장 좋은 자리의 점수 */

@@ -598,41 +598,65 @@ public class SoundManager
 				phase = phase + hz / SAMPLE_RATE;
 				phase = phase - Math.floor(phase);
 
-				// 파형 종류에 따라 -1.0 ~ 1.0 값을 만든다
-				float value;
-				if (shape == SQUARE)
-				{
-					value = phase < 0.5 ? 1f : -1f;
-				}
-				else if (shape == PULSE)
-				{
-					value = phase < 0.25 ? 1f : -1f;
-				}
-				else if (shape == TRIANGLE)
-				{
-					value = (float) (4.0 * Math.abs(phase - 0.5) - 1.0);
-				}
-				else if (shape == SINE)
-				{
-					value = (float) Math.sin(2.0 * Math.PI * phase);
-				}
-				else
-				{
-					value = noise.nextFloat() * 2f - 1f;
-				}
-
-				// 서서히 작아지는 정도, 시작과 끝의 짧은 증감을 곱해 크기를 정한다
-				float envelope = 1f - fade * i / count;
-				if (i < attack)
-				{
-					envelope = envelope * i / attack;
-				}
-				if (count - i < release)
-				{
-					envelope = envelope * (count - i) / release;
-				}
+				float value = waveValue(shape, phase, noise);
+				float envelope = envelope(i, count, attack, release, fade);
 				data[start + i] = data[start + i] + value * amp * envelope;
 			}
+		}
+
+		/**
+		 * 파형 종류에 따라 한 주기 안의 위치(phase)에서의 값(-1.0 ~ 1.0)을 만든다.
+		 * 잡음(NOISE)일 때만 noise에서 난수를 하나 꺼낸다.
+		 *
+		 * @param shape 파형 종류(SQUARE, PULSE, TRIANGLE, SINE, NOISE)
+		 * @param phase 한 주기 안의 위치(0~1)
+		 * @param noise 잡음용 난수
+		 * @return 파형 값
+		 */
+		private static float waveValue(int shape, double phase, Random noise)
+		{
+			if (shape == SQUARE)
+			{
+				return phase < 0.5 ? 1f : -1f;
+			}
+			if (shape == PULSE)
+			{
+				return phase < 0.25 ? 1f : -1f;
+			}
+			if (shape == TRIANGLE)
+			{
+				return (float) (4.0 * Math.abs(phase - 0.5) - 1.0);
+			}
+			if (shape == SINE)
+			{
+				return (float) Math.sin(2.0 * Math.PI * phase);
+			}
+			return noise.nextFloat() * 2f - 1f;
+		}
+
+		/**
+		 * i번째 샘플의 크기 배율을 구한다. 서서히 작아지는 정도에
+		 * 시작(attack)과 끝(release)의 짧은 증감을 곱한다.
+		 *
+		 * @param i       음 안에서의 샘플 번호
+		 * @param count   음 전체 샘플 수
+		 * @param attack  시작 증가 구간 샘플 수
+		 * @param release 끝 감소 구간 샘플 수
+		 * @param fade    끝으로 갈수록 작아지는 정도
+		 * @return 크기 배율
+		 */
+		private static float envelope(int i, int count, int attack, int release, float fade)
+		{
+			float envelope = 1f - fade * i / count;
+			if (i < attack)
+			{
+				envelope = envelope * i / attack;
+			}
+			if (count - i < release)
+			{
+				envelope = envelope * (count - i) / release;
+			}
+			return envelope;
 		}
 
 		/**
