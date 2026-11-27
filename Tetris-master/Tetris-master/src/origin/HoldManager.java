@@ -1,3 +1,5 @@
+package origin;
+
 /** Stores a 2D block type, independently of its position and rotation. */
 public final class HoldManager
 {

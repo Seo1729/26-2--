@@ -1,3 +1,5 @@
+package origin;
+
 import java.util.ArrayList;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -94,7 +96,7 @@ class RankingManager
 	 */
 	static synchronized ArrayList<Entry> getEntries()
 	{
-		ArrayList<Entry> list = new ArrayList<Entry>();
+		ArrayList<Entry> list = new ArrayList<>();
 		for (int i = 1; i <= MAX_ENTRIES; i++)
 		{
 			String value = store.get(KEY_PREFIX + i, null);
